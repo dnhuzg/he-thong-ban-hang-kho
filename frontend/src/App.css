@@ -22,8 +22,21 @@
 .eyebrow, .panel-label { margin: 0 0 6px; color: var(--teal); font: 700 0.72rem/1.2 'Space Grotesk', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
 .brand-name { margin: 0; font: 700 1.05rem/1.2 'Space Grotesk', sans-serif; }
 .environment-label { padding: 8px 12px; border: 1px solid #b9d8d7; border-radius: 999px; color: var(--teal-dark); font-size: 0.8rem; }
+.account-summary { display: grid; gap: 4px; justify-items: end; max-width: 45%; text-align: right; }
+.account-summary strong { overflow-wrap: anywhere; font-size: 0.9rem; }
+.account-summary span { color: var(--muted); font-size: 0.8rem; }
 .app-main { padding: 92px 0 120px; }
 .home-page, .hero-copy { max-width: 820px; }
+.login-page { width: min(100%, 480px); margin: 0 auto; }
+.login-heading h1 { margin-top: 18px; font-size: 3.7rem; }
+.login-heading > p:last-child { max-width: 420px; color: var(--muted); }
+.login-panel { display: grid; gap: 22px; margin-top: 34px; padding: 30px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+.login-field { display: grid; gap: 8px; }
+.login-field label { font-size: 0.88rem; font-weight: 700; }
+.login-field input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #aebdc3; border-radius: 6px; background: white; color: var(--ink); font: inherit; }
+.login-field input:focus { outline: 3px solid rgba(8, 127, 128, 0.18); border-color: var(--teal); }
+.login-error { margin: 0; color: #a34839; font-size: 0.9rem; }
+.login-submit { width: 100%; min-height: 46px; }
 .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
 .status-online { background: #dff3e9; color: #16704a; }
 .status-offline { background: #fae5df; color: #a34839; }
@@ -42,7 +55,10 @@ button:disabled { cursor: wait; opacity: 0.6; }
   .app-header, .app-main, .app-footer { width: min(100% - 32px, 1080px); }
   .app-header { align-items: flex-start; gap: 18px; }
   .environment-label { font-size: 0.7rem; }
+  .account-summary { max-width: 48%; }
   .app-main { padding: 64px 0 88px; }
   .health-panel { align-items: flex-start; flex-direction: column; margin-top: 48px; }
+  .login-heading h1 { font-size: 3rem; }
+  .login-panel { padding: 22px; }
   button { width: 100%; }
 }

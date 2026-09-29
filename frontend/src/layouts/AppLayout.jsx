@@ -1,4 +1,4 @@
-function AppLayout({ children }) {
+function AppLayout({ children, user }) {
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -6,7 +6,18 @@ function AppLayout({ children }) {
           <p className="eyebrow">Workspace nhóm</p>
           <p className="brand-name">Quản lý bán hàng & kho</p>
         </div>
-        <span className="environment-label">Môi trường phát triển</span>
+        {user ? (
+          <div className="account-summary">
+            <strong>{user.username}</strong>
+            <span>
+              {user.roles.length > 0
+                ? user.roles.map((role) => role.name).join(', ')
+                : 'Chưa được gán vai trò'}
+            </span>
+          </div>
+        ) : (
+          <span className="environment-label">Môi trường phát triển</span>
+        )}
       </header>
       <main className="app-main">{children}</main>
       <footer className="app-footer">Khung sườn hệ thống · React + Express + MySQL</footer>
