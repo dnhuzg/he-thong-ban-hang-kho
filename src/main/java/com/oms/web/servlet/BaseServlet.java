@@ -55,11 +55,16 @@ abstract class BaseServlet extends HttpServlet {
 
     /** Đọc tệp tải lên tối đa 2MB + 1 byte: đủ để biết tệp quá cỡ mà không nạp cả tệp lớn vào bộ nhớ. */
     protected static byte[] readUpload(Part part) throws IOException {
+        return readUpload(part, Images.MAX_BYTES);
+    }
+
+    /** Đọc tối đa maxBytes + 1 byte để nơi gọi phát hiện tệp quá lớn. */
+    protected static byte[] readUpload(Part part, long maxBytes) throws IOException {
         if (part == null || part.getSize() == 0) {
             return new byte[0];
         }
         try (InputStream in = part.getInputStream()) {
-            return in.readNBytes((int) Images.MAX_BYTES + 1);
+            return in.readNBytes((int) maxBytes + 1);
         }
     }
 }

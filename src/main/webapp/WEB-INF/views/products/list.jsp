@@ -12,7 +12,10 @@
             <h1>Sản phẩm</h1>
           </div>
           <c:if test="${canWrite}">
-            <a class="btn btn--primary" href="${ctx}/products/new">+ Thêm sản phẩm</a>
+            <div class="badge-list">
+              <a class="btn btn--secondary" href="${ctx}/products/import">Nhập từ Excel</a>
+              <a class="btn btn--primary" href="${ctx}/products/new">+ Thêm sản phẩm</a>
+            </div>
           </c:if>
         </div>
 
