@@ -40,6 +40,7 @@ public class User {
     private LocalDateTime loginLockedUntil;
     private int sessionVersion;
     private String lockReason;
+    private String avatarPath;
     private Set<Role> roles = EnumSet.noneOf(Role.class);
     private List<NamedItem> warehouses = new ArrayList<>();
     private List<NamedItem> areas = new ArrayList<>();
@@ -110,6 +111,13 @@ public class User {
     public void setSessionVersion(int sessionVersion) { this.sessionVersion = sessionVersion; }
     public String getLockReason() { return lockReason; }
     public void setLockReason(String lockReason) { this.lockReason = lockReason; }
+    public String getAvatarPath() { return avatarPath; }
+    public void setAvatarPath(String avatarPath) { this.avatarPath = avatarPath; }
+
+    /** Bản thu nhỏ 64px nằm cạnh ảnh gốc, cùng tên thêm đuôi -64 (S2-03). */
+    public String getAvatarThumbPath() {
+        return avatarPath == null ? null : avatarPath.replaceFirst("\\.png$", "-64.png");
+    }
     public Set<Role> getRoles() { return roles; }
     public void setRoles(Set<Role> roles) { this.roles = roles; }
     public List<NamedItem> getWarehouses() { return warehouses; }

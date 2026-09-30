@@ -138,6 +138,10 @@
   background: var(--color-surface-muted);
 }
 
+img.user-menu__avatar {
+  object-fit: cover;
+}
+
 .user-menu__avatar {
   display: grid;
   place-items: center;

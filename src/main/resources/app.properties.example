@@ -18,3 +18,7 @@ mail.username=
 mail.password=
 mail.from=
 mail.fromName=OMS Bán hàng & Kho
+
+# Thư mục lưu ảnh tải lên (ảnh đại diện, ảnh sản phẩm), nằm ngoài Tomcat để không mất khi deploy lại.
+# Để trống thì dùng thư mục oms-uploads trong thư mục người dùng.
+upload.dir=
