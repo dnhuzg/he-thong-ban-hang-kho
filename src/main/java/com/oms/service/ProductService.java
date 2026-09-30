@@ -27,7 +27,6 @@ public class ProductService {
 
     public static final int PAGE_SIZE = 20;
     private static final Pattern SKU = Pattern.compile("^[A-Z0-9][A-Z0-9._-]{1,49}$");
-    private static final BigDecimal MAX_PRICE = new BigDecimal("9999999999999.99");
     private static final String IMAGE_FOLDER = "products";
 
     private final ProductDao productDao = new ProductDao();
@@ -247,26 +246,9 @@ public class ProductService {
         return sku;
     }
 
-    /** Nhận "7200", "7200.5", "7.200" hoặc "7,200.50"; bỏ trống = chưa có giá vốn. */
+    /** Giá vốn người dùng nhập; bỏ trống = chưa có giá vốn. */
     static BigDecimal parseCost(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        String cleaned = raw.trim().replace(" ", "");
-        // Dấu chấm/phẩy phân tách hàng nghìn kiểu Việt Nam: "7.200" hoặc "1.250.000"
-        if (cleaned.matches("\\d{1,3}(\\.\\d{3})+")) {
-            cleaned = cleaned.replace(".", "");
-        }
-        cleaned = cleaned.replace(",", "");
-        try {
-            BigDecimal value = new BigDecimal(cleaned);
-            if (value.signum() < 0 || value.compareTo(MAX_PRICE) > 0 || value.scale() > 2) {
-                throw new NumberFormatException();
-            }
-            return value.setScale(2);
-        } catch (NumberFormatException e) {
-            throw new ServiceException("Giá vốn phải là số không âm, tối đa 2 chữ số thập phân.");
-        }
+        return Money.parse(raw, "Giá vốn");
     }
 
     private String describe(Connection conn, Product p) throws SQLException {
