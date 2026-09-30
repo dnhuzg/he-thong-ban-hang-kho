@@ -55,6 +55,7 @@
             </span>
           </summary>
           <div class="user-menu__panel">
+            <a href="${ctx}/account/profile">Hồ sơ cá nhân</a>
             <a href="${ctx}/account/change-password">Đổi mật khẩu</a>
             <form action="${ctx}/logout" method="post">
               <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">

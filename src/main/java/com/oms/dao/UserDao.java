@@ -180,6 +180,16 @@ public class UserDao {
         }
     }
 
+    /** Người dùng tự sửa hồ sơ (S2-02): chỉ họ tên và số điện thoại, không đụng tài khoản, vai trò, phạm vi. */
+    public void updateNameAndPhone(Connection conn, long userId, String fullName, String phone) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET full_name = ?, phone = ? WHERE id = ?")) {
+            ps.setString(1, fullName);
+            ps.setString(2, phone);
+            ps.setLong(3, userId);
+            ps.executeUpdate();
+        }
+    }
+
     public void replaceRoles(Connection conn, long userId, Set<Role> roles) throws SQLException {
         replaceLinks(conn, "user_roles", "role_code", userId, roles.stream().map(Role::name).toList());
     }

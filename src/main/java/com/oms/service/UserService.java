@@ -29,7 +29,6 @@ public class UserService {
     private static final Logger LOG = Logger.getLogger(UserService.class.getName());
     private static final Pattern USERNAME = Pattern.compile("^[a-zA-Z0-9._-]{3,50}$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-    private static final Pattern PHONE = Pattern.compile("^[0-9 +().-]{8,20}$");
 
     private final UserDao userDao = new UserDao();
     private final LookupDao lookupDao = new LookupDao();
@@ -110,7 +109,7 @@ public class UserService {
             user.setUsername(form.getUsername());
             user.setEmail(form.getEmail());
             user.setFullName(form.getFullName());
-            user.setPhone(blankToNull(form.getPhone()));
+            user.setPhone(PhoneNumbers.normalize(form.getPhone()));
             user.setPasswordHash(Passwords.hash(tempPassword));
             user.setStatus(User.Status.PENDING);
             user.setMustChangePassword(true);
@@ -138,10 +137,34 @@ public class UserService {
             }
             existing.setEmail(form.getEmail());
             existing.setFullName(form.getFullName());
-            existing.setPhone(blankToNull(form.getPhone()));
+            existing.setPhone(PhoneNumbers.normalize(form.getPhone()));
             userDao.updateProfile(conn, existing);
             saveRelations(conn, existing.getId(), form);
             auditDao.log(conn, actor.getId(), "USER_UPDATE", "USER", existing.getId(), "roles=" + form.getRoles());
+            return null;
+        });
+    }
+
+    /**
+     * Người dùng tự cập nhật họ tên và số điện thoại (S2-02). Tài khoản, email, vai trò, kho, địa bàn
+     * do quản trị quản lý nên không nhận ở đây dù request có gửi kèm.
+     */
+    public void updateOwnProfile(User actor, String fullName, String phone) throws SQLException {
+        String name = fullName == null ? "" : fullName.trim();
+        if (name.isEmpty()) {
+            throw new ServiceException("Vui lòng nhập họ và tên.");
+        }
+        if (name.length() > 150) {
+            throw new ServiceException("Họ và tên tối đa 150 ký tự.");
+        }
+        String normalizedPhone = PhoneNumbers.normalize(phone);
+        Db.inTransaction(conn -> {
+            User current = userDao.findByIdForUpdate(conn, actor.getId());
+            if (current == null || current.getStatus() == User.Status.LOCKED) {
+                throw new ServiceException("Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
+            }
+            userDao.updateNameAndPhone(conn, current.getId(), name, normalizedPhone);
+            auditDao.log(conn, current.getId(), "PROFILE_UPDATE", "USER", current.getId(), null);
             return null;
         });
     }
@@ -250,9 +273,7 @@ public class UserService {
         if (!EMAIL.matcher(form.getEmail()).matches()) {
             throw new ServiceException("Email không hợp lệ.");
         }
-        if (!form.getPhone().isBlank() && !PHONE.matcher(form.getPhone()).matches()) {
-            throw new ServiceException("Số điện thoại không hợp lệ.");
-        }
+        PhoneNumbers.normalize(form.getPhone());
         if (form.getRoles().isEmpty()) {
             throw new ServiceException("Vui lòng chọn ít nhất một vai trò.");
         }
@@ -264,10 +285,6 @@ public class UserService {
         if (actor != null && !form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
             throw new ServiceException("Bạn không thể tự thu hồi vai trò Quản trị hệ thống của chính mình.");
         }
-    }
-
-    private static String blankToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
     }
 
     public static class NotFoundException extends ServiceException {
