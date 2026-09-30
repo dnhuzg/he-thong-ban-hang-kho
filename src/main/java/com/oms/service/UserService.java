@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -152,12 +154,17 @@ public class UserService {
         if (reason.length() > 500) {
             throw new ServiceException("Lý do khoá tối đa 500 ký tự.");
         }
-        if (userId == actor.getId()) {
+        if (actor != null && userId == actor.getId()) {
             throw new ServiceException("Bạn không thể tự khoá tài khoản của chính mình.");
         }
         Db.inTransaction(conn -> {
-            if (userDao.findById(conn, userId) == null) {
+            requireAdmin(conn, actor);
+            User target = userDao.findByIdForUpdate(conn, userId);
+            if (target == null) {
                 throw new NotFoundException();
+            }
+            if (target.getStatus() == User.Status.LOCKED) {
+                throw new ServiceException("Tài khoản đã bị khoá.");
             }
             userDao.lock(conn, userId, reason.trim(), actor.getId());
             auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim());
@@ -167,8 +174,13 @@ public class UserService {
 
     public void unlock(long userId, User actor) throws SQLException {
         Db.inTransaction(conn -> {
-            if (userDao.findById(conn, userId) == null) {
+            requireAdmin(conn, actor);
+            User target = userDao.findByIdForUpdate(conn, userId);
+            if (target == null) {
                 throw new NotFoundException();
+            }
+            if (target.getStatus() != User.Status.LOCKED) {
+                throw new ServiceException("Tài khoản không đang bị khoá.");
             }
             userDao.unlock(conn, userId);
             auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null);
@@ -223,9 +235,9 @@ public class UserService {
         return current;
     }
 
-    private static void validateScopeIds(java.util.Set<Long> ids, List<NamedItem> available, String label) {
-        java.util.Set<Long> known = available.stream().map(NamedItem::getId)
-                .collect(java.util.stream.Collectors.toSet());
+    private static void validateScopeIds(Set<Long> ids, List<NamedItem> available, String label) {
+        Set<Long> known = available.stream().map(NamedItem::getId)
+                .collect(Collectors.toSet());
         if (ids.stream().anyMatch(id -> id == null || id <= 0 || !known.contains(id))) {
             throw new ServiceException(label + " được chọn không tồn tại. Vui lòng tải lại danh sách.");
         }
@@ -249,7 +261,7 @@ public class UserService {
             throw new ServiceException("Người dùng có vai trò kho phải được gắn với ít nhất một kho.");
         }
         // S1-09: không thể tự thu hồi vai trò quản trị của chính mình
-        if (!form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
+        if (actor != null && !form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
             throw new ServiceException("Bạn không thể tự thu hồi vai trò Quản trị hệ thống của chính mình.");
         }
     }

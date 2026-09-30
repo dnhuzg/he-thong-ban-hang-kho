@@ -254,8 +254,9 @@ public class UserDao {
     }
 
     public void unlock(Connection conn, long userId) throws SQLException {
-        String sql = "UPDATE users SET status = IF(must_change_password = 1, 'PENDING', 'ACTIVE'), lock_reason = NULL, "
-                + "locked_at = NULL, locked_by = NULL, failed_login_count = 0, login_locked_until = NULL WHERE id = ?";
+        String sql = "UPDATE users SET status = CASE WHEN must_change_password = 1 THEN 'PENDING' ELSE 'ACTIVE' END, lock_reason = NULL, "
+                + "locked_at = NULL, locked_by = NULL, failed_login_count = 0, login_locked_until = NULL, "
+                + "session_version = session_version + 1 WHERE id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.executeUpdate();

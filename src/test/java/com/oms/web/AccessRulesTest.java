@@ -20,6 +20,8 @@ class AccessRulesTest {
         manager.setRoles(EnumSet.of(Role.SALES_MANAGER));
         assertFalse(AccessRules.isAllowed(AccessRules.find("/admin/users/new"), manager, policy));
         assertFalse(AccessRules.isAllowed(AccessRules.find("/admin/users/edit"), manager, policy));
+        assertFalse(AccessRules.isAllowed(AccessRules.find("/admin/users/lock"), manager, policy));
+        assertFalse(AccessRules.isAllowed(AccessRules.find("/admin/users/unlock"), manager, policy));
         manager.setRoles(EnumSet.of(Role.ADMIN));
         assertTrue(AccessRules.isAllowed(AccessRules.find("/admin/users/edit"), manager, policy));
     }
