@@ -64,3 +64,26 @@ INSERT INTO customers (code, name, phone, area_id) VALUES
   ('DL003', 'Đại lý Phúc Thịnh',       '0911000003', 2),
   ('DL004', 'Siêu thị mini Bình An',   '0911000004', 2),
   ('DL005', 'Nhà phân phối Kinh Bắc',  '0911000005', 3);
+
+-- Đơn vị tính, nhóm hàng 3 cấp và sản phẩm mẫu (S2-05)
+INSERT IGNORE INTO units (code, name) VALUES
+  ('LON', 'Lon'), ('LOC', 'Lốc'), ('THUNG', 'Thùng'), ('CHAI', 'Chai'),
+  ('GOI', 'Gói'), ('HOP', 'Hộp'), ('KG', 'Kg'), ('CAI', 'Cái');
+
+-- Nhóm hàng mẫu 3 cấp; chỉ thêm khi bảng còn trống để chạy lại không nhân đôi
+INSERT INTO product_categories (id, parent_id, name)
+SELECT * FROM (SELECT 1 AS id, NULL AS parent_id, 'Đồ uống' AS name UNION ALL
+               SELECT 2, 1, 'Nước giải khát' UNION ALL
+               SELECT 3, 2, 'Nước ngọt có ga' UNION ALL
+               SELECT 4, 2, 'Nước tăng lực' UNION ALL
+               SELECT 5, 1, 'Bia' UNION ALL
+               SELECT 6, NULL, 'Thực phẩm khô' UNION ALL
+               SELECT 7, 6, 'Mì, phở ăn liền') seed
+WHERE NOT EXISTS (SELECT 1 FROM product_categories);
+
+INSERT IGNORE INTO products (sku, name, category_id, base_unit_id, packing_spec, cost_price)
+SELECT 'COCA-330', 'Coca-Cola lon 330ml', 3, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 7200.00 UNION ALL
+SELECT 'PEPSI-330', 'Pepsi lon 330ml', 3, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 7000.00 UNION ALL
+SELECT 'REDBULL-250', 'Red Bull lon 250ml', 4, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 9500.00 UNION ALL
+SELECT 'TIGER-330', 'Bia Tiger lon 330ml', 5, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 14500.00 UNION ALL
+SELECT 'HAOHAO-TOM', 'Mì Hảo Hảo tôm chua cay', 7, (SELECT id FROM units WHERE code='GOI'), '30 gói/thùng', 3300.00;

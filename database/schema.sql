@@ -99,6 +99,45 @@ CREATE TABLE customers (
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
+CREATE TABLE product_categories (
+  id          BIGINT       NOT NULL AUTO_INCREMENT,
+  parent_id   BIGINT       NULL,
+  name        VARCHAR(150) NOT NULL,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_categories_parent (parent_id),
+  CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES product_categories (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE units (
+  id    BIGINT      NOT NULL AUTO_INCREMENT,
+  code  VARCHAR(20) NOT NULL,
+  name  VARCHAR(50) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_units_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE products (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  sku           VARCHAR(50)   NOT NULL,
+  name          VARCHAR(255)  NOT NULL,
+  category_id   BIGINT        NOT NULL,
+  base_unit_id  BIGINT        NOT NULL,
+  packing_spec  VARCHAR(255)  NULL,
+  cost_price    DECIMAL(15,2) NULL,
+  image_path    VARCHAR(255)  NULL,
+  status        ENUM('ACTIVE','DISCONTINUED') NOT NULL DEFAULT 'ACTIVE',
+  created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_products_sku (sku),
+  KEY idx_products_category (category_id),
+  KEY idx_products_name (name),
+  CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES product_categories (id),
+  CONSTRAINT fk_products_base_unit FOREIGN KEY (base_unit_id) REFERENCES units (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE user_warehouses (
   user_id       BIGINT NOT NULL,
   warehouse_id  BIGINT NOT NULL,
