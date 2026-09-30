@@ -39,7 +39,14 @@ public class RolesServlet extends BaseServlet {
         for (Role role : Role.configurable()) {
             Map<Module, PermissionLevel> row = new EnumMap<>(Module.class);
             for (Module module : Module.values()) {
-                row.put(module, parseLevel(param(req, "perm." + module.name() + "." + role.name())));
+                PermissionLevel level = parseLevel(req.getParameter("perm." + module.name() + "." + role.name()));
+                if (level == null) {
+                    // Form bị cắt / thiếu ô mà coi là "không có quyền" thì sẽ xoá nhầm cả ma trận
+                    flash(req, "Dữ liệu phân quyền gửi lên không đầy đủ nên chưa lưu. Vui lòng tải lại trang và thử lại.");
+                    redirect(req, resp, "/admin/roles");
+                    return;
+                }
+                row.put(module, level);
             }
             matrix.put(role, row);
         }
@@ -52,11 +59,15 @@ public class RolesServlet extends BaseServlet {
         redirect(req, resp, "/admin/roles");
     }
 
+    /** Trả về null khi thiếu ô hoặc giá trị lạ, để từ chối cả lần lưu thay vì đoán. */
     private static PermissionLevel parseLevel(String value) {
+        if (value == null) {
+            return null;
+        }
         try {
             return PermissionLevel.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return PermissionLevel.NONE;
+            return null;
         }
     }
 }
