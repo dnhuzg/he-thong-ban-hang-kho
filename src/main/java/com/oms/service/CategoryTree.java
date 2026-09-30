@@ -33,6 +33,11 @@ public final class CategoryTree {
         }
         children.values().forEach(list -> list.sort(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER)));
         walk(null, 1, "", new HashSet<>());
+        for (Category c : ordered) {
+            c.setHasChildren(hasChildren(c.getId()));
+            c.setTotalProductCount(selfAndDescendants(c.getId()).stream()
+                    .mapToLong(id -> byId.get(id).getProductCount()).sum());
+        }
     }
 
     private void walk(Long parentId, int level, String prefix, Set<Long> seen) {

@@ -28,7 +28,11 @@ public class AuditEntry {
             Map.entry("PRODUCT_UPDATE", "Sửa sản phẩm"),
             Map.entry("PRODUCT_COST_UPDATE", "Sửa giá vốn"),
             Map.entry("PRODUCT_IMAGE_UPDATE", "Đổi ảnh sản phẩm"),
-            Map.entry("PRODUCT_DELETE", "Xoá sản phẩm"));
+            Map.entry("PRODUCT_DELETE", "Xoá sản phẩm"),
+            Map.entry("CATEGORY_CREATE", "Tạo nhóm hàng"),
+            Map.entry("CATEGORY_RENAME", "Đổi tên nhóm hàng"),
+            Map.entry("CATEGORY_DELETE", "Xoá nhóm hàng"),
+            Map.entry("CATEGORY_MOVE_PRODUCTS", "Chuyển sản phẩm sang nhóm khác"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
@@ -40,6 +44,7 @@ public class AuditEntry {
         TARGET_LABELS.put("USER", "Người dùng");
         TARGET_LABELS.put("ROLE_PERMISSIONS", "Phân quyền");
         TARGET_LABELS.put("PRODUCT", "Sản phẩm");
+        TARGET_LABELS.put("CATEGORY", "Nhóm hàng");
     }
 
     private long id;

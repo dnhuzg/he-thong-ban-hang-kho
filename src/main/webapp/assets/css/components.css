@@ -674,3 +674,45 @@
   object-fit: cover;
   border: 1px solid var(--color-border);
 }
+
+/* ---------- Tab trong một khu vực ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs__item {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.tabs__item:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.tabs__item.is-active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ---------- Cây nhóm hàng: thụt lề theo cấp ---------- */
+
+/* Viết kèm ".table td" để thắng padding mặc định của ô bảng */
+.table td.tree-l2 { padding-left: calc(var(--space-4) + 24px); }
+.table td.tree-l3 { padding-left: calc(var(--space-4) + 48px); }
+.table td.tree-l4 { padding-left: calc(var(--space-4) + 72px); }
+.table td.tree-l5 { padding-left: calc(var(--space-4) + 96px); }
+.table td.tree-l6 { padding-left: calc(var(--space-4) + 120px); }
+
+.table td[class^="tree-l"] .table__cell-main,
+.table td[class^="tree-l"] .table__cell-sub {
+  display: block;
+}
