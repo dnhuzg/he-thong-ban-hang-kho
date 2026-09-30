@@ -716,3 +716,17 @@
 .table td[class^="tree-l"] .table__cell-sub {
   display: block;
 }
+
+/* ---------- Form một dòng (đơn vị quy đổi) ---------- */
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input--narrow {
+  width: auto;
+  flex: 0 0 110px;
+}
