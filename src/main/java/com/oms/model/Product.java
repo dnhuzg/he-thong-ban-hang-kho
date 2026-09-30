@@ -1,6 +1,7 @@
 package com.oms.model;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /** Sản phẩm (S2-05). costPrice chỉ được nạp / hiển thị cho người có quyền xem giá vốn. */
 public class Product {
@@ -35,6 +36,10 @@ public class Product {
     private BigDecimal costPrice;
     private String imagePath;
     private Status status;
+    private List<ProductUnit> conversions = List.of();
+
+    public List<ProductUnit> getConversions() { return conversions; }
+    public void setConversions(List<ProductUnit> conversions) { this.conversions = conversions; }
 
     public String getImageThumbPath() {
         return imagePath == null ? null : imagePath.replaceFirst("\\.png$", "-64.png");

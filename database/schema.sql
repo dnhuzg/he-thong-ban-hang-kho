@@ -138,6 +138,17 @@ CREATE TABLE products (
   CONSTRAINT fk_products_base_unit FOREIGN KEY (base_unit_id) REFERENCES units (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S2-07: đơn vị quy đổi; dòng giao dịch sau này lưu kèm hệ số tại thời điểm ghi
+CREATE TABLE product_units (
+  product_id  BIGINT        NOT NULL,
+  unit_id     BIGINT        NOT NULL,
+  factor      DECIMAL(12,4) NOT NULL,
+  PRIMARY KEY (product_id, unit_id),
+  CONSTRAINT fk_product_units_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_product_units_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT chk_product_units_factor CHECK (factor > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE user_warehouses (
   user_id       BIGINT NOT NULL,
   warehouse_id  BIGINT NOT NULL,

@@ -32,7 +32,9 @@ public class AuditEntry {
             Map.entry("CATEGORY_CREATE", "Tạo nhóm hàng"),
             Map.entry("CATEGORY_RENAME", "Đổi tên nhóm hàng"),
             Map.entry("CATEGORY_DELETE", "Xoá nhóm hàng"),
-            Map.entry("CATEGORY_MOVE_PRODUCTS", "Chuyển sản phẩm sang nhóm khác"));
+            Map.entry("CATEGORY_MOVE_PRODUCTS", "Chuyển sản phẩm sang nhóm khác"),
+            Map.entry("PRODUCT_UNIT_SAVE", "Khai báo quy đổi đơn vị"),
+            Map.entry("PRODUCT_UNIT_DELETE", "Xoá quy đổi đơn vị"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
