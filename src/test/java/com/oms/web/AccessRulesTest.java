@@ -25,4 +25,12 @@ class AccessRulesTest {
         manager.setRoles(EnumSet.of(Role.ADMIN));
         assertTrue(AccessRules.isAllowed(AccessRules.find("/admin/users/edit"), manager, policy));
     }
+
+    @Test
+    void uploadedFilesNeedLoginButAnyRoleCanView() {
+        assertEquals(AccessRules.Kind.AUTHENTICATED, AccessRules.find("/files/avatars/x.png").kind());
+        assertEquals(AccessRules.Kind.AUTHENTICATED, AccessRules.find("/account/avatar").kind());
+        assertNull(AccessRules.find("/filesx"));
+        assertFalse(AccessRules.isPublic("/files/avatars/x.png"));
+    }
 }

@@ -48,7 +48,14 @@
         <p class="topbar__context">Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
         <details class="user-menu">
           <summary>
-            <span class="user-menu__avatar" aria-hidden="true"><c:out value="${currentUser.initials}"/></span>
+            <c:choose>
+              <c:when test="${not empty currentUser.avatarThumbPath}">
+                <img class="user-menu__avatar" src="${ctx}/files/<c:out value='${currentUser.avatarThumbPath}'/>" alt="" width="34" height="34">
+              </c:when>
+              <c:otherwise>
+                <span class="user-menu__avatar" aria-hidden="true"><c:out value="${currentUser.initials}"/></span>
+              </c:otherwise>
+            </c:choose>
             <span>
               <span class="user-menu__name"><c:out value="${currentUser.fullName}"/></span>
               <span class="user-menu__role"><c:out value="${currentUser.roleLabels}"/></span>

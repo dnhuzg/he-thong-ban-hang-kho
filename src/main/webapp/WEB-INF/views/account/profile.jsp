@@ -11,6 +11,35 @@
         </div>
 
         <div class="profile-grid">
+          <section class="card" aria-labelledby="profile-avatar-title">
+            <div class="card__header">
+              <h2 id="profile-avatar-title">Ảnh đại diện</h2>
+              <p>Giúp đồng nghiệp nhận ra ai đã tạo đơn khi xem lịch sử.</p>
+            </div>
+            <div class="card__body avatar-upload">
+              <c:choose>
+                <c:when test="${not empty currentUser.avatarPath}">
+                  <img class="avatar avatar--lg" src="${ctx}/files/<c:out value='${currentUser.avatarPath}'/>" alt="Ảnh đại diện của bạn" width="96" height="96">
+                </c:when>
+                <c:otherwise>
+                  <span class="avatar avatar--lg" aria-hidden="true"><c:out value="${currentUser.initials}"/></span>
+                </c:otherwise>
+              </c:choose>
+              <form action="${ctx}/account/avatar" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                <label class="form-label" for="avatar-file">Chọn ảnh mới</label>
+                <input class="input" id="avatar-file" name="avatar" type="file" accept="image/png,image/jpeg" required aria-describedby="avatar-hint">
+                <p class="form-hint" id="avatar-hint">JPG hoặc PNG, tối đa 2MB. Ảnh được cắt vuông ở giữa.</p>
+                <div class="button-row">
+                  <button class="btn btn--primary btn--sm" type="submit">Tải ảnh lên</button>
+                  <c:if test="${not empty currentUser.avatarPath}">
+                    <button class="btn btn--secondary btn--sm" type="submit" name="action" value="remove" formnovalidate>Xoá ảnh</button>
+                  </c:if>
+                </div>
+              </form>
+            </div>
+          </section>
+
           <section class="card" aria-labelledby="profile-edit-title">
             <div class="card__header">
               <h2 id="profile-edit-title">Thông tin liên lạc</h2>
