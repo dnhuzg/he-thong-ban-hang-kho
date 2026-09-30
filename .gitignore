@@ -1,0 +1,9 @@
+target/
+src/main/resources/app.properties
+.env
+*.log
+.idea/
+.vscode/
+database/local/
+# Backlog nằm trên Jira, không đưa file Excel lên repo
+*.xlsx
