@@ -1,0 +1,5 @@
+<%-- Thanh tab khu vực "Sản phẩm & bảng giá"; trang đặt biến catalogTab trước khi include --%>
+        <nav class="tabs" aria-label="Danh mục sản phẩm">
+          <a class="tabs__item ${catalogTab == 'products' ? 'is-active' : ''}" href="${ctx}/products" ${catalogTab == 'products' ? 'aria-current="page"' : ''}>Sản phẩm</a>
+          <a class="tabs__item ${catalogTab == 'categories' ? 'is-active' : ''}" href="${ctx}/products/categories" ${catalogTab == 'categories' ? 'aria-current="page"' : ''}>Nhóm hàng</a>
+        </nav>

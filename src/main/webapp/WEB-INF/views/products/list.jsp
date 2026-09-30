@@ -3,6 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <fmt:setLocale value="vi_VN"/>
 <c:set var="pageTitle" value="Sản phẩm"/>
+<c:set var="catalogTab" value="products"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 
         <div class="page-header">
@@ -14,6 +15,8 @@
             <a class="btn btn--primary" href="${ctx}/products/new">+ Thêm sản phẩm</a>
           </c:if>
         </div>
+
+<%@ include file="/WEB-INF/views/products/nav.jspf" %>
 
         <section class="card">
           <form class="toolbar" action="${ctx}/products" method="get" role="search">
