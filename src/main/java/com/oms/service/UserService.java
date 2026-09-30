@@ -93,9 +93,7 @@ public class UserService {
     /** Tạo tài khoản và gửi email kích hoạt kèm mật khẩu tạm (S1-08). Trả về true nếu email đã gửi được. */
     public boolean create(UserForm form, User actor) throws SQLException {
         validate(form, actor);
-        if (!USERNAME.matcher(form.getUsername()).matches()) {
-            throw new ServiceException("Tài khoản chỉ gồm chữ không dấu, số và . _ - (3–50 ký tự).");
-        }
+        requireValidUsername(form.getUsername());
         String tempPassword = Passwords.generateTemporary();
         Db.inTransaction(conn -> {
             validate(form, requireAdmin(conn, actor));
@@ -122,6 +120,16 @@ public class UserService {
                 "Chào " + form.getFullName() + ",\nTài khoản của bạn đã được tạo.\n"
                         + "Tài khoản: " + form.getUsername() + "\nMật khẩu tạm: " + tempPassword + "\n"
                         + "Đăng nhập tại " + AppConfig.get("app.baseUrl") + "/login và đổi mật khẩu ngay lần đầu.");
+    }
+
+    static void requireValidUsername(String username) {
+        if (!USERNAME.matcher(username).matches()) {
+            throw new ServiceException("Tài khoản chỉ gồm chữ không dấu, số và . _ - (3–50 ký tự).");
+        }
+    }
+
+    static boolean isValidEmail(String email) {
+        return EMAIL.matcher(email).matches();
     }
 
     public void update(UserForm form, User actor) throws SQLException {
