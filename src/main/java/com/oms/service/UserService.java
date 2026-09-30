@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -97,6 +99,7 @@ public class UserService {
         }
         String tempPassword = Passwords.generateTemporary();
         Db.inTransaction(conn -> {
+            validate(form, requireAdmin(conn, actor));
             if (userDao.existsUsername(conn, form.getUsername())) {
                 throw new ServiceException("Tài khoản \"" + form.getUsername() + "\" đã tồn tại. Vui lòng chọn tên tài khoản khác.");
             }
@@ -125,7 +128,8 @@ public class UserService {
     public void update(UserForm form, User actor) throws SQLException {
         validate(form, actor);
         Db.inTransaction(conn -> {
-            User existing = userDao.findById(conn, form.getId());
+            validate(form, requireAdmin(conn, actor));
+            User existing = userDao.findByIdForUpdate(conn, form.getId());
             if (existing == null) {
                 throw new NotFoundException();
             }
@@ -150,12 +154,17 @@ public class UserService {
         if (reason.length() > 500) {
             throw new ServiceException("Lý do khoá tối đa 500 ký tự.");
         }
-        if (userId == actor.getId()) {
+        if (actor != null && userId == actor.getId()) {
             throw new ServiceException("Bạn không thể tự khoá tài khoản của chính mình.");
         }
         Db.inTransaction(conn -> {
-            if (userDao.findById(conn, userId) == null) {
+            requireAdmin(conn, actor);
+            User target = userDao.findByIdForUpdate(conn, userId);
+            if (target == null) {
                 throw new NotFoundException();
+            }
+            if (target.getStatus() == User.Status.LOCKED) {
+                throw new ServiceException("Tài khoản đã bị khoá.");
             }
             userDao.lock(conn, userId, reason.trim(), actor.getId());
             auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim());
@@ -165,8 +174,13 @@ public class UserService {
 
     public void unlock(long userId, User actor) throws SQLException {
         Db.inTransaction(conn -> {
-            if (userDao.findById(conn, userId) == null) {
+            requireAdmin(conn, actor);
+            User target = userDao.findByIdForUpdate(conn, userId);
+            if (target == null) {
                 throw new NotFoundException();
+            }
+            if (target.getStatus() != User.Status.LOCKED) {
+                throw new ServiceException("Tài khoản không đang bị khoá.");
             }
             userDao.unlock(conn, userId);
             auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null);
@@ -202,9 +216,31 @@ public class UserService {
     }
 
     private void saveRelations(Connection conn, long userId, UserForm form) throws SQLException {
+        validateScopeIds(form.getWarehouseIds(), lookupDao.warehouses(conn), "Kho");
+        validateScopeIds(form.getAreaIds(), lookupDao.areas(conn), "Địa bàn");
         userDao.replaceRoles(conn, userId, form.getRoles());
         userDao.replaceWarehouses(conn, userId, form.getWarehouseIds());
         userDao.replaceAreas(conn, userId, form.getAreaIds());
+    }
+
+    private User requireAdmin(Connection conn, User actor) throws SQLException {
+        if (actor == null) {
+            throw new ServiceException("Chỉ Quản trị hệ thống được thay đổi tài khoản và vai trò.");
+        }
+        User current = userDao.findByIdForUpdate(conn, actor.getId());
+        if (current == null || !current.isAdmin() || current.getStatus() != User.Status.ACTIVE
+                || current.isMustChangePassword() || current.getSessionVersion() != actor.getSessionVersion()) {
+            throw new ServiceException("Quyền quản trị hoặc phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
+        }
+        return current;
+    }
+
+    private static void validateScopeIds(Set<Long> ids, List<NamedItem> available, String label) {
+        Set<Long> known = available.stream().map(NamedItem::getId)
+                .collect(Collectors.toSet());
+        if (ids.stream().anyMatch(id -> id == null || id <= 0 || !known.contains(id))) {
+            throw new ServiceException(label + " được chọn không tồn tại. Vui lòng tải lại danh sách.");
+        }
     }
 
     private void validate(UserForm form, User actor) {
@@ -225,7 +261,7 @@ public class UserService {
             throw new ServiceException("Người dùng có vai trò kho phải được gắn với ít nhất một kho.");
         }
         // S1-09: không thể tự thu hồi vai trò quản trị của chính mình
-        if (!form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
+        if (actor != null && !form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
             throw new ServiceException("Bạn không thể tự thu hồi vai trò Quản trị hệ thống của chính mình.");
         }
     }

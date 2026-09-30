@@ -25,8 +25,17 @@ import java.sql.SQLException;
  */
 public class AuthFilter implements Filter {
 
-    private final AuthService authService = new AuthService();
-    private final PermissionService permissionService = new PermissionService();
+    private final AuthService authService;
+    private final PermissionService permissionService;
+
+    public AuthFilter() {
+        this(new AuthService(), new PermissionService());
+    }
+
+    AuthFilter(AuthService authService, PermissionService permissionService) {
+        this.authService = authService;
+        this.permissionService = permissionService;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -38,20 +47,26 @@ public class AuthFilter implements Filter {
             path = "/";
         }
 
+        if (!path.startsWith("/assets/")) {
+            resp.setHeader("Cache-Control", "no-store");
+        }
+
         HttpSession session = req.getSession(false);
         Long userId = session == null ? null : (Long) session.getAttribute(SessionKeys.USER_ID);
 
         try {
             User user = userId == null ? null : authService.findActiveSessionUser(userId);
             Integer version = session == null ? null : (Integer) session.getAttribute(SessionKeys.SESSION_VERSION);
-            boolean revoked = user != null
-                    && (user.getStatus() == User.Status.LOCKED || version == null || version != user.getSessionVersion());
+            boolean revoked = userId != null
+                    && (user == null || user.getStatus() == User.Status.LOCKED
+                    || version == null || version != user.getSessionVersion());
             if (revoked) {
                 session.invalidate();
                 user = null;
             }
 
-            PermissionPolicy policy = permissionService.policy();
+            // Khách chưa đăng nhập không cần nạp ma trận quyền khi mở trang công khai.
+            PermissionPolicy policy = user == null ? null : permissionService.policy();
             if (user != null) {
                 req.setAttribute(SessionKeys.CURRENT_USER, user);
                 req.setAttribute("menu", Menu.build(user, policy, path));

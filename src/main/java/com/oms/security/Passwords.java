@@ -3,6 +3,7 @@ package com.oms.security;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.security.SecureRandom;
+import java.nio.charset.StandardCharsets;
 
 public final class Passwords {
 
@@ -27,6 +28,10 @@ public final class Passwords {
     public static String validateStrength(String raw) {
         if (raw == null || raw.length() < 8) {
             return "Mật khẩu mới phải có tối thiểu 8 ký tự.";
+        }
+        // bcrypt chỉ xét 72 byte đầu; từ chối phần bị cắt để hai mật khẩu khác nhau không trùng hash.
+        if (raw.getBytes(StandardCharsets.UTF_8).length > 72) {
+            return "Mật khẩu mới không được vượt quá 72 byte UTF-8.";
         }
         boolean hasLetter = raw.chars().anyMatch(Character::isLetter);
         boolean hasDigit = raw.chars().anyMatch(Character::isDigit);
