@@ -20,6 +20,10 @@ public class LookupDao {
         return list(conn, "SELECT id, name FROM areas ORDER BY name");
     }
 
+    public List<NamedItem> units(Connection conn) throws SQLException {
+        return list(conn, "SELECT id, name FROM units ORDER BY name");
+    }
+
     /** Người dùng dạng "Họ tên (tài khoản)" cho các ô chọn lọc. */
     public List<NamedItem> users(Connection conn) throws SQLException {
         return list(conn, "SELECT id, CONCAT(full_name, ' (', username, ')') FROM users ORDER BY full_name, username");

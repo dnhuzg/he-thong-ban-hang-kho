@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /** Một dòng nhật ký thao tác (S2-04) kèm thông tin người thực hiện để hiển thị. */
 public class AuditEntry {
@@ -22,7 +23,15 @@ public class AuditEntry {
             Map.entry("USER_UPDATE", "Sửa tài khoản"),
             Map.entry("USER_LOCK", "Khoá tài khoản"),
             Map.entry("USER_UNLOCK", "Mở khoá tài khoản"),
-            Map.entry("PERMISSION_UPDATE", "Sửa phân quyền"));
+            Map.entry("PERMISSION_UPDATE", "Sửa phân quyền"),
+            Map.entry("PRODUCT_CREATE", "Tạo sản phẩm"),
+            Map.entry("PRODUCT_UPDATE", "Sửa sản phẩm"),
+            Map.entry("PRODUCT_COST_UPDATE", "Sửa giá vốn"),
+            Map.entry("PRODUCT_IMAGE_UPDATE", "Đổi ảnh sản phẩm"),
+            Map.entry("PRODUCT_DELETE", "Xoá sản phẩm"));
+
+    // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
+    private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
 
     /** Loại đối tượng dùng cho bộ lọc; thêm vào đây khi module mới ghi nhật ký. */
     public static final Map<String, String> TARGET_LABELS = new LinkedHashMap<>();
@@ -30,6 +39,7 @@ public class AuditEntry {
     static {
         TARGET_LABELS.put("USER", "Người dùng");
         TARGET_LABELS.put("ROLE_PERMISSIONS", "Phân quyền");
+        TARGET_LABELS.put("PRODUCT", "Sản phẩm");
     }
 
     private long id;
@@ -44,6 +54,10 @@ public class AuditEntry {
     private String actorName;
     private String actorUsername;
     private String actorAvatarPath;
+
+    public boolean isCostSensitive() {
+        return COST_SENSITIVE.contains(action);
+    }
 
     public String getActionLabel() {
         return ACTION_LABELS.getOrDefault(action, action);
