@@ -9,6 +9,8 @@ public class Category {
     private int level;
     private String path;
     private long productCount;
+    private long totalProductCount;
+    private boolean hasChildren;
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -22,4 +24,9 @@ public class Category {
     public void setPath(String path) { this.path = path; }
     public long getProductCount() { return productCount; }
     public void setProductCount(long productCount) { this.productCount = productCount; }
+    /** Số sản phẩm của nhóm và mọi nhóm con cháu. */
+    public long getTotalProductCount() { return totalProductCount; }
+    public void setTotalProductCount(long totalProductCount) { this.totalProductCount = totalProductCount; }
+    public boolean isHasChildren() { return hasChildren; }
+    public void setHasChildren(boolean hasChildren) { this.hasChildren = hasChildren; }
 }
