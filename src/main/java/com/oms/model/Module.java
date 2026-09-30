@@ -6,7 +6,7 @@ public enum Module {
     CUSTOMER_CREDIT("Đại lý & hạn mức công nợ", null),
     ORDER("Đơn hàng", null),
     ORDER_APPROVAL("Duyệt đơn & giá đặc biệt", null),
-    INVENTORY("Tồn kho & nhập kho", null),
+    INVENTORY("Tồn kho & nhập kho", "/suppliers"),
     SHIPMENT("Phiếu xuất & giao hàng", null),
     INVOICE("Hoá đơn & công nợ", null),
     RETURN("Trả hàng & điều chỉnh", null),

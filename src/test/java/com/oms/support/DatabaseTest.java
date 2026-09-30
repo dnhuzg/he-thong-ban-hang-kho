@@ -61,6 +61,12 @@ public abstract class DatabaseTest {
                         unit_id BIGINT REFERENCES units(id), factor DECIMAL(12,4) CHECK (factor > 0),
                         PRIMARY KEY (product_id, unit_id))
                     """);
+            statement.execute("""
+                    CREATE TABLE suppliers (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(255),
+                        tax_code VARCHAR(14), contact_name VARCHAR(150), contact_phone VARCHAR(20), email VARCHAR(150),
+                        address VARCHAR(255), payment_terms VARCHAR(255), status VARCHAR(20) DEFAULT 'ACTIVE',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");

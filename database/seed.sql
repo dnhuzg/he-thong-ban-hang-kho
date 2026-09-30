@@ -95,3 +95,9 @@ UNION ALL
 SELECT p.id, u.id, 24 FROM products p JOIN units b ON b.id = p.base_unit_id AND b.code = 'LON' JOIN units u ON u.code = 'THUNG'
 UNION ALL
 SELECT p.id, u.id, 30 FROM products p JOIN units b ON b.id = p.base_unit_id AND b.code = 'GOI' JOIN units u ON u.code = 'THUNG';
+
+-- Nhà cung cấp mẫu (S2-09)
+INSERT IGNORE INTO suppliers (code, name, tax_code, contact_name, contact_phone, payment_terms) VALUES
+  ('NCC-COCA', 'Công ty TNHH Nước giải khát Coca-Cola Việt Nam', '0300792451', 'Nguyễn Văn Hùng', '0903123456', 'Công nợ 30 ngày'),
+  ('NCC-SUNTORY', 'Công ty TNHH Suntory PepsiCo Việt Nam', '0300816663', 'Trần Thị Mai', '0912345670', 'Công nợ 15 ngày'),
+  ('NCC-ACECOOK', 'Công ty CP Acecook Việt Nam', '0300808687', 'Lê Minh Tuấn', '0987654320', 'Thanh toán khi nhận hàng');
