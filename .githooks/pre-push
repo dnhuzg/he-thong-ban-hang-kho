@@ -1,0 +1,17 @@
+#!/bin/sh
+# Chặn push thẳng (kể cả force push và xoá nhánh) lên main / develop từ máy thành viên.
+# Repo private trên GitHub Free không bật được bảo vệ nhánh, nên dùng hook này thay thế.
+# Bật một lần sau khi clone:  git config core.hooksPath .githooks
+# Mọi thay đổi vào main / develop phải đi qua Pull Request trên GitHub.
+
+status=0
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/develop)
+      echo "✗ Không được push thẳng lên ${remote_ref#refs/heads/}." >&2
+      echo "  Tạo nhánh theo mã Jira (ví dụ GHTK-24-quan-ly-san-pham), push nhánh đó rồi mở Pull Request vào develop." >&2
+      status=1
+      ;;
+  esac
+done
+exit $status

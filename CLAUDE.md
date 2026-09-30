@@ -159,6 +159,7 @@ Cách hỏi:
 ## Git
 
 - Nhánh `main` (bản ổn định) và `develop` (tích hợp). Làm việc trên nhánh riêng đặt theo mã Jira, ví dụ `GHTK-24-quan-ly-san-pham`, rồi mở Pull Request vào `develop`. Không commit thẳng lên `main` / `develop`.
+- Repo private trên GitHub Free nên KHÔNG bật được bảo vệ nhánh; thay bằng hook `.githooks/pre-push` chặn push lên `main` / `develop` (mỗi máy chạy `git config core.hooksPath .githooks`). Không dùng `--no-verify` để lách hook.
 - Commit message viết **tiếng Việt**, bắt đầu bằng mã Jira để Jira tự gắn commit vào issue, ví dụ `GHTK-24: Thêm màn hình danh sách sản phẩm`.
 - Chỉ commit hoặc push khi người dùng yêu cầu.
 - Không dùng `--no-verify`, `--force`, `reset --hard` hay các thao tác phá hủy khác nếu chưa được đồng ý.
