@@ -46,6 +46,20 @@ public abstract class DatabaseTest {
                         old_value CLOB, new_value CLOB, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
             statement.execute("CREATE TABLE customers (id BIGINT PRIMARY KEY, code VARCHAR(20), name VARCHAR(200), sales_rep_id BIGINT)");
+            // Danh mục sản phẩm (S2-05, S2-06); dữ liệu mẫu: cây 3 cấp 1 → 2 → 3 và nhóm gốc 4
+            statement.execute("CREATE TABLE product_categories (id BIGINT AUTO_INCREMENT PRIMARY KEY, parent_id BIGINT REFERENCES product_categories(id), name VARCHAR(150), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+            statement.execute("CREATE TABLE units (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(50))");
+            statement.execute("""
+                    CREATE TABLE products (id BIGINT AUTO_INCREMENT PRIMARY KEY, sku VARCHAR(50) UNIQUE, name VARCHAR(255),
+                        category_id BIGINT REFERENCES product_categories(id), base_unit_id BIGINT REFERENCES units(id),
+                        packing_spec VARCHAR(255), cost_price DECIMAL(15,2), image_path VARCHAR(255),
+                        status VARCHAR(20) DEFAULT 'ACTIVE', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
+            statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
+            statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
+            statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
         }

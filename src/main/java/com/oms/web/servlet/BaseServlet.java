@@ -1,13 +1,16 @@
 package com.oms.web.servlet;
 
 import com.oms.model.User;
+import com.oms.service.Images;
 import com.oms.web.SessionKeys;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 abstract class BaseServlet extends HttpServlet {
 
@@ -47,6 +50,16 @@ abstract class BaseServlet extends HttpServlet {
             return Integer.parseInt(param(req, name));
         } catch (NumberFormatException e) {
             return defaultValue;
+        }
+    }
+
+    /** Đọc tệp tải lên tối đa 2MB + 1 byte: đủ để biết tệp quá cỡ mà không nạp cả tệp lớn vào bộ nhớ. */
+    protected static byte[] readUpload(Part part) throws IOException {
+        if (part == null || part.getSize() == 0) {
+            return new byte[0];
+        }
+        try (InputStream in = part.getInputStream()) {
+            return in.readNBytes((int) Images.MAX_BYTES + 1);
         }
     }
 }

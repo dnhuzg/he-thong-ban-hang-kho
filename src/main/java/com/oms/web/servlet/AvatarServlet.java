@@ -1,17 +1,14 @@
 package com.oms.web.servlet;
 
 import com.oms.service.AvatarService;
-import com.oms.service.Images;
 import com.oms.service.ServiceException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.Part;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
 
 /**
@@ -31,7 +28,7 @@ public class AvatarServlet extends BaseServlet {
                 avatarService.remove(currentUser(req));
                 flash(req, "Đã xoá ảnh đại diện.");
             } else {
-                avatarService.upload(currentUser(req), readLimited(req.getPart("avatar")));
+                avatarService.upload(currentUser(req), readUpload(req.getPart("avatar")));
                 flash(req, "Đã cập nhật ảnh đại diện.");
             }
         } catch (ServiceException e) {
@@ -42,13 +39,4 @@ public class AvatarServlet extends BaseServlet {
         redirect(req, resp, "/account/profile");
     }
 
-    /** Đọc tối đa 2MB + 1 byte: đủ để biết tệp quá cỡ mà không nạp cả tệp lớn vào bộ nhớ. */
-    private static byte[] readLimited(Part part) throws IOException {
-        if (part == null || part.getSize() == 0) {
-            return new byte[0];
-        }
-        try (InputStream in = part.getInputStream()) {
-            return in.readNBytes((int) Images.MAX_BYTES + 1);
-        }
-    }
 }

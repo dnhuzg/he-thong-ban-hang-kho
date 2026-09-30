@@ -31,7 +31,11 @@ public final class AccessRules {
             Map.entry("/admin/users/edit", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/lock", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/unlock", new Rule(Kind.ADMIN_ONLY, null)),
-            Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)));
+            Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
+            Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/edit", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/delete", new Rule(Kind.WRITE, Module.PRODUCT)));
 
     // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ
     private static final Rule FILES = new Rule(Kind.AUTHENTICATED, null);
