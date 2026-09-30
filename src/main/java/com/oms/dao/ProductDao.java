@@ -11,8 +11,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ProductDao {
 
@@ -76,8 +78,25 @@ public class ProductDao {
         return findOne(conn, "SELECT " + COLUMNS + FROM + " WHERE p.id = ? FOR UPDATE", id, true);
     }
 
+    public Product findBySkuForUpdate(Connection conn, String sku) throws SQLException {
+        return findOne(conn, "SELECT " + COLUMNS + FROM + " WHERE p.sku = ? FOR UPDATE", sku, true);
+    }
+
     public Product findBySku(Connection conn, String sku, boolean withCost) throws SQLException {
         return findOne(conn, "SELECT " + COLUMNS + FROM + " WHERE p.sku = ?", sku, withCost);
+    }
+
+    /** Toàn bộ sản phẩm theo SKU (không kèm giá vốn), để đối chiếu tệp nhập hàng loạt bằng một truy vấn. */
+    public Map<String, Product> allBySku(Connection conn) throws SQLException {
+        Map<String, Product> result = new HashMap<>();
+        try (PreparedStatement ps = conn.prepareStatement("SELECT " + COLUMNS + FROM);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Product p = map(rs, false);
+                result.put(p.getSku(), p);
+            }
+        }
+        return result;
     }
 
     private Product findOne(Connection conn, String sql, Object param, boolean withCost) throws SQLException {

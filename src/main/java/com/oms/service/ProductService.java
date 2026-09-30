@@ -252,8 +252,12 @@ public class ProductService {
     }
 
     private String describe(Connection conn, Product p) throws SQLException {
-        CategoryTree tree = new CategoryTree(categoryDao.listAll(conn));
-        String unit = lookupDao.units(conn).stream().filter(u -> u.getId() == p.getBaseUnitId())
+        return describe(new CategoryTree(categoryDao.listAll(conn)), lookupDao.units(conn), p);
+    }
+
+    /** Bản dùng danh mục đã nạp sẵn, cho nhập hàng loạt không phải truy vấn lại ở mỗi dòng. */
+    static String describe(CategoryTree tree, List<NamedItem> units, Product p) {
+        String unit = units.stream().filter(u -> u.getId() == p.getBaseUnitId())
                 .map(NamedItem::getName).findFirst().orElse("?");
         return "Tên: " + p.getName() + "\nNhóm hàng: " + pathOf(tree, p.getCategoryId())
                 + "\nĐơn vị cơ sở: " + unit + "\nQuy cách: " + (p.getPackingSpec() == null ? "—" : p.getPackingSpec())
@@ -265,11 +269,11 @@ public class ProductService {
         return c == null ? "?" : c.getPath();
     }
 
-    private static boolean sameMoney(BigDecimal a, BigDecimal b) {
+    static boolean sameMoney(BigDecimal a, BigDecimal b) {
         return a == null ? b == null : b != null && a.compareTo(b) == 0;
     }
 
-    private static String money(BigDecimal value) {
+    static String money(BigDecimal value) {
         return value == null ? "—" : value.toPlainString();
     }
 
