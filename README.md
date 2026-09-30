@@ -7,6 +7,9 @@ Backlog, sprint và người phụ trách: Jira project **GHTK** (https://dnhunq
 
 ## Cài đặt lần đầu
 
+Ngay sau khi clone, bật hook chặn push thẳng lên `main` / `develop` (chạy một lần trong thư mục repo):
+`git config core.hooksPath .githooks`
+
 1. Cài **JDK 21**, **MySQL 8**, tải **Maven 3.9** và **Tomcat 10.1** (bản zip, giải nén là dùng được).
    Nếu không cài vào vị trí mặc định trong `run.ps1`, đặt biến môi trường `JAVA_HOME`, `MAVEN_HOME`, `CATALINA_HOME`.
 2. Tạo user MySQL cho ứng dụng: chép `database/create-app-user.example.sql` thành `database/local/create-app-user.sql`,
@@ -34,6 +37,7 @@ Database đã tạo từ trước thì không chạy lại `schema.sql`; áp cá
 1. Nhận việc trên Jira, tạo nhánh từ `develop` đặt tên theo mã issue, ví dụ `GHTK-24-quan-ly-san-pham`.
 2. Commit message viết tiếng Việt, bắt đầu bằng mã Jira, ví dụ `GHTK-24: Thêm màn hình danh sách sản phẩm`.
 3. Chạy `.\run.ps1` (có test) trước khi mở Pull Request vào `develop`; cần ít nhất một người review mới merge.
-4. Không commit thẳng lên `main` / `develop`.
+4. Không commit thẳng lên `main` / `develop`. Hook `.githooks/pre-push` chặn việc này trên máy;
+   đừng sửa file trực tiếp trên trang web GitHub vì hook không chặn được thao tác trên web.
 
 Quy ước code chi tiết (tầng Servlet → Service → DAO, bảo mật, giao diện): xem [CLAUDE.md](CLAUDE.md).
