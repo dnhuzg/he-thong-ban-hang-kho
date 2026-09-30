@@ -87,8 +87,15 @@
                       <c:out value="${e.targetLabel}"/>
                       <c:if test="${not empty e.targetName}"><div class="table__cell-sub"><c:out value="${e.targetName}"/></div></c:if>
                     </td>
-                    <td class="audit-value"><c:out value="${empty e.oldValue ? '—' : e.oldValue}"/></td>
-                    <td class="audit-value"><c:out value="${empty e.newValue ? '—' : e.newValue}"/></td>
+                    <c:choose>
+                      <c:when test="${e.costSensitive and not canViewCostPrice}">
+                        <td class="audit-value" colspan="2">(Ẩn — chỉ Quản lý kinh doanh xem được giá vốn)</td>
+                      </c:when>
+                      <c:otherwise>
+                        <td class="audit-value"><c:out value="${empty e.oldValue ? '—' : e.oldValue}"/></td>
+                        <td class="audit-value"><c:out value="${empty e.newValue ? '—' : e.newValue}"/></td>
+                      </c:otherwise>
+                    </c:choose>
                   </tr>
                 </c:forEach>
               </tbody>
