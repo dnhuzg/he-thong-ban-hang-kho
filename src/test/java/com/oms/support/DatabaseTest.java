@@ -42,7 +42,8 @@ public abstract class DatabaseTest {
                     """);
             statement.execute("""
                     CREATE TABLE audit_logs (id BIGINT AUTO_INCREMENT PRIMARY KEY, actor_id BIGINT,
-                        action VARCHAR(50), target_type VARCHAR(50), target_id BIGINT, detail VARCHAR(1000))
+                        action VARCHAR(50), target_type VARCHAR(50), target_id BIGINT, detail VARCHAR(1000),
+                        old_value CLOB, new_value CLOB, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
             statement.execute("CREATE TABLE customers (id BIGINT PRIMARY KEY, code VARCHAR(20), name VARCHAR(200), sales_rep_id BIGINT)");
             statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");

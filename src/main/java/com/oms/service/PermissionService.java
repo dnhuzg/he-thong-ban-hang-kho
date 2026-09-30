@@ -10,6 +10,8 @@ import com.oms.security.PermissionPolicy;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /** Giữ ma trận phân quyền trong bộ nhớ; nạp lại sau mỗi lần lưu. */
@@ -37,8 +39,27 @@ public class PermissionService {
 
     public void save(Map<Role, Map<Module, PermissionLevel>> matrix, long actorId) throws SQLException {
         Db.inTransaction(conn -> {
+            PermissionPolicy before = new PermissionPolicy(permissionDao.loadMatrix(conn));
+            PermissionPolicy after = new PermissionPolicy(matrix);
+            List<String> oldCells = new ArrayList<>();
+            List<String> newCells = new ArrayList<>();
+            for (Role role : Role.configurable()) {
+                for (Module module : Module.values()) {
+                    PermissionLevel from = before.levelOf(role, module);
+                    PermissionLevel to = after.levelOf(role, module);
+                    if (from != to) {
+                        String cell = role.getLabel() + " / " + module.getLabel() + ": ";
+                        oldCells.add(cell + from.getSymbol());
+                        newCells.add(cell + to.getSymbol());
+                    }
+                }
+            }
             permissionDao.replaceMatrix(conn, matrix);
-            auditDao.log(conn, actorId, "PERMISSION_UPDATE", "ROLE_PERMISSIONS", null, null);
+            // Chỉ ghi các ô thay đổi để nhật ký đọc được; không đổi gì thì ghi rõ là không thay đổi
+            auditDao.log(conn, actorId, "PERMISSION_UPDATE", "ROLE_PERMISSIONS", null,
+                    oldCells.isEmpty() ? "Không có ô nào thay đổi" : oldCells.size() + " ô thay đổi",
+                    oldCells.isEmpty() ? null : String.join("\n", oldCells),
+                    newCells.isEmpty() ? null : String.join("\n", newCells));
             return null;
         });
         reload();
