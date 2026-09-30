@@ -22,7 +22,7 @@ import java.util.Set;
 
 public class UserDao {
 
-    private static final String COLUMNS = "u.id, u.username, u.email, u.full_name, u.phone, u.password_hash, u.status, "
+    private static final String COLUMNS = "u.id, u.username, u.email, u.full_name, u.phone, u.avatar_path, u.password_hash, u.status, "
             + "u.must_change_password, u.failed_login_count, u.login_locked_until, u.session_version, u.lock_reason";
 
     public User findById(Connection conn, long id) throws SQLException {
@@ -190,6 +190,14 @@ public class UserDao {
         }
     }
 
+    public void updateAvatar(Connection conn, long userId, String avatarPath) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET avatar_path = ? WHERE id = ?")) {
+            ps.setString(1, avatarPath);
+            ps.setLong(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
     public void replaceRoles(Connection conn, long userId, Set<Role> roles) throws SQLException {
         replaceLinks(conn, "user_roles", "role_code", userId, roles.stream().map(Role::name).toList());
     }
@@ -336,6 +344,7 @@ public class UserDao {
         u.setLoginLockedUntil(lockedUntil == null ? null : lockedUntil.toLocalDateTime());
         u.setSessionVersion(rs.getInt("session_version"));
         u.setLockReason(rs.getString("lock_reason"));
+        u.setAvatarPath(rs.getString("avatar_path"));
         return u;
     }
 }

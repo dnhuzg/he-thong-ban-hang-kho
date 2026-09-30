@@ -22,7 +22,7 @@ public abstract class DatabaseTest {
             statement.execute("""
                     CREATE TABLE users (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE,
-                        email VARCHAR(150) UNIQUE, full_name VARCHAR(150), phone VARCHAR(20),
+                        email VARCHAR(150) UNIQUE, full_name VARCHAR(150), phone VARCHAR(20), avatar_path VARCHAR(255),
                         password_hash VARCHAR(100), status VARCHAR(20), must_change_password BOOLEAN,
                         failed_login_count INT DEFAULT 0, login_locked_until TIMESTAMP,
                         session_version INT DEFAULT 0, lock_reason VARCHAR(500),

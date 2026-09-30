@@ -11,6 +11,8 @@ CREATE TABLE users (
   email                VARCHAR(150) NOT NULL,
   full_name            VARCHAR(150) NOT NULL,
   phone                VARCHAR(20)  NULL,
+  -- Đường dẫn tương đối trong thư mục upload.dir; bản thu nhỏ cùng tên, đuôi -64.png
+  avatar_path          VARCHAR(255) NULL,
   password_hash        VARCHAR(100) NOT NULL,
   status               ENUM('PENDING','ACTIVE','LOCKED') NOT NULL DEFAULT 'PENDING',
   must_change_password TINYINT(1)   NOT NULL DEFAULT 1,
