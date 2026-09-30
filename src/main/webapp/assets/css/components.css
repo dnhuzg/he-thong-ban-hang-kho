@@ -614,3 +614,36 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+
+/* ---------- Nhật ký thao tác ---------- */
+
+.avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+.actor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbar__date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 1 160px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Giá trị trước / sau nhiều dòng */
+.audit-value {
+  min-width: 180px;
+  white-space: pre-line;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
