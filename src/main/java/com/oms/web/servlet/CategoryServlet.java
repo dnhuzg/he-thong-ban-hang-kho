@@ -29,6 +29,7 @@ public class CategoryServlet extends BaseServlet {
         try {
             req.setAttribute("categories", categoryService.tree().ordered());
             req.setAttribute("canWrite", permissionService.policy().canWrite(currentUser(req).getRoles(), Module.PRODUCT));
+            req.setAttribute("canViewPriceLists", !permissionService.policy().isOwnScopeOnly(currentUser(req).getRoles(), Module.PRODUCT));
         } catch (SQLException e) {
             throw new ServletException(e);
         }

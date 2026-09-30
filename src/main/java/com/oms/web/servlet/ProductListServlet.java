@@ -33,6 +33,7 @@ public class ProductListServlet extends BaseServlet {
             req.setAttribute("result", productService.search(keyword, categoryId, status, intParam(req, "page", 1), currentUser(req)));
             req.setAttribute("categories", productService.categories().ordered());
             req.setAttribute("canWrite", permissionService.policy().canWrite(currentUser(req).getRoles(), Module.PRODUCT));
+            req.setAttribute("canViewPriceLists", !permissionService.policy().isOwnScopeOnly(currentUser(req).getRoles(), Module.PRODUCT));
         } catch (SQLException e) {
             throw new ServletException(e);
         }
