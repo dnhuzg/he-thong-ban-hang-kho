@@ -1,0 +1,88 @@
+package com.oms.model;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/** Một dòng nhật ký thao tác (S2-04) kèm thông tin người thực hiện để hiển thị. */
+public class AuditEntry {
+
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+    // Mã lưu trong DB giữ tiếng Anh để truy vấn; nhãn hiển thị tiếng Việt. Mã chưa có nhãn thì hiện nguyên mã.
+    private static final Map<String, String> ACTION_LABELS = Map.ofEntries(
+            Map.entry("LOGIN", "Đăng nhập"),
+            Map.entry("PASSWORD_CHANGE", "Đổi mật khẩu"),
+            Map.entry("PASSWORD_RESET", "Đặt lại mật khẩu"),
+            Map.entry("PROFILE_UPDATE", "Sửa hồ sơ cá nhân"),
+            Map.entry("AVATAR_UPDATE", "Đổi ảnh đại diện"),
+            Map.entry("AVATAR_REMOVE", "Xoá ảnh đại diện"),
+            Map.entry("USER_CREATE", "Tạo tài khoản"),
+            Map.entry("USER_UPDATE", "Sửa tài khoản"),
+            Map.entry("USER_LOCK", "Khoá tài khoản"),
+            Map.entry("USER_UNLOCK", "Mở khoá tài khoản"),
+            Map.entry("PERMISSION_UPDATE", "Sửa phân quyền"));
+
+    /** Loại đối tượng dùng cho bộ lọc; thêm vào đây khi module mới ghi nhật ký. */
+    public static final Map<String, String> TARGET_LABELS = new LinkedHashMap<>();
+
+    static {
+        TARGET_LABELS.put("USER", "Người dùng");
+        TARGET_LABELS.put("ROLE_PERMISSIONS", "Phân quyền");
+    }
+
+    private long id;
+    private LocalDateTime createdAt;
+    private String action;
+    private String targetType;
+    private Long targetId;
+    private String targetName;
+    private String detail;
+    private String oldValue;
+    private String newValue;
+    private String actorName;
+    private String actorUsername;
+    private String actorAvatarPath;
+
+    public String getActionLabel() {
+        return ACTION_LABELS.getOrDefault(action, action);
+    }
+
+    public String getTargetLabel() {
+        return TARGET_LABELS.getOrDefault(targetType, targetType);
+    }
+
+    public String getCreatedAtText() {
+        return createdAt == null ? "" : createdAt.format(TIME);
+    }
+
+    public String getActorAvatarThumbPath() {
+        return actorAvatarPath == null ? null : actorAvatarPath.replaceFirst("\\.png$", "-64.png");
+    }
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getAction() { return action; }
+    public void setAction(String action) { this.action = action; }
+    public String getTargetType() { return targetType; }
+    public void setTargetType(String targetType) { this.targetType = targetType; }
+    public Long getTargetId() { return targetId; }
+    public void setTargetId(Long targetId) { this.targetId = targetId; }
+    public String getTargetName() { return targetName; }
+    public void setTargetName(String targetName) { this.targetName = targetName; }
+    public String getDetail() { return detail; }
+    public void setDetail(String detail) { this.detail = detail; }
+    public String getOldValue() { return oldValue; }
+    public void setOldValue(String oldValue) { this.oldValue = oldValue; }
+    public String getNewValue() { return newValue; }
+    public void setNewValue(String newValue) { this.newValue = newValue; }
+    public String getActorName() { return actorName; }
+    public void setActorName(String actorName) { this.actorName = actorName; }
+    public String getActorUsername() { return actorUsername; }
+    public void setActorUsername(String actorUsername) { this.actorUsername = actorUsername; }
+    public String getActorAvatarPath() { return actorAvatarPath; }
+    public void setActorAvatarPath(String actorAvatarPath) { this.actorAvatarPath = actorAvatarPath; }
+}

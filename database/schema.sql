@@ -136,9 +136,13 @@ CREATE TABLE audit_logs (
   target_type VARCHAR(50)  NOT NULL,
   target_id   BIGINT       NULL,
   detail      VARCHAR(1000) NULL,
+  -- Giá trị trước / sau khi thay đổi, dạng chữ đọc được (S2-04)
+  old_value   TEXT         NULL,
+  new_value   TEXT         NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_audit_target (target_type, target_id),
   KEY idx_audit_created (created_at),
+  KEY idx_audit_actor_created (actor_id, created_at),
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

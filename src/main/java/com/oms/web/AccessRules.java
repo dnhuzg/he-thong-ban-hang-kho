@@ -26,6 +26,7 @@ public final class AccessRules {
             Map.entry("/account/profile", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/account/avatar", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/admin/users", new Rule(Kind.READ, Module.USER_AUDIT)),
+            Map.entry("/admin/audit-logs", new Rule(Kind.READ, Module.USER_AUDIT)),
             Map.entry("/admin/users/new", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/edit", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/lock", new Rule(Kind.ADMIN_ONLY, null)),

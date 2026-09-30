@@ -132,6 +132,7 @@ public class UserService {
             if (existing == null) {
                 throw new NotFoundException();
             }
+            String before = describe(existing);
             if (userDao.existsEmail(conn, form.getEmail(), form.getId())) {
                 throw new ServiceException("Email \"" + form.getEmail() + "\" đã được dùng cho tài khoản khác.");
             }
@@ -140,7 +141,8 @@ public class UserService {
             existing.setPhone(PhoneNumbers.normalize(form.getPhone()));
             userDao.updateProfile(conn, existing);
             saveRelations(conn, existing.getId(), form);
-            auditDao.log(conn, actor.getId(), "USER_UPDATE", "USER", existing.getId(), "roles=" + form.getRoles());
+            auditDao.log(conn, actor.getId(), "USER_UPDATE", "USER", existing.getId(), null,
+                    before, describe(userDao.findById(conn, existing.getId())));
             return null;
         });
     }
@@ -164,7 +166,8 @@ public class UserService {
                 throw new ServiceException("Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
             }
             userDao.updateNameAndPhone(conn, current.getId(), name, normalizedPhone);
-            auditDao.log(conn, current.getId(), "PROFILE_UPDATE", "USER", current.getId(), null);
+            auditDao.log(conn, current.getId(), "PROFILE_UPDATE", "USER", current.getId(), null,
+                    contact(current.getFullName(), current.getPhone()), contact(name, normalizedPhone));
             return null;
         });
     }
@@ -190,7 +193,8 @@ public class UserService {
                 throw new ServiceException("Tài khoản đã bị khoá.");
             }
             userDao.lock(conn, userId, reason.trim(), actor.getId());
-            auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim());
+            auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim(),
+                    "Trạng thái: " + target.getStatus().getLabel(), "Trạng thái: " + User.Status.LOCKED.getLabel());
             return null;
         });
     }
@@ -206,7 +210,9 @@ public class UserService {
                 throw new ServiceException("Tài khoản không đang bị khoá.");
             }
             userDao.unlock(conn, userId);
-            auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null);
+            auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null,
+                    "Trạng thái: " + target.getStatus().getLabel(),
+                    "Trạng thái: " + userDao.findById(conn, userId).getStatus().getLabel());
             return null;
         });
     }
@@ -256,6 +262,17 @@ public class UserService {
             throw new ServiceException("Quyền quản trị hoặc phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
         }
         return current;
+    }
+
+    /** Mô tả tài khoản dạng đọc được để lưu giá trị trước / sau vào nhật ký (S2-04). */
+    private static String describe(User u) {
+        return "Họ tên: " + u.getFullName() + "\nEmail: " + u.getEmail()
+                + "\nSĐT: " + (u.getPhone() == null ? "—" : u.getPhone())
+                + "\nVai trò: " + u.getRoleLabels() + "\nKho / Địa bàn: " + u.getScopeLabel();
+    }
+
+    private static String contact(String fullName, String phone) {
+        return "Họ tên: " + fullName + "\nSĐT: " + (phone == null ? "—" : phone);
     }
 
     private static void validateScopeIds(Set<Long> ids, List<NamedItem> available, String label) {
