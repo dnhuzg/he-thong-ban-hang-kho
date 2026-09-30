@@ -41,7 +41,11 @@ public final class AccessRules {
             Map.entry("/products/categories/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/categories/move", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/units/save", new Rule(Kind.WRITE, Module.PRODUCT)),
-            Map.entry("/products/units/delete", new Rule(Kind.WRITE, Module.PRODUCT)));
+            Map.entry("/products/units/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/suppliers", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/suppliers/new", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/suppliers/edit", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/suppliers/delete", new Rule(Kind.WRITE, Module.INVENTORY)));
 
     // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ
     private static final Rule FILES = new Rule(Kind.AUTHENTICATED, null);
