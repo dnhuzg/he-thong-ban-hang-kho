@@ -1,5 +1,6 @@
 package com.oms.dao;
 
+import com.oms.model.NamedItem;
 import com.oms.model.PageResult;
 import com.oms.model.Product;
 
@@ -86,6 +87,19 @@ public class ProductDao {
                 return rs.next() ? map(rs, withCost) : null;
             }
         }
+    }
+
+    /** Sản phẩm đang kinh doanh dạng "SKU – Tên (đơn vị cơ sở)" cho các ô chọn (bảng giá, đơn hàng). */
+    public List<NamedItem> activeOptions(Connection conn) throws SQLException {
+        List<NamedItem> items = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement("SELECT p.id, CONCAT(p.sku, ' – ', p.name, ' (', u.name, ')')"
+                + FROM + " WHERE p.status = 'ACTIVE' ORDER BY p.sku");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                items.add(new NamedItem(rs.getLong(1), rs.getString(2)));
+            }
+        }
+        return items;
     }
 
     public boolean existsSku(Connection conn, String sku) throws SQLException {
