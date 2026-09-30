@@ -9,7 +9,10 @@
             <h1>Người dùng</h1>
           </div>
           <c:if test="${canWrite}">
-            <a class="btn btn--primary" href="${ctx}/admin/users/new">+ Tạo tài khoản</a>
+            <div class="badge-list">
+              <a class="btn btn--secondary" href="${ctx}/admin/users/import">Nhập từ Excel</a>
+              <a class="btn btn--primary" href="${ctx}/admin/users/new">+ Tạo tài khoản</a>
+            </div>
           </c:if>
         </div>
 
