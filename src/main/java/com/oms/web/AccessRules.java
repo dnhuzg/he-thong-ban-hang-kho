@@ -23,18 +23,55 @@ public final class AccessRules {
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/session/ping", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/account/change-password", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/account/profile", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/account/avatar", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/admin/users", new Rule(Kind.READ, Module.USER_AUDIT)),
+            Map.entry("/admin/audit-logs", new Rule(Kind.READ, Module.USER_AUDIT)),
             Map.entry("/admin/users/new", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/admin/users/import", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/admin/users/import/apply", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/admin/users/import/template", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/edit", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/lock", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/unlock", new Rule(Kind.ADMIN_ONLY, null)),
-            Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)));
+            Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
+            Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/edit", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/categories", new Rule(Kind.READ, Module.PRODUCT)),
+            Map.entry("/products/categories/save", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/categories/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/categories/move", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/units/save", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/units/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/suppliers", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/suppliers/new", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/suppliers/edit", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/suppliers/delete", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/products/price-lists", new Rule(Kind.READ, Module.PRODUCT)),
+            Map.entry("/products/price-lists/view", new Rule(Kind.READ, Module.PRODUCT)),
+            Map.entry("/products/price-lists/new", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/price-lists/header", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/price-lists/items/save", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/price-lists/items/delete", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/price-lists/new-version", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/import", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/import/apply", new Rule(Kind.WRITE, Module.PRODUCT)),
+            Map.entry("/products/import/template", new Rule(Kind.WRITE, Module.PRODUCT)));
+
+    // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ
+    private static final Rule FILES = new Rule(Kind.AUTHENTICATED, null);
 
     private AccessRules() {
     }
 
     public static Rule find(String path) {
-        return RULES.get(path);
+        Rule rule = RULES.get(path);
+        if (rule == null && path.startsWith("/files/")) {
+            return FILES;
+        }
+        return rule;
     }
 
     public static boolean isAllowed(Rule rule, User user, PermissionPolicy policy) {

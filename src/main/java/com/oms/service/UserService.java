@@ -29,7 +29,6 @@ public class UserService {
     private static final Logger LOG = Logger.getLogger(UserService.class.getName());
     private static final Pattern USERNAME = Pattern.compile("^[a-zA-Z0-9._-]{3,50}$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-    private static final Pattern PHONE = Pattern.compile("^[0-9 +().-]{8,20}$");
 
     private final UserDao userDao = new UserDao();
     private final LookupDao lookupDao = new LookupDao();
@@ -94,9 +93,7 @@ public class UserService {
     /** Tạo tài khoản và gửi email kích hoạt kèm mật khẩu tạm (S1-08). Trả về true nếu email đã gửi được. */
     public boolean create(UserForm form, User actor) throws SQLException {
         validate(form, actor);
-        if (!USERNAME.matcher(form.getUsername()).matches()) {
-            throw new ServiceException("Tài khoản chỉ gồm chữ không dấu, số và . _ - (3–50 ký tự).");
-        }
+        requireValidUsername(form.getUsername());
         String tempPassword = Passwords.generateTemporary();
         Db.inTransaction(conn -> {
             validate(form, requireAdmin(conn, actor));
@@ -110,7 +107,7 @@ public class UserService {
             user.setUsername(form.getUsername());
             user.setEmail(form.getEmail());
             user.setFullName(form.getFullName());
-            user.setPhone(blankToNull(form.getPhone()));
+            user.setPhone(PhoneNumbers.normalize(form.getPhone()));
             user.setPasswordHash(Passwords.hash(tempPassword));
             user.setStatus(User.Status.PENDING);
             user.setMustChangePassword(true);
@@ -125,6 +122,16 @@ public class UserService {
                         + "Đăng nhập tại " + AppConfig.get("app.baseUrl") + "/login và đổi mật khẩu ngay lần đầu.");
     }
 
+    static void requireValidUsername(String username) {
+        if (!USERNAME.matcher(username).matches()) {
+            throw new ServiceException("Tài khoản chỉ gồm chữ không dấu, số và . _ - (3–50 ký tự).");
+        }
+    }
+
+    static boolean isValidEmail(String email) {
+        return EMAIL.matcher(email).matches();
+    }
+
     public void update(UserForm form, User actor) throws SQLException {
         validate(form, actor);
         Db.inTransaction(conn -> {
@@ -133,15 +140,42 @@ public class UserService {
             if (existing == null) {
                 throw new NotFoundException();
             }
+            String before = describe(existing);
             if (userDao.existsEmail(conn, form.getEmail(), form.getId())) {
                 throw new ServiceException("Email \"" + form.getEmail() + "\" đã được dùng cho tài khoản khác.");
             }
             existing.setEmail(form.getEmail());
             existing.setFullName(form.getFullName());
-            existing.setPhone(blankToNull(form.getPhone()));
+            existing.setPhone(PhoneNumbers.normalize(form.getPhone()));
             userDao.updateProfile(conn, existing);
             saveRelations(conn, existing.getId(), form);
-            auditDao.log(conn, actor.getId(), "USER_UPDATE", "USER", existing.getId(), "roles=" + form.getRoles());
+            auditDao.log(conn, actor.getId(), "USER_UPDATE", "USER", existing.getId(), null,
+                    before, describe(userDao.findById(conn, existing.getId())));
+            return null;
+        });
+    }
+
+    /**
+     * Người dùng tự cập nhật họ tên và số điện thoại (S2-02). Tài khoản, email, vai trò, kho, địa bàn
+     * do quản trị quản lý nên không nhận ở đây dù request có gửi kèm.
+     */
+    public void updateOwnProfile(User actor, String fullName, String phone) throws SQLException {
+        String name = fullName == null ? "" : fullName.trim();
+        if (name.isEmpty()) {
+            throw new ServiceException("Vui lòng nhập họ và tên.");
+        }
+        if (name.length() > 150) {
+            throw new ServiceException("Họ và tên tối đa 150 ký tự.");
+        }
+        String normalizedPhone = PhoneNumbers.normalize(phone);
+        Db.inTransaction(conn -> {
+            User current = userDao.findByIdForUpdate(conn, actor.getId());
+            if (current == null || current.getStatus() == User.Status.LOCKED) {
+                throw new ServiceException("Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
+            }
+            userDao.updateNameAndPhone(conn, current.getId(), name, normalizedPhone);
+            auditDao.log(conn, current.getId(), "PROFILE_UPDATE", "USER", current.getId(), null,
+                    contact(current.getFullName(), current.getPhone()), contact(name, normalizedPhone));
             return null;
         });
     }
@@ -167,7 +201,8 @@ public class UserService {
                 throw new ServiceException("Tài khoản đã bị khoá.");
             }
             userDao.lock(conn, userId, reason.trim(), actor.getId());
-            auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim());
+            auditDao.log(conn, actor.getId(), "USER_LOCK", "USER", userId, reason.trim(),
+                    "Trạng thái: " + target.getStatus().getLabel(), "Trạng thái: " + User.Status.LOCKED.getLabel());
             return null;
         });
     }
@@ -183,7 +218,9 @@ public class UserService {
                 throw new ServiceException("Tài khoản không đang bị khoá.");
             }
             userDao.unlock(conn, userId);
-            auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null);
+            auditDao.log(conn, actor.getId(), "USER_UNLOCK", "USER", userId, null,
+                    "Trạng thái: " + target.getStatus().getLabel(),
+                    "Trạng thái: " + userDao.findById(conn, userId).getStatus().getLabel());
             return null;
         });
     }
@@ -235,6 +272,17 @@ public class UserService {
         return current;
     }
 
+    /** Mô tả tài khoản dạng đọc được để lưu giá trị trước / sau vào nhật ký (S2-04). */
+    private static String describe(User u) {
+        return "Họ tên: " + u.getFullName() + "\nEmail: " + u.getEmail()
+                + "\nSĐT: " + (u.getPhone() == null ? "—" : u.getPhone())
+                + "\nVai trò: " + u.getRoleLabels() + "\nKho / Địa bàn: " + u.getScopeLabel();
+    }
+
+    private static String contact(String fullName, String phone) {
+        return "Họ tên: " + fullName + "\nSĐT: " + (phone == null ? "—" : phone);
+    }
+
     private static void validateScopeIds(Set<Long> ids, List<NamedItem> available, String label) {
         Set<Long> known = available.stream().map(NamedItem::getId)
                 .collect(Collectors.toSet());
@@ -250,9 +298,7 @@ public class UserService {
         if (!EMAIL.matcher(form.getEmail()).matches()) {
             throw new ServiceException("Email không hợp lệ.");
         }
-        if (!form.getPhone().isBlank() && !PHONE.matcher(form.getPhone()).matches()) {
-            throw new ServiceException("Số điện thoại không hợp lệ.");
-        }
+        PhoneNumbers.normalize(form.getPhone());
         if (form.getRoles().isEmpty()) {
             throw new ServiceException("Vui lòng chọn ít nhất một vai trò.");
         }
@@ -264,10 +310,6 @@ public class UserService {
         if (actor != null && !form.isNew() && form.getId() == actor.getId() && actor.isAdmin() && !form.getRoles().contains(Role.ADMIN)) {
             throw new ServiceException("Bạn không thể tự thu hồi vai trò Quản trị hệ thống của chính mình.");
         }
-    }
-
-    private static String blankToNull(String s) {
-        return s == null || s.isBlank() ? null : s.trim();
     }
 
     public static class NotFoundException extends ServiceException {

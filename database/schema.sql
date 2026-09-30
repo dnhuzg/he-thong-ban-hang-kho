@@ -11,6 +11,8 @@ CREATE TABLE users (
   email                VARCHAR(150) NOT NULL,
   full_name            VARCHAR(150) NOT NULL,
   phone                VARCHAR(20)  NULL,
+  -- Đường dẫn tương đối trong thư mục upload.dir; bản thu nhỏ cùng tên, đuôi -64.png
+  avatar_path          VARCHAR(255) NULL,
   password_hash        VARCHAR(100) NOT NULL,
   status               ENUM('PENDING','ACTIVE','LOCKED') NOT NULL DEFAULT 'PENDING',
   must_change_password TINYINT(1)   NOT NULL DEFAULT 1,
@@ -82,19 +84,133 @@ CREATE TABLE areas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Đại lý: bản tối thiểu cho S1-10 (cảnh báo bàn giao khi khoá nhân viên). EP-03 sẽ mở rộng.
+-- S2-10: nhóm khách hàng quyết định bảng giá áp dụng
+CREATE TABLE customer_groups (
+  id    BIGINT       NOT NULL AUTO_INCREMENT,
+  code  VARCHAR(20)  NOT NULL,
+  name  VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_customer_groups_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE customers (
   id            BIGINT       NOT NULL AUTO_INCREMENT,
   code          VARCHAR(20)  NOT NULL,
   name          VARCHAR(200) NOT NULL,
   phone         VARCHAR(20)  NULL,
   area_id       BIGINT       NULL,
+  group_id      BIGINT       NULL,
   sales_rep_id  BIGINT       NULL,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_customers_code (code),
   KEY idx_customers_sales_rep (sales_rep_id),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
+  CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
+CREATE TABLE product_categories (
+  id          BIGINT       NOT NULL AUTO_INCREMENT,
+  parent_id   BIGINT       NULL,
+  name        VARCHAR(150) NOT NULL,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_categories_parent (parent_id),
+  CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES product_categories (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE units (
+  id    BIGINT      NOT NULL AUTO_INCREMENT,
+  code  VARCHAR(20) NOT NULL,
+  name  VARCHAR(50) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_units_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE products (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  sku           VARCHAR(50)   NOT NULL,
+  name          VARCHAR(255)  NOT NULL,
+  category_id   BIGINT        NOT NULL,
+  base_unit_id  BIGINT        NOT NULL,
+  packing_spec  VARCHAR(255)  NULL,
+  cost_price    DECIMAL(15,2) NULL,
+  image_path    VARCHAR(255)  NULL,
+  status        ENUM('ACTIVE','DISCONTINUED') NOT NULL DEFAULT 'ACTIVE',
+  created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_products_sku (sku),
+  KEY idx_products_category (category_id),
+  KEY idx_products_name (name),
+  CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES product_categories (id),
+  CONSTRAINT fk_products_base_unit FOREIGN KEY (base_unit_id) REFERENCES units (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S2-07: đơn vị quy đổi; dòng giao dịch sau này lưu kèm hệ số tại thời điểm ghi
+CREATE TABLE product_units (
+  product_id  BIGINT        NOT NULL,
+  unit_id     BIGINT        NOT NULL,
+  factor      DECIMAL(12,4) NOT NULL,
+  PRIMARY KEY (product_id, unit_id),
+  CONSTRAINT fk_product_units_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_product_units_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT chk_product_units_factor CHECK (factor > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S2-09: nhà cung cấp; phiếu nhập kho sau này tham chiếu bằng khoá ngoại để chặn xoá
+CREATE TABLE suppliers (
+  id             BIGINT       NOT NULL AUTO_INCREMENT,
+  code           VARCHAR(20)  NOT NULL,
+  name           VARCHAR(255) NOT NULL,
+  tax_code       VARCHAR(14)  NULL,
+  contact_name   VARCHAR(150) NULL,
+  contact_phone  VARCHAR(20)  NULL,
+  email          VARCHAR(150) NULL,
+  address        VARCHAR(255) NULL,
+  payment_terms  VARCHAR(255) NULL,
+  status         ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_suppliers_code (code),
+  KEY idx_suppliers_name (name),
+  KEY idx_suppliers_tax_code (tax_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S2-10: bảng giá có hiệu lực, phiên bản; đã phát sinh đơn (locked_at) thì chỉ tạo phiên bản mới
+CREATE TABLE price_lists (
+  id                 BIGINT       NOT NULL AUTO_INCREMENT,
+  code               VARCHAR(30)  NOT NULL,
+  version            INT          NOT NULL DEFAULT 1,
+  name               VARCHAR(150) NOT NULL,
+  customer_group_id  BIGINT       NOT NULL,
+  valid_from         DATE         NOT NULL,
+  valid_to           DATE         NULL,
+  previous_id        BIGINT       NULL,
+  locked_at          DATETIME     NULL,
+  created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_price_lists_code_version (code, version),
+  KEY idx_price_lists_group_dates (customer_group_id, valid_from, valid_to),
+  CONSTRAINT fk_price_lists_group FOREIGN KEY (customer_group_id) REFERENCES customer_groups (id),
+  CONSTRAINT fk_price_lists_previous FOREIGN KEY (previous_id) REFERENCES price_lists (id),
+  CONSTRAINT chk_price_lists_dates CHECK (valid_to IS NULL OR valid_to >= valid_from)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE price_list_items (
+  price_list_id  BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  sale_price     DECIMAL(15,2) NOT NULL,
+  floor_price    DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (price_list_id, product_id),
+  KEY idx_price_items_product (product_id),
+  CONSTRAINT fk_price_items_list FOREIGN KEY (price_list_id) REFERENCES price_lists (id) ON DELETE CASCADE,
+  CONSTRAINT fk_price_items_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT chk_price_items CHECK (floor_price >= 0 AND floor_price <= sale_price)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE user_warehouses (
@@ -134,9 +250,13 @@ CREATE TABLE audit_logs (
   target_type VARCHAR(50)  NOT NULL,
   target_id   BIGINT       NULL,
   detail      VARCHAR(1000) NULL,
+  -- Giá trị trước / sau khi thay đổi, dạng chữ đọc được (S2-04)
+  old_value   TEXT         NULL,
+  new_value   TEXT         NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_audit_target (target_type, target_id),
   KEY idx_audit_created (created_at),
+  KEY idx_audit_actor_created (actor_id, created_at),
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

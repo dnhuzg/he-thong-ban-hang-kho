@@ -43,6 +43,7 @@ public final class Menu {
         List<Item> admin = new ArrayList<>();
         if (policy.canRead(user.getRoles(), Module.USER_AUDIT)) {
             admin.add(new Item("Người dùng", "/admin/users", path.startsWith("/admin/users"), false));
+            admin.add(new Item("Nhật ký thao tác", "/admin/audit-logs", path.equals("/admin/audit-logs"), false));
         }
         if (PermissionPolicy.canManagePermissions(user.getRoles())) {
             admin.add(new Item("Vai trò & quyền", "/admin/roles", path.equals("/admin/roles"), false));

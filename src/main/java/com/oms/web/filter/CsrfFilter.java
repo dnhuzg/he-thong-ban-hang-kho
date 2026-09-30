@@ -33,7 +33,12 @@ public class CsrfFilter implements Filter {
         String token = (String) session.getAttribute(SessionKeys.CSRF_TOKEN);
 
         if ("POST".equalsIgnoreCase(req.getMethod())) {
-            if (token == null || !Tokens.constantTimeEquals(token, req.getParameter(PARAM))) {
+            String submitted = req.getParameter(PARAM);
+            if (submitted == null && isMultipart(req) && tooLarge(req)) {
+                resp.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+                return;
+            }
+            if (token == null || !Tokens.constantTimeEquals(token, submitted)) {
                 // Thường do phiên đã hết hạn khi form còn mở: quay về đăng nhập thay vì báo lỗi khó hiểu
                 if (session.getAttribute(SessionKeys.USER_ID) == null) {
                     resp.sendRedirect(req.getContextPath() + "/login?expired=1");
@@ -50,5 +55,22 @@ public class CsrfFilter implements Filter {
         }
         req.setAttribute(SessionKeys.CSRF_TOKEN, token);
         chain.doFilter(request, response);
+    }
+
+    private static boolean isMultipart(HttpServletRequest req) {
+        String type = req.getContentType();
+        return type != null && type.toLowerCase().startsWith("multipart/");
+    }
+
+    /** Tomcat bỏ qua form nhiều phần khi tệp vượt giới hạn của @MultipartConfig; getParts báo lại lỗi đó. */
+    private static boolean tooLarge(HttpServletRequest req) {
+        try {
+            req.getParts();
+            return false;
+        } catch (IllegalStateException e) {
+            return true;
+        } catch (IOException | ServletException e) {
+            return false;
+        }
     }
 }

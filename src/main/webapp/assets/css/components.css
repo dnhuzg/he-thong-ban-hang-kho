@@ -541,3 +541,206 @@
 .error-state .form-actions {
   justify-content: center;
 }
+
+/* ---------- Hồ sơ cá nhân ---------- */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.profile-grid .card + .card {
+  margin-top: 0;
+}
+
+/* Danh sách nhãn – giá trị chỉ đọc */
+.info-list {
+  margin: 0;
+}
+
+.info-list > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-list > div:last-child {
+  border-bottom: 0;
+}
+
+.info-list dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.info-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Ảnh đại diện ---------- */
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+  object-fit: cover;
+}
+
+.avatar--lg {
+  width: 96px;
+  height: 96px;
+  font-size: var(--font-size-xl);
+}
+
+.avatar-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.avatar-upload form {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ---------- Nhật ký thao tác ---------- */
+
+.avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+.actor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbar__date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 1 160px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Giá trị trước / sau nhiều dòng */
+.audit-value {
+  min-width: 180px;
+  white-space: pre-line;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- Sản phẩm ---------- */
+
+.num {
+  text-align: right;
+}
+
+.product-thumb {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.product-thumb--empty {
+  background: var(--color-surface-muted);
+}
+
+.product-image {
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+/* ---------- Tab trong một khu vực ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs__item {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.tabs__item:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.tabs__item.is-active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ---------- Cây nhóm hàng: thụt lề theo cấp ---------- */
+
+/* Viết kèm ".table td" để thắng padding mặc định của ô bảng */
+.table td.tree-l2 { padding-left: calc(var(--space-4) + 24px); }
+.table td.tree-l3 { padding-left: calc(var(--space-4) + 48px); }
+.table td.tree-l4 { padding-left: calc(var(--space-4) + 72px); }
+.table td.tree-l5 { padding-left: calc(var(--space-4) + 96px); }
+.table td.tree-l6 { padding-left: calc(var(--space-4) + 120px); }
+
+.table td[class^="tree-l"] .table__cell-main,
+.table td[class^="tree-l"] .table__cell-sub {
+  display: block;
+}
+
+/* ---------- Form một dòng (đơn vị quy đổi) ---------- */
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input--narrow {
+  width: auto;
+  flex: 0 0 110px;
+}
+
+.inline-form--end {
+  justify-content: flex-end;
+}
+
+.input--date {
+  flex-basis: 160px;
+}
+
+.form-actions--start {
+  justify-content: flex-start;
+  margin-top: 0;
+  grid-column: 1 / -1;
+}
