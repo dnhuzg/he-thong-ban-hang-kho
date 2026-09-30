@@ -5,6 +5,7 @@ import com.oms.dao.AuditLogDao;
 import com.oms.dao.CategoryDao;
 import com.oms.dao.LookupDao;
 import com.oms.dao.ProductDao;
+import com.oms.dao.ProductUnitDao;
 import com.oms.model.NamedItem;
 import com.oms.model.PageResult;
 import com.oms.model.Product;
@@ -30,6 +31,7 @@ public class ProductService {
     private static final String IMAGE_FOLDER = "products";
 
     private final ProductDao productDao = new ProductDao();
+    private final ProductUnitDao productUnitDao = new ProductUnitDao();
     private final CategoryDao categoryDao = new CategoryDao();
     private final LookupDao lookupDao = new LookupDao();
     private final AuditLogDao auditDao = new AuditLogDao();
@@ -52,6 +54,8 @@ public class ProductService {
             PageResult<Product> result = productDao.search(conn, keyword, categoryIds, status, Math.max(1, page),
                     PAGE_SIZE, PermissionPolicy.canViewCostPrice(viewer.getRoles()));
             result.getItems().forEach(p -> p.setCategoryPath(pathOf(tree, p.getCategoryId())));
+            var conversions = productUnitDao.listByProducts(conn, result.getItems().stream().map(Product::getId).toList());
+            result.getItems().forEach(p -> p.setConversions(conversions.getOrDefault(p.getId(), List.of())));
             return result;
         }
     }
@@ -122,6 +126,11 @@ public class ProductService {
             }
             changes.setId(existing.getId());
             changes.setSku(existing.getSku());
+            // Hệ số quy đổi tính theo đơn vị cơ sở cũ: đổi đơn vị cơ sở sẽ làm sai toàn bộ quy đổi (S2-07)
+            if (changes.getBaseUnitId() != existing.getBaseUnitId() && productUnitDao.hasAny(conn, existing.getId())) {
+                throw new ServiceException("Sản phẩm đã khai báo đơn vị quy đổi nên không đổi được đơn vị cơ sở. "
+                        + "Hãy xoá các đơn vị quy đổi trước.");
+            }
             validateReferences(conn, changes);
             String before = describe(conn, existing);
             productDao.update(conn, changes);

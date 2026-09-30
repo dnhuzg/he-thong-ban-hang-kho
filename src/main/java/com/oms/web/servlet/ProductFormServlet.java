@@ -4,6 +4,7 @@ import com.oms.model.Product;
 import com.oms.service.ProductForm;
 import com.oms.service.ProductService;
 import com.oms.service.ServiceException;
+import com.oms.service.UnitConversionService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,6 +20,7 @@ import java.sql.SQLException;
 public class ProductFormServlet extends BaseServlet {
 
     private final ProductService productService = new ProductService();
+    private final UnitConversionService conversionService = new UnitConversionService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -86,6 +88,9 @@ public class ProductFormServlet extends BaseServlet {
         req.setAttribute("categories", productService.categories().ordered());
         req.setAttribute("units", productService.units());
         req.setAttribute("statuses", Product.Status.values());
+        if (product != null) {
+            req.setAttribute("conversions", conversionService.list(product.getId()));
+        }
         render(req, resp, "products/form");
     }
 

@@ -111,4 +111,74 @@
           </div>
         </form>
 
+        <%-- Đơn vị quy đổi (S2-07): form riêng vì HTML không cho form lồng nhau --%>
+        <c:if test="${not form['new']}">
+          <section class="card mt-4" id="don-vi-quy-doi" aria-labelledby="units-title">
+            <div class="card__header">
+              <h2 id="units-title">Đơn vị quy đổi</h2>
+              <p>Hệ số quy về đơn vị cơ sở <strong><c:out value="${product.baseUnitName}"/></strong>. Đơn hàng và phiếu kho nhập theo đơn vị nào cũng được quy về đơn vị cơ sở khi ghi sổ.</p>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th scope="col">Đơn vị</th><th scope="col">Quy đổi</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><c:out value="${product.baseUnitName} "/><span class="badge">Cơ sở</span></td>
+                    <td>1 <c:out value="${product.baseUnitName}"/></td>
+                    <td></td>
+                  </tr>
+                  <c:forEach var="pu" items="${conversions}">
+                    <tr>
+                      <td><c:out value="${pu.unitName}"/></td>
+                      <td>
+                        <form class="inline-form" action="${ctx}/products/units/save" method="post">
+                          <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                          <input type="hidden" name="productId" value="${product.id}">
+                          <input type="hidden" name="unitId" value="${pu.unitId}">
+                          <label class="visually-hidden" for="factor-${pu.unitId}">Hệ số của <c:out value="${pu.unitName}"/></label>
+                          <span>1 <c:out value="${pu.unitName}"/> =</span>
+                          <input class="input input--narrow" id="factor-${pu.unitId}" name="factor" inputmode="decimal" required value="<c:out value='${pu.factorText}'/>">
+                          <span><c:out value="${product.baseUnitName}"/></span>
+                          <button class="btn btn--secondary btn--sm" type="submit">Lưu</button>
+                        </form>
+                      </td>
+                      <td>
+                        <form action="${ctx}/products/units/delete" method="post">
+                          <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                          <input type="hidden" name="productId" value="${product.id}">
+                          <input type="hidden" name="unitId" value="${pu.unitId}">
+                          <button class="btn btn--ghost btn--sm" type="submit">Xoá</button>
+                        </form>
+                      </td>
+                    </tr>
+                  </c:forEach>
+                </tbody>
+              </table>
+            </div>
+            <div class="card__body">
+              <form class="inline-form" action="${ctx}/products/units/save" method="post">
+                <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                <input type="hidden" name="productId" value="${product.id}">
+                <span>Thêm: 1</span>
+                <label class="visually-hidden" for="new-unit">Đơn vị</label>
+                <select class="select input--narrow" id="new-unit" name="unitId" required>
+                  <option value="">— Đơn vị —</option>
+                  <c:forEach var="u" items="${units}">
+                    <c:if test="${u.id != product.baseUnitId}">
+                      <option value="${u.id}"><c:out value="${u.name}"/></option>
+                    </c:if>
+                  </c:forEach>
+                </select>
+                <span>=</span>
+                <label class="visually-hidden" for="new-factor">Hệ số</label>
+                <input class="input input--narrow" id="new-factor" name="factor" inputmode="decimal" placeholder="24" required>
+                <span><c:out value="${product.baseUnitName}"/></span>
+                <button class="btn btn--primary btn--sm" type="submit">Thêm quy đổi</button>
+              </form>
+            </div>
+          </section>
+        </c:if>
+
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

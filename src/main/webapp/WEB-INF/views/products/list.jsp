@@ -75,6 +75,9 @@
                     <td>
                       <div class="table__cell-main"><c:out value="${p.name}"/></div>
                       <c:if test="${not empty p.packingSpec}"><div class="table__cell-sub"><c:out value="${p.packingSpec}"/></div></c:if>
+                      <c:if test="${not empty p.conversions}">
+                        <div class="table__cell-sub"><c:forEach var="pu" items="${p.conversions}" varStatus="st"><c:out value="1 ${pu.unitName} = ${pu.factorText} ${p.baseUnitName}${st.last ? '' : ' · '}"/></c:forEach></div>
+                      </c:if>
                     </td>
                     <td><c:out value="${p.categoryPath}"/></td>
                     <td><c:out value="${p.baseUnitName}"/></td>
