@@ -233,7 +233,7 @@ public class UserDao {
     public int updatePassword(Connection conn, long userId, String passwordHash) throws SQLException {
         String sql = "UPDATE users SET password_hash = ?, must_change_password = 0, failed_login_count = 0, "
                 + "login_locked_until = NULL, session_version = session_version + 1, "
-                + "status = IF(status = 'PENDING', 'ACTIVE', status) WHERE id = ?";
+                + "status = CASE WHEN status = 'PENDING' THEN 'ACTIVE' ELSE status END WHERE id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, passwordHash);
             ps.setLong(2, userId);

@@ -85,8 +85,9 @@ public class AuthService {
             throw new ServiceException("Mật khẩu nhập lại không khớp.");
         }
         return Db.inTransaction(conn -> {
-            User user = userDao.findById(conn, userId);
-            if (user == null || !Passwords.matches(currentPassword, user.getPasswordHash())) {
+            User user = userDao.findByIdForUpdate(conn, userId);
+            if (user == null || user.getStatus() == User.Status.LOCKED
+                    || !Passwords.matches(currentPassword, user.getPasswordHash())) {
                 throw new ServiceException("Mật khẩu hiện tại không đúng.");
             }
             if (Passwords.matches(newPassword, user.getPasswordHash())) {

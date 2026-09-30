@@ -18,6 +18,13 @@ class PasswordsTest {
     }
 
     @Test
+    void bcryptLimitCountsUtf8BytesInsteadOfCharacters() {
+        assertNull(Passwords.validateStrength("a".repeat(71) + "1"));
+        assertNotNull(Passwords.validateStrength("a".repeat(72) + "1"));
+        assertNotNull(Passwords.validateStrength("ế".repeat(24) + "1"));
+    }
+
+    @Test
     void temporaryPasswordAlwaysValid() {
         for (int i = 0; i < 50; i++) {
             assertNull(Passwords.validateStrength(Passwords.generateTemporary()));
