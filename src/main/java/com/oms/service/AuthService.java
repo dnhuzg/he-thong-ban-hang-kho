@@ -30,37 +30,42 @@ public class AuthService {
         if (username == null || username.isBlank() || password == null || password.isEmpty()) {
             throw new ServiceException("Vui lòng nhập tài khoản và mật khẩu.");
         }
-        try (Connection conn = Db.getConnection()) {
-            User user = userDao.findByUsername(conn, username.trim());
+        // Trả kết quả lỗi ra ngoài transaction để bộ đếm đăng nhập sai vẫn được commit.
+        LoginResult result = Db.inTransaction(conn -> {
+            User user = userDao.findByUsernameForUpdate(conn, username.trim());
             if (user == null) {
                 Passwords.matches(password, DUMMY_HASH);
-                throw new ServiceException(GENERIC_LOGIN_ERROR);
+                return new LoginResult(null, GENERIC_LOGIN_ERROR);
             }
 
             LocalDateTime now = LocalDateTime.now();
             if (user.getLoginLockedUntil() != null && user.getLoginLockedUntil().isAfter(now)) {
-                throw new ServiceException(GENERIC_LOGIN_ERROR);
+                return new LoginResult(null, GENERIC_LOGIN_ERROR);
             }
 
             if (!Passwords.matches(password, user.getPasswordHash())) {
                 int failed = user.getFailedLoginCount() + 1;
-                if (failed >= MAX_FAILED_ATTEMPTS) {
-                    userDao.recordLoginFailure(conn, user.getId(), 0, now.plusMinutes(LOCK_MINUTES));
-                } else {
-                    userDao.recordLoginFailure(conn, user.getId(), failed, null);
-                }
-                throw new ServiceException(GENERIC_LOGIN_ERROR);
+                userDao.recordLoginFailure(conn, user.getId(),
+                        failed >= MAX_FAILED_ATTEMPTS ? 0 : failed,
+                        failed >= MAX_FAILED_ATTEMPTS ? now.plusMinutes(LOCK_MINUTES) : null);
+                return new LoginResult(null, GENERIC_LOGIN_ERROR);
             }
 
-            // Đã chứng minh đúng mật khẩu nên có thể báo rõ tài khoản bị quản trị khoá
             if (user.getStatus() == User.Status.LOCKED) {
-                throw new ServiceException("Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị hệ thống.");
+                return new LoginResult(null, "Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị hệ thống.");
             }
 
             userDao.recordLoginSuccess(conn, user.getId());
             auditDao.log(conn, user.getId(), "LOGIN", "USER", user.getId(), null);
-            return user;
+            return new LoginResult(user, null);
+        });
+        if (result.error() != null) {
+            throw new ServiceException(result.error());
         }
+        return result.user();
+    }
+
+    private record LoginResult(User user, String error) {
     }
 
     public User findActiveSessionUser(long userId) throws SQLException {
@@ -80,8 +85,9 @@ public class AuthService {
             throw new ServiceException("Mật khẩu nhập lại không khớp.");
         }
         return Db.inTransaction(conn -> {
-            User user = userDao.findById(conn, userId);
-            if (user == null || !Passwords.matches(currentPassword, user.getPasswordHash())) {
+            User user = userDao.findByIdForUpdate(conn, userId);
+            if (user == null || user.getStatus() == User.Status.LOCKED
+                    || !Passwords.matches(currentPassword, user.getPasswordHash())) {
                 throw new ServiceException("Mật khẩu hiện tại không đúng.");
             }
             if (Passwords.matches(newPassword, user.getPasswordHash())) {
