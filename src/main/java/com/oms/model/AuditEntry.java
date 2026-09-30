@@ -43,7 +43,8 @@ public class AuditEntry {
             Map.entry("PRICE_LIST_NEW_VERSION", "Tạo phiên bản bảng giá"),
             Map.entry("PRICE_ITEM_SAVE", "Sửa giá bán / giá sàn"),
             Map.entry("PRICE_ITEM_DELETE", "Xoá dòng giá"),
-            Map.entry("PRODUCT_IMPORT", "Nhập sản phẩm từ Excel"));
+            Map.entry("PRODUCT_IMPORT", "Nhập sản phẩm từ Excel"),
+            Map.entry("USER_IMPORT", "Nhập người dùng từ Excel"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
