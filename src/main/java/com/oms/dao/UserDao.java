@@ -33,6 +33,15 @@ public class UserDao {
         return findOne(conn, "SELECT " + COLUMNS + " FROM users u WHERE u.username = ?", username);
     }
 
+    /** Khoá dòng người dùng để các thao tác bảo mật trên cùng tài khoản chạy tuần tự. */
+    public User findByUsernameForUpdate(Connection conn, String username) throws SQLException {
+        return findOne(conn, "SELECT " + COLUMNS + " FROM users u WHERE u.username = ? FOR UPDATE", username);
+    }
+
+    public User findByIdForUpdate(Connection conn, long id) throws SQLException {
+        return findOne(conn, "SELECT " + COLUMNS + " FROM users u WHERE u.id = ? FOR UPDATE", id);
+    }
+
     public User findByEmail(Connection conn, String email) throws SQLException {
         return findOne(conn, "SELECT " + COLUMNS + " FROM users u WHERE u.email = ?", email);
     }
