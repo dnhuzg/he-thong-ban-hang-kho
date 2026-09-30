@@ -14,7 +14,7 @@ class UserLockTest extends DatabaseTest {
     void lockRevokesSessionsAndReportsCustomersForHandover() throws Exception {
         User admin = user("admin", Role.ADMIN);
         User target = user("sales", Role.SALES_REP);
-        sql("INSERT INTO customers VALUES (1, 'DL001', 'Đại lý A', " + target.getId() + ")");
+        sql("INSERT INTO customers (id, code, name, sales_rep_id) VALUES (1, 'DL001', 'Đại lý A', " + target.getId() + ")");
         service.lock(target.getId(), "  Nghỉ việc  ", admin);
         User locked = reload(target.getId());
         assertEquals(User.Status.LOCKED, locked.getStatus());

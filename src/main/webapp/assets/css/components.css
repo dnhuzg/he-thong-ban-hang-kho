@@ -730,3 +730,17 @@
   width: auto;
   flex: 0 0 110px;
 }
+
+.inline-form--end {
+  justify-content: flex-end;
+}
+
+.input--date {
+  flex-basis: 160px;
+}
+
+.form-actions--start {
+  justify-content: flex-start;
+  margin-top: 0;
+  grid-column: 1 / -1;
+}

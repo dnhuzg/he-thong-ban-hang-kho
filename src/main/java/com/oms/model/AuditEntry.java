@@ -37,7 +37,12 @@ public class AuditEntry {
             Map.entry("PRODUCT_UNIT_DELETE", "Xoá quy đổi đơn vị"),
             Map.entry("SUPPLIER_CREATE", "Tạo nhà cung cấp"),
             Map.entry("SUPPLIER_UPDATE", "Sửa nhà cung cấp"),
-            Map.entry("SUPPLIER_DELETE", "Xoá nhà cung cấp"));
+            Map.entry("SUPPLIER_DELETE", "Xoá nhà cung cấp"),
+            Map.entry("PRICE_LIST_CREATE", "Tạo bảng giá"),
+            Map.entry("PRICE_LIST_UPDATE", "Sửa thông tin bảng giá"),
+            Map.entry("PRICE_LIST_NEW_VERSION", "Tạo phiên bản bảng giá"),
+            Map.entry("PRICE_ITEM_SAVE", "Sửa giá bán / giá sàn"),
+            Map.entry("PRICE_ITEM_DELETE", "Xoá dòng giá"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
@@ -51,6 +56,7 @@ public class AuditEntry {
         TARGET_LABELS.put("PRODUCT", "Sản phẩm");
         TARGET_LABELS.put("CATEGORY", "Nhóm hàng");
         TARGET_LABELS.put("SUPPLIER", "Nhà cung cấp");
+        TARGET_LABELS.put("PRICE_LIST", "Bảng giá");
     }
 
     private long id;

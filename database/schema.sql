@@ -84,18 +84,29 @@ CREATE TABLE areas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Đại lý: bản tối thiểu cho S1-10 (cảnh báo bàn giao khi khoá nhân viên). EP-03 sẽ mở rộng.
+-- S2-10: nhóm khách hàng quyết định bảng giá áp dụng
+CREATE TABLE customer_groups (
+  id    BIGINT       NOT NULL AUTO_INCREMENT,
+  code  VARCHAR(20)  NOT NULL,
+  name  VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_customer_groups_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE customers (
   id            BIGINT       NOT NULL AUTO_INCREMENT,
   code          VARCHAR(20)  NOT NULL,
   name          VARCHAR(200) NOT NULL,
   phone         VARCHAR(20)  NULL,
   area_id       BIGINT       NULL,
+  group_id      BIGINT       NULL,
   sales_rep_id  BIGINT       NULL,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_customers_code (code),
   KEY idx_customers_sales_rep (sales_rep_id),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
+  CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -167,6 +178,39 @@ CREATE TABLE suppliers (
   UNIQUE KEY uk_suppliers_code (code),
   KEY idx_suppliers_name (name),
   KEY idx_suppliers_tax_code (tax_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S2-10: bảng giá có hiệu lực, phiên bản; đã phát sinh đơn (locked_at) thì chỉ tạo phiên bản mới
+CREATE TABLE price_lists (
+  id                 BIGINT       NOT NULL AUTO_INCREMENT,
+  code               VARCHAR(30)  NOT NULL,
+  version            INT          NOT NULL DEFAULT 1,
+  name               VARCHAR(150) NOT NULL,
+  customer_group_id  BIGINT       NOT NULL,
+  valid_from         DATE         NOT NULL,
+  valid_to           DATE         NULL,
+  previous_id        BIGINT       NULL,
+  locked_at          DATETIME     NULL,
+  created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_price_lists_code_version (code, version),
+  KEY idx_price_lists_group_dates (customer_group_id, valid_from, valid_to),
+  CONSTRAINT fk_price_lists_group FOREIGN KEY (customer_group_id) REFERENCES customer_groups (id),
+  CONSTRAINT fk_price_lists_previous FOREIGN KEY (previous_id) REFERENCES price_lists (id),
+  CONSTRAINT chk_price_lists_dates CHECK (valid_to IS NULL OR valid_to >= valid_from)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE price_list_items (
+  price_list_id  BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  sale_price     DECIMAL(15,2) NOT NULL,
+  floor_price    DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (price_list_id, product_id),
+  KEY idx_price_items_product (product_id),
+  CONSTRAINT fk_price_items_list FOREIGN KEY (price_list_id) REFERENCES price_lists (id) ON DELETE CASCADE,
+  CONSTRAINT fk_price_items_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT chk_price_items CHECK (floor_price >= 0 AND floor_price <= sale_price)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE user_warehouses (
