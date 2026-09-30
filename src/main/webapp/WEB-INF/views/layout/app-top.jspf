@@ -1,0 +1,71 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="${ctx}/assets/css/base.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/layout.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/components.css">
+</head>
+<body data-ctx="${ctx}">
+  <div class="app">
+    <%-- Menu chỉ gồm mục thuộc quyền, dựng ở server (Menu.build) --%>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__brand">
+        <span class="logo-mark">OMS</span>
+        <span>Bán hàng &amp; Kho</span>
+      </div>
+      <nav class="sidebar__nav" aria-label="Menu chính">
+        <c:forEach var="group" items="${menu}">
+          <p class="sidebar__group"><c:out value="${group.title}"/></p>
+          <c:forEach var="item" items="${group.items}">
+            <c:choose>
+              <c:when test="${item.comingSoon}">
+                <a class="sidebar__link is-disabled" aria-disabled="true"><c:out value="${item.label}"/> <span class="badge">Sắp có</span></a>
+              </c:when>
+              <c:when test="${item.active}">
+                <a class="sidebar__link is-active" href="${ctx}${item.url}" aria-current="page"><c:out value="${item.label}"/></a>
+              </c:when>
+              <c:otherwise>
+                <a class="sidebar__link" href="${ctx}${item.url}"><c:out value="${item.label}"/></a>
+              </c:otherwise>
+            </c:choose>
+          </c:forEach>
+        </c:forEach>
+      </nav>
+    </aside>
+    <div class="sidebar-backdrop" data-sidebar-close></div>
+
+    <div class="app__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu">☰</button>
+        <p class="topbar__context">Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
+        <details class="user-menu">
+          <summary>
+            <span class="user-menu__avatar" aria-hidden="true"><c:out value="${currentUser.initials}"/></span>
+            <span>
+              <span class="user-menu__name"><c:out value="${currentUser.fullName}"/></span>
+              <span class="user-menu__role"><c:out value="${currentUser.roleLabels}"/></span>
+            </span>
+          </summary>
+          <div class="user-menu__panel">
+            <a href="${ctx}/account/change-password">Đổi mật khẩu</a>
+            <form action="${ctx}/logout" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <button type="submit">Đăng xuất</button>
+            </form>
+          </div>
+        </details>
+      </header>
+
+      <main class="content">
+        <c:if test="${not empty sessionScope.flash}">
+          <div class="alert alert--info" role="status"><c:out value="${sessionScope.flash}"/></div>
+          <c:remove var="flash" scope="session"/>
+        </c:if>

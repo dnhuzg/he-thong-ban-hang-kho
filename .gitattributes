@@ -1,0 +1,8 @@
+# Thống nhất xuống dòng LF trong repo để máy Windows/macOS/Linux không tạo diff giả
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.ico binary
+*.xlsx binary
