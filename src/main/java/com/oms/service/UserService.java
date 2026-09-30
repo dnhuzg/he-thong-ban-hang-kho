@@ -145,6 +145,30 @@ public class UserService {
         });
     }
 
+    /**
+     * Người dùng tự cập nhật họ tên và số điện thoại (S2-02). Tài khoản, email, vai trò, kho, địa bàn
+     * do quản trị quản lý nên không nhận ở đây dù request có gửi kèm.
+     */
+    public void updateOwnProfile(User actor, String fullName, String phone) throws SQLException {
+        String name = fullName == null ? "" : fullName.trim();
+        if (name.isEmpty()) {
+            throw new ServiceException("Vui lòng nhập họ và tên.");
+        }
+        if (name.length() > 150) {
+            throw new ServiceException("Họ và tên tối đa 150 ký tự.");
+        }
+        String normalizedPhone = PhoneNumbers.normalize(phone);
+        Db.inTransaction(conn -> {
+            User current = userDao.findByIdForUpdate(conn, actor.getId());
+            if (current == null || current.getStatus() == User.Status.LOCKED) {
+                throw new ServiceException("Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.");
+            }
+            userDao.updateNameAndPhone(conn, current.getId(), name, normalizedPhone);
+            auditDao.log(conn, current.getId(), "PROFILE_UPDATE", "USER", current.getId(), null);
+            return null;
+        });
+    }
+
     /** Khoá tài khoản: bắt buộc lý do, thu hồi phiên đang mở (S1-10). */
     public void lock(long userId, String reason, User actor) throws SQLException {
         if (reason == null || reason.isBlank()) {

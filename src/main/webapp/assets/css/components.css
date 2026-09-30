@@ -541,3 +541,43 @@
 .error-state .form-actions {
   justify-content: center;
 }
+
+/* ---------- Hồ sơ cá nhân ---------- */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.profile-grid .card + .card {
+  margin-top: 0;
+}
+
+/* Danh sách nhãn – giá trị chỉ đọc */
+.info-list {
+  margin: 0;
+}
+
+.info-list > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-list > div:last-child {
+  border-bottom: 0;
+}
+
+.info-list dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.info-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
