@@ -1,0 +1,22 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="${ctx}/assets/css/base.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/components.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/auth.css">
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="auth-card__brand">
+        <span class="logo-mark">OMS</span>
+        <span>Bán hàng &amp; Kho</span>
+      </div>
