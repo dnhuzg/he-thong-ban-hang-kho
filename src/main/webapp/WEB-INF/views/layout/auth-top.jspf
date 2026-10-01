@@ -6,6 +6,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
+  <script>
+    // Đặt giao diện sáng / tối trước khi trình duyệt vẽ trang để không bị nháy; ưu tiên lựa chọn đã lưu, không có thì theo máy
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("oms-theme"); } catch (e) { /* trình duyệt chặn lưu trữ */ }
+      if (theme !== "dark" && theme !== "light") {
+        theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
@@ -14,6 +25,17 @@
   <link rel="stylesheet" href="${ctx}/assets/css/auth.css?v=${assetVersion}">
 </head>
 <body>
+  <label class="theme-switch" title="Chuyển giao diện sáng / tối">
+    <input class="theme-switch__input" id="theme-toggle" type="checkbox" role="switch" aria-label="Giao diện tối">
+    <span class="theme-switch__track" aria-hidden="true">
+      <span class="theme-switch__cosmos"></span>
+      <span class="theme-switch__line"></span>
+      <span class="theme-switch__line"></span>
+      <span class="theme-switch__line"></span>
+      <span class="theme-switch__particles"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="theme-switch__orb"><span class="theme-switch__core"></span><span class="theme-switch__ring"></span></span>
+    </span>
+  </label>
   <c:choose>
     <%-- Trang đăng nhập dùng bố cục hai cột (authSplit = true): giới thiệu bên trái, biểu mẫu bên phải --%>
     <c:when test="${authSplit}">
