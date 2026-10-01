@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
-  <link rel="stylesheet" href="${ctx}/assets/css/base.css">
-  <link rel="stylesheet" href="${ctx}/assets/css/components.css">
-  <link rel="stylesheet" href="${ctx}/assets/css/auth.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/base.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/auth.css?v=${assetVersion}">
 </head>
 <body>
   <%@ include file="/WEB-INF/views/layout/icons.jspf" %>

@@ -4,6 +4,6 @@
     </div>
   </c:if>
   </main>
-  <script src="${ctx}/assets/js/app.js"></script>
+  <script src="${ctx}/assets/js/app.js?v=${assetVersion}"></script>
 </body>
 </html>
