@@ -52,8 +52,14 @@ public abstract class DatabaseTest {
                         phone VARCHAR(20), tax_code VARCHAR(14) UNIQUE, area_id BIGINT REFERENCES areas(id),
                         group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id),
                         status VARCHAR(20) DEFAULT 'ACTIVE', credit_limit DECIMAL(15,2) DEFAULT 0 NOT NULL,
-                        credit_days INT DEFAULT 0 NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        credit_days INT DEFAULT 0 NOT NULL, lock_reason VARCHAR(500), locked_at TIMESTAMP,
+                        locked_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_lock_history (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, action VARCHAR(10), reason VARCHAR(500),
+                        changed_by BIGINT REFERENCES users(id), changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
             statement.execute("""
                     CREATE TABLE customer_assignments (id BIGINT AUTO_INCREMENT PRIMARY KEY,

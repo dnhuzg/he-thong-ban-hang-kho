@@ -105,6 +105,9 @@ CREATE TABLE customers (
   status        ENUM('ACTIVE','LOCKED') NOT NULL DEFAULT 'ACTIVE',
   credit_limit  DECIMAL(15,2) NOT NULL DEFAULT 0,
   credit_days   INT          NOT NULL DEFAULT 0,
+  lock_reason   VARCHAR(500) NULL,
+  locked_at     DATETIME     NULL,
+  locked_by     BIGINT       NULL,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -115,7 +118,8 @@ CREATE TABLE customers (
   CONSTRAINT chk_customers_credit CHECK (credit_limit >= 0 AND credit_days >= 0),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
   CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
-  CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
+  CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id),
+  CONSTRAINT fk_customers_locked_by FOREIGN KEY (locked_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- S3-04: điểm giao hàng của đại lý; mỗi đại lý tối đa một điểm mặc định (ứng dụng giữ)
@@ -167,6 +171,20 @@ CREATE TABLE customer_assignments (
   CONSTRAINT fk_assignments_from FOREIGN KEY (from_user_id) REFERENCES users (id),
   CONSTRAINT fk_assignments_to FOREIGN KEY (to_user_id) REFERENCES users (id),
   CONSTRAINT fk_assignments_by FOREIGN KEY (changed_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-07: lịch sử khoá / mở giao dịch với đại lý (chỉ thêm, không sửa / xoá)
+CREATE TABLE customer_lock_history (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  action        ENUM('LOCK','UNLOCK') NOT NULL,
+  reason        VARCHAR(500)  NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_lock_history_customer (customer_id, changed_at),
+  CONSTRAINT fk_lock_history_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_lock_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
