@@ -259,7 +259,8 @@
   gap: var(--space-2);
 }
 
-.alert--icon img {
+.alert--icon img,
+.alert--icon .icon {
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -1231,5 +1232,181 @@
 
   .form-footer__actions .btn {
     flex: 1;
+  }
+}
+
+/* ---------- Bảng giá theo thiết kế ---------- */
+
+.icon--xs {
+  width: 12px;
+  height: 12px;
+}
+
+.toolbar__wide {
+  flex: 0 1 256px;
+}
+
+.badge--warning .icon {
+  margin-right: var(--space-1);
+  vertical-align: -1px;
+}
+
+.pl-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 188px 220px 112px 16px;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text);
+}
+
+a.pl-row:hover {
+  background: var(--color-primary-soft);
+  text-decoration: none;
+}
+
+.pl-row--head {
+  padding: var(--space-3) 20px;
+  background: var(--color-bg);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.pl-row__name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.pl-row__title {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+a.pl-row:hover .pl-row__title {
+  color: var(--color-primary);
+}
+
+.pl-row__sub {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.pl-row__count strong {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.pl-row__count-suffix {
+  display: none;
+}
+
+.pl-row__chevron {
+  color: var(--color-text-muted);
+}
+
+.pl-empty,
+.pl-foot {
+  margin: 0;
+  padding: var(--space-4);
+  font-size: 0.6875rem;
+}
+
+.readonly-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.pl-items-cards {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .pl-row--head {
+    display: none;
+  }
+
+  /* Điện thoại: mỗi bảng giá một thẻ */
+  .pl-list {
+    gap: var(--space-3);
+  }
+
+  .pl-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name chevron"
+      "group count"
+      "valid valid";
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .pl-row__name { grid-area: name; }
+  .pl-row__chevron { grid-area: chevron; }
+  .pl-row__group { grid-area: group; font-size: var(--font-size-sm); }
+  .pl-row__count { grid-area: count; color: var(--color-text-muted); }
+  .pl-row__valid { grid-area: valid; color: var(--color-text-muted); }
+
+  .pl-row__count-suffix {
+    display: inline;
+  }
+
+  .pl-items-table {
+    display: none;
+  }
+
+  .pl-items-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .pl-item {
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .pl-item p {
+    margin: 0;
+  }
+
+  .pl-item__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .pl-item__sub,
+  .pl-item__floor {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+  }
+
+  .pl-item__foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: var(--space-3);
+  }
+
+  .pl-item__price {
+    font-size: 1rem;
+    font-weight: 600;
   }
 }

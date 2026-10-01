@@ -41,3 +41,6 @@
 .icon--circle-check { --icon: url("../img/icons/circle-check.svg"); }
 .icon--check { --icon: url("../img/icons/check.svg"); }
 .icon--info { --icon: url("../img/icons/info.svg"); }
+.icon--list-filter { --icon: url("../img/icons/list-filter.svg"); }
+.icon--chevron-right { --icon: url("../img/icons/chevron-right.svg"); }
+.icon--lock-keyhole { --icon: url("../img/icons/lock-keyhole.svg"); }
