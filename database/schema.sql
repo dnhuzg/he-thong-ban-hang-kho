@@ -496,3 +496,15 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 
 ALTER TABLE orders MODIFY status VARCHAR(32) NOT NULL DEFAULT 'DRAFT', ADD approval_reason VARCHAR(1000) NULL, ADD warehouse_id BIGINT NULL, ADD CONSTRAINT fk_order_warehouse FOREIGN KEY(warehouse_id) REFERENCES warehouses(id);
 ALTER TABLE order_lines ADD unit_price DECIMAL(15,2) NULL, ADD gross_amount DECIMAL(18,2) NULL, ADD discount_amount DECIMAL(18,2) NULL, ADD discount_note VARCHAR(500) NULL;
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS customer_accounts (
+  customer_id BIGINT NOT NULL PRIMARY KEY,
+  user_id BIGINT NOT NULL UNIQUE,
+  CONSTRAINT fk_customer_account_customer FOREIGN KEY(customer_id) REFERENCES customers(id),
+  CONSTRAINT fk_customer_account_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE orders ADD customer_submitted BOOLEAN NOT NULL DEFAULT FALSE;

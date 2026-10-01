@@ -13,7 +13,7 @@ public class PurchaseHistoryService {
         OrderService.requireOrders(viewer);
         try(var conn=Db.getConnection()) {
             var customer=new CustomerDao().findById(conn,customerId);
-            if(customer==null || !OrderService.canSeeCustomer(viewer,customer)) throw new OrderService.NotFoundException();
+            if(customer==null || !OrderService.canSeeCustomer(conn,viewer,customer)) throw new OrderService.NotFoundException();
             return new PurchaseHistoryDao().list(conn,customerId,LocalDate.now().minusMonths(3));
         }
     }

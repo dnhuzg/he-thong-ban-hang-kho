@@ -23,6 +23,12 @@ public class Order {
     public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
     public String getApprovalReason() { return approvalReason; }
     public void setApprovalReason(String approvalReason) { this.approvalReason = approvalReason; }
+    private Long customerAccountUserId;
+    private boolean customerSubmitted;
+    public Long getCustomerAccountUserId() { return customerAccountUserId; }
+    public void setCustomerAccountUserId(Long id) { customerAccountUserId = id; }
+    public boolean isCustomerSubmitted() { return customerSubmitted; }
+    public void setCustomerSubmitted(boolean value) { customerSubmitted = value; }
     private long id;
     private String code;
     private long customerId;

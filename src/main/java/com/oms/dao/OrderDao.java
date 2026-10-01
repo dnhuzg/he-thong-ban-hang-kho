@@ -22,8 +22,8 @@ public class OrderDao {
     private static final String SELECT = "SELECT o.id, o.code, o.customer_id, c.code, c.name, c.group_id, g.name, c.status, "
             + "c.lock_reason, c.sales_rep_id, o.delivery_point_id, CONCAT(dp.receiver_name, ' – ', dp.address), "
             + "o.delivery_date, o.note, u.full_name, o.created_at, o.updated_at, "
-            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id), o.status, o.warehouse_id, o.approval_reason "
-            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_groups g ON g.id = c.group_id "
+            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id), o.status, o.warehouse_id, o.approval_reason, ca.user_id, o.customer_submitted "
+            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_accounts ca ON ca.customer_id = c.id LEFT JOIN customer_groups g ON g.id = c.group_id "
             + "LEFT JOIN customer_delivery_points dp ON dp.id = o.delivery_point_id JOIN users u ON u.id = o.created_by";
 
     public long insert(Connection conn, long customerId, Long deliveryPointId, long createdBy) throws SQLException {
@@ -242,6 +242,9 @@ public class OrderDao {
         long warehouse = rs.getLong(20);
         o.setWarehouseId(rs.wasNull() ? null : warehouse);
         o.setApprovalReason(rs.getString(21));
+        long account = rs.getLong(22);
+        o.setCustomerAccountUserId(rs.wasNull() ? null : account);
+        o.setCustomerSubmitted(rs.getBoolean(23));
         return o;
     }
 

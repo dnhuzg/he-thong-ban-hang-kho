@@ -20,6 +20,15 @@ public final class AccessRules {
     private static final Map<String, Rule> RULES = Map.ofEntries(
             Map.entry("/", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/catalog", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/cart", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/create", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/add", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/update", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/remove", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/header", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/submit", new Rule(Kind.AUTHENTICATED, null)),
+
             Map.entry("/api/orders/copy", new Rule(Kind.AUTHENTICATED, null)),
 
             Map.entry("/api/orders/pdf", new Rule(Kind.AUTHENTICATED, null)),

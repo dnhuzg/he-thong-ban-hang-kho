@@ -70,7 +70,7 @@ public class OrderService {
     private final AuditLogDao auditDao = new AuditLogDao();
 
     public PageResult<Order> search(String keyword, int page, User viewer) throws SQLException {
-        requireOrders(viewer);
+        if (!PermissionPolicy.canTakeOrders(viewer.getRoles())) throw new ForbiddenException("Danh sách này chỉ dành cho nhân viên kinh doanh.");
         Long own = PermissionPolicy.canSeeAllOrders(viewer.getRoles()) ? null : viewer.getId();
         try (Connection conn = Db.getConnection()) {
             PageResult<Order> result = orderDao.search(conn, keyword, own, Math.max(1, page), PAGE_SIZE);
@@ -153,7 +153,7 @@ public class OrderService {
 
     long create(Connection conn, long customerId, User actor) throws SQLException {
         Customer customer = customerDao.findByIdForUpdate(conn, customerId);
-        if (customer == null || !canSeeCustomer(actor, customer)) {
+        if (customer == null || !canSeeCustomer(conn, actor, customer)) {
             throw new NotFoundException();
         }
         CustomerLockService.requireTradable(customer);
@@ -296,19 +296,21 @@ public class OrderService {
 
     static void requireVisible(Order order, User viewer) {
         boolean visible = order != null && (PermissionPolicy.canSeeAllOrders(viewer.getRoles())
-                || (order.getCustomerSalesRepId() != null && order.getCustomerSalesRepId() == viewer.getId()));
+                || (viewer.hasRole(com.oms.model.Role.SALES_REP) && order.getCustomerSalesRepId() != null && order.getCustomerSalesRepId() == viewer.getId())
+                || (viewer.hasRole(com.oms.model.Role.CUSTOMER) && order.getCustomerAccountUserId() != null && order.getCustomerAccountUserId() == viewer.getId()));
         if (!visible) {
             throw new NotFoundException();
         }
     }
 
-    static boolean canSeeCustomer(User viewer, Customer c) {
+    static boolean canSeeCustomer(Connection conn, User viewer, Customer c) throws SQLException {
         return PermissionPolicy.canSeeAllOrders(viewer.getRoles())
-                || (c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId());
+                || (viewer.hasRole(com.oms.model.Role.SALES_REP) && c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId())
+                || (viewer.hasRole(com.oms.model.Role.CUSTOMER) && new com.oms.dao.PortalAccountDao().owns(conn,c.getId(),viewer.getId()));
     }
 
     static void requireOrders(User user) {
-        if (!PermissionPolicy.canTakeOrders(user.getRoles())) {
+        if (!PermissionPolicy.canTakeOrders(user.getRoles()) && !user.hasRole(com.oms.model.Role.CUSTOMER)) {
             throw new ForbiddenException("Chỉ Nhân viên kinh doanh và Quản lý kinh doanh được lập đơn hàng.");
         }
     }

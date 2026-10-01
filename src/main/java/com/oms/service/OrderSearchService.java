@@ -16,7 +16,7 @@ public class OrderSearchService {
     public record Item(long id,String code,String customer,Order.Status status,BigDecimal total,LocalDateTime createdAt) { }
     public record Result(List<Item> items,long count,BigDecimal total,int page,int pageSize) { }
     public Result search(OrderSearchDao.Filter filter,int page,int size,User viewer) throws SQLException {
-        OrderService.requireOrders(viewer);
+        if (!PermissionPolicy.canTakeOrders(viewer.getRoles())) throw new ForbiddenException("Danh sách này chỉ dành cho nhân viên kinh doanh.");
         if(page<1 || page>100000 || size<1 || size>100) throw new ServiceException("Phân trang không hợp lệ.");
         if(filter.from()!=null && filter.to()!=null && filter.from().isAfter(filter.to())) throw new ServiceException("Ngày bắt đầu phải trước ngày kết thúc.");
         Long own=PermissionPolicy.canSeeAllOrders(viewer.getRoles())?null:viewer.getId();

@@ -16,10 +16,15 @@ public class OrderStockService {
         Order order=new OrderService().get(orderId,viewer);
         var dao=new OrderStockDao();
         try(var conn=Db.getConnection()) {
-            long warehouse=dao.warehouse(conn,order.getCustomerId());
+            long warehouse=order.getWarehouseId()==null?dao.warehouse(conn,order.getCustomerId()):order.getWarehouseId();
             var result=new ArrayList<Availability>();
             for(var e:quantities(order).entrySet()) {
                 var available=dao.available(conn,warehouse,e.getKey(),false);
+                // Giữ chỗ của chính đơn vẫn là phần đơn đó được dùng, không tính thành thiếu hàng.
+                try(var ps=conn.prepareStatement("SELECT quantity FROM order_inventory_reservations WHERE order_id=? AND warehouse_id=? AND product_id=?")) {
+                    ps.setLong(1,orderId); ps.setLong(2,warehouse); ps.setLong(3,e.getKey());
+                    try(var rs=ps.executeQuery()) { if(rs.next()) available=available.add(rs.getBigDecimal(1)); }
+                }
                 result.add(new Availability(e.getKey(),warehouse,available,e.getValue(),e.getValue().compareTo(available)>0));
             }
             return result;
