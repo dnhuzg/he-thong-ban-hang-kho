@@ -56,6 +56,12 @@ public abstract class DatabaseTest {
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
             statement.execute("""
+                    CREATE TABLE customer_assignments (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, from_user_id BIGINT REFERENCES users(id),
+                        to_user_id BIGINT REFERENCES users(id), reason VARCHAR(500), changed_by BIGINT REFERENCES users(id),
+                        changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
                     CREATE TABLE customer_credit_history (id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, old_limit DECIMAL(15,2),
                         new_limit DECIMAL(15,2), old_days INT, new_days INT, reason VARCHAR(500),

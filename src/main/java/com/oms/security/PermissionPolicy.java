@@ -74,6 +74,11 @@ public class PermissionPolicy {
         return roles.contains(Role.ADMIN) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ACCOUNTANT);
     }
 
+    /** Ràng buộc cố định: phân công và chuyển giao người phụ trách đại lý chỉ Quản lý kinh doanh (và Admin). */
+    public static boolean canAssignCustomers(Set<Role> roles) {
+        return roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
+    }
+
     /** Ràng buộc cố định: hạn mức công nợ và số ngày nợ chỉ Kế toán công nợ, Quản lý kinh doanh (và Admin) sửa. */
     public static boolean canManageCredit(Set<Role> roles) {
         return roles.contains(Role.ACCOUNTANT) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);

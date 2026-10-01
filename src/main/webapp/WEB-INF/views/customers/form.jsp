@@ -101,12 +101,13 @@
                 </div>
                 <div class="form-field">
                   <label class="form-label" for="salesRepId">Người phụ trách</label>
-                  <select class="select" id="salesRepId" name="salesRepId">
+                  <select class="select" id="salesRepId" name="salesRepId" ${canAssign ? '' : 'disabled aria-describedby="rep-hint"'}>
                     <option value="">— Chưa phân công —</option>
                     <c:forEach var="r" items="${reps}">
                       <option value="${r.id}" ${r.id == customer.salesRepId ? 'selected' : ''}><c:out value="${r.name}"/></option>
                     </c:forEach>
                   </select>
+                  <c:if test="${not canAssign}"><p class="form-hint" id="rep-hint">Chỉ Quản lý kinh doanh phân công người phụ trách.</p></c:if>
                 </div>
               </section>
             </div>

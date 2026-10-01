@@ -33,6 +33,22 @@
           </dl>
         </section>
 
+        <section class="card credit-card" id="lich-su-phan-cong">
+          <div class="card__header"><h2>Lịch sử phân công</h2></div>
+          <div class="credit-history">
+            <c:if test="${empty assignments}"><p class="text-muted credit-history__empty">Chưa có thay đổi người phụ trách nào.</p></c:if>
+            <c:forEach var="ch" items="${assignments}">
+              <article class="credit-change">
+                <p class="credit-change__what">
+                  <c:out value="${ch.fromLabel}"/> <span aria-hidden="true">→</span><span class="visually-hidden">sang</span> <strong><c:out value="${ch.toLabel}"/></strong>
+                </p>
+                <c:if test="${not empty ch.reason}"><p class="credit-change__reason">Lý do: <c:out value="${ch.reason}"/></p></c:if>
+                <p class="credit-change__meta"><c:out value="${ch.changedByName}"/> · <c:out value="${ch.timeText}"/></p>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+
         <section class="card credit-card" id="han-muc-cong-no">
           <div class="card__header dp-card__header">
             <div>

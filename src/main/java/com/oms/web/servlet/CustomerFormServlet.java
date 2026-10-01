@@ -85,6 +85,7 @@ public class CustomerFormServlet extends BaseServlet {
             req.setAttribute("groups", customerService.groups());
             req.setAttribute("areas", customerService.areas());
             req.setAttribute("reps", customerService.salesReps());
+            req.setAttribute("canAssign", PermissionPolicy.canAssignCustomers(currentUser(req).getRoles()));
         } catch (SQLException e) {
             throw new ServletException(e);
         }
