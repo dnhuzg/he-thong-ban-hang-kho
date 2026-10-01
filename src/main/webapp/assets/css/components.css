@@ -23,11 +23,12 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
@@ -39,6 +40,7 @@
 
 .btn--primary {
   background: var(--color-primary);
+  border-color: var(--color-primary);
   color: var(--color-text-inverse);
 }
 
@@ -48,7 +50,7 @@
 
 .btn--secondary {
   background: var(--color-surface);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-border);
   color: var(--color-text);
 }
 
@@ -73,7 +75,7 @@
 .btn--sm {
   min-height: 32px;
   padding: 0 var(--space-3);
-  font-size: var(--font-size-sm);
+  font-size: 0.75rem;
 }
 
 .btn--block {
@@ -103,7 +105,7 @@
 }
 
 .form-label {
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--font-size-sm);
 }
 
@@ -125,11 +127,12 @@
 .select,
 .textarea {
   width: 100%;
-  min-height: 40px;
-  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  padding: var(--space-3);
   background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
 .textarea {
@@ -278,8 +281,7 @@
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
 }
 
 .form-narrow {
@@ -332,8 +334,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--color-border);
+  padding: 20px;
 }
 
 .toolbar__search {
@@ -360,21 +361,19 @@
 
 .table th,
 .table td {
-  padding: var(--space-3) var(--space-4);
+  padding: 20px;
   border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
 }
 
 .table th {
-  background: var(--color-surface-muted);
-  font-weight: 600;
+  padding: var(--space-3) 20px;
+  background: var(--color-bg);
+  font-size: 0.625rem;
+  font-weight: 500;
   color: var(--color-text-muted);
   white-space: nowrap;
-}
-
-.table tbody tr:hover {
-  background: var(--color-surface-muted);
 }
 
 .table__actions {
@@ -390,12 +389,12 @@
 }
 
 .table__cell-main {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text);
 }
 
 .table__cell-sub {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
 }
 
@@ -403,14 +402,13 @@
 
 .badge {
   display: inline-block;
-  padding: 2px var(--space-2);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 500;
   white-space: nowrap;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
 }
 
 .badge--primary {
@@ -451,13 +449,13 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
-  font-size: var(--font-size-sm);
+  padding: var(--space-4) 20px;
+  font-size: 0.75rem;
 }
 
 .pagination__pages {
   display: flex;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .pagination__page {
@@ -465,11 +463,18 @@
   place-items: center;
   min-width: 32px;
   height: 32px;
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
+  font-weight: 500;
   color: var(--color-text);
+}
+
+.pagination__page.is-disabled {
+  background: var(--color-bg);
+  color: var(--color-text-disabled);
+  pointer-events: none;
 }
 
 .pagination__page:hover {
@@ -700,17 +705,17 @@
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
 
 .tabs__item {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   color: var(--color-text-muted);
-  font-weight: 600;
+  font-size: var(--font-size-sm);
 }
 
 .tabs__item:hover {
@@ -721,16 +726,17 @@
 .tabs__item.is-active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
+  font-weight: 600;
 }
 
 /* ---------- Cây nhóm hàng: thụt lề theo cấp ---------- */
 
 /* Viết kèm ".table td" để thắng padding mặc định của ô bảng */
-.table td.tree-l2 { padding-left: calc(var(--space-4) + 24px); }
-.table td.tree-l3 { padding-left: calc(var(--space-4) + 48px); }
-.table td.tree-l4 { padding-left: calc(var(--space-4) + 72px); }
-.table td.tree-l5 { padding-left: calc(var(--space-4) + 96px); }
-.table td.tree-l6 { padding-left: calc(var(--space-4) + 120px); }
+.table td.tree-l2 { padding-left: calc(20px + 24px); }
+.table td.tree-l3 { padding-left: calc(20px + 48px); }
+.table td.tree-l4 { padding-left: calc(20px + 72px); }
+.table td.tree-l5 { padding-left: calc(20px + 96px); }
+.table td.tree-l6 { padding-left: calc(20px + 120px); }
 
 .table td[class^="tree-l"] .table__cell-main,
 .table td[class^="tree-l"] .table__cell-sub {
@@ -763,4 +769,269 @@
   justify-content: flex-start;
   margin-top: 0;
   grid-column: 1 / -1;
+}
+
+/* ---------- Danh sách theo thiết kế: tìm kiếm, ô chọn, bảng và thẻ trên điện thoại ---------- */
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.search-field:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.search-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font-size: 0.75rem;
+  color: var(--color-text);
+}
+
+.search-field input:focus {
+  outline: none;
+}
+
+.select {
+  appearance: none;
+  padding-right: 36px;
+  background: var(--color-surface) url("../img/icons/chevron-down.svg") no-repeat right 12px center / 16px;
+}
+
+.toolbar .select {
+  flex: 0 1 238px;
+}
+
+/* Bộ lọc tự gửi khi đổi ô chọn; nút vẫn có mặt cho bàn phím và khi tắt JavaScript */
+.toolbar__submit {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
+.list-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 20px;
+}
+
+.list-summary__title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.table__cell-code {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.table__cell-hint {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+
+.table .col-sku { width: 120px; }
+.table .col-unit { width: 80px; }
+.table .col-cost { width: 120px; }
+.table .col-status { width: 160px; }
+.table .col-menu { width: 44px; }
+
+.product-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.row-menu {
+  position: relative;
+  color: var(--color-text-muted);
+}
+
+.row-menu > summary {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  list-style: none;
+  cursor: pointer;
+}
+
+.row-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.row-menu > summary:hover {
+  background: var(--color-bg);
+}
+
+.row-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 5;
+  min-width: 140px;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.row-menu__panel a,
+.row-menu__panel button {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-menu__panel a:hover,
+.row-menu__panel button:hover {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.row-menu__panel .is-danger {
+  color: var(--color-danger);
+}
+
+.product-cards {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  /* Điện thoại: bảng đổi thành các thẻ trên nền xám */
+  .list-card {
+    background: var(--color-bg);
+    border-color: var(--color-bg);
+  }
+
+  .list-card .toolbar {
+    flex-direction: row;
+    padding: 0 0 var(--space-3);
+  }
+
+  .list-card .toolbar__search {
+    flex: 1 1 100%;
+  }
+
+  .list-card .toolbar .select {
+    flex: 1 1 calc(50% - var(--space-2));
+    min-width: 0;
+  }
+
+  .list-card .list-summary {
+    padding: var(--space-3) 0;
+  }
+
+  .list-table {
+    display: none;
+  }
+
+  .product-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .product-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .product-card__title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .product-card__title p,
+  .product-card__meta p,
+  .product-card__foot p {
+    margin: 0;
+  }
+
+  .product-card__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .product-card__sku,
+  .product-card__meta {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+  }
+
+  .product-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .product-card__foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .product-card__foot .badge {
+    margin-left: auto;
+  }
+
+  .product-card__label {
+    font-size: 0.625rem;
+    color: var(--color-text-muted);
+  }
+
+  .product-card__price {
+    margin-top: var(--space-1);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .list-card .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-4) 0;
+  }
+
+  .list-card .pagination__page {
+    height: 44px;
+    padding: 0 var(--space-4);
+  }
 }
