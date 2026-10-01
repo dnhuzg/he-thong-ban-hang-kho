@@ -17,7 +17,7 @@ import java.time.format.DateTimeParseException;
 
 /** Đơn hàng nháp (S3-09): danh sách, chọn đại lý, màn hình gõ đơn (giao hàng, thêm / sửa / xoá dòng hàng), xoá nháp. */
 @WebServlet({"/orders", "/orders/new", "/orders/create", "/orders/edit", "/orders/save", "/orders/delete",
-        "/orders/lines/add", "/orders/lines/save", "/orders/lines/delete"})
+        "/orders/lines/add", "/orders/lines/save", "/orders/lines/delete", "/orders/products"})
 public class OrderServlet extends BaseServlet {
 
     private final OrderService orderService = new OrderService();
@@ -42,6 +42,16 @@ public class OrderServlet extends BaseServlet {
                     render(req, resp, "orders/new");
                 }
                 case "/orders/edit" -> showEdit(req, resp);
+                case "/orders/products" -> {
+                    // gợi ý khi gõ: chỉ trả phần danh sách sản phẩm, không kèm khung trang
+                    Order order = orderService.get(longParam(req, "id"), currentUser(req));
+                    String q = param(req, "q");
+                    req.setAttribute("order", order);
+                    req.setAttribute("q", q);
+                    req.setAttribute("choices", orderService.searchProducts(order, q));
+                    resp.setHeader("Cache-Control", "no-store");
+                    render(req, resp, "orders/product-results");
+                }
                 default -> redirect(req, resp, "/orders");
             }
         } catch (ForbiddenException e) {
