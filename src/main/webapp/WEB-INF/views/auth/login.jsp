@@ -24,18 +24,18 @@
 
       <form action="${ctx}/login" method="post" novalidate>
         <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-        <div class="form-field">
-          <label class="form-label" for="username">Tài khoản</label>
-          <input class="input" id="username" name="username" type="text" autocomplete="username" required autofocus
-                 value="<c:out value='${username}'/>">
+        <div class="float-field">
+          <input class="float-field__input" id="username" name="username" type="text" autocomplete="username" required autofocus
+                 placeholder=" " value="<c:out value='${username}'/>">
+          <label class="float-field__label" for="username">Tài khoản</label>
+          <i class="float-field__line" aria-hidden="true"></i>
         </div>
 
-        <div class="form-field">
-          <label class="form-label" for="password">Mật khẩu</label>
-          <div class="input-group">
-            <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
-            <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false"><img src="${ctx}/assets/img/icon-eye.svg" alt="" width="16" height="16"><span data-toggle-label>Hiện</span></button>
-          </div>
+        <div class="float-field float-field--action">
+          <input class="float-field__input" id="password" name="password" type="password" autocomplete="current-password" required placeholder=" ">
+          <label class="float-field__label" for="password">Mật khẩu</label>
+          <i class="float-field__line" aria-hidden="true"></i>
+          <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false"><img src="${ctx}/assets/img/icon-eye.svg" alt="" width="16" height="16"><span data-toggle-label>Hiện</span></button>
         </div>
 
         <div class="auth-card__row">
