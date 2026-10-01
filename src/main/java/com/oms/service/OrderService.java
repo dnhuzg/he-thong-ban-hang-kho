@@ -113,6 +113,28 @@ public class OrderService {
         }
     }
 
+    /** Đơn vị chọn được (đơn vị cơ sở và các đơn vị quy đổi) của từng sản phẩm có dòng trong đơn, để đổi đơn vị ngay trên dòng. */
+    public Map<Long, List<NamedItem>> unitOptions(Order order) throws SQLException {
+        Map<Long, List<NamedItem>> options = new HashMap<>();
+        if (order.getLines().isEmpty()) {
+            return options;
+        }
+        try (Connection conn = Db.getConnection()) {
+            List<Long> productIds = order.getLines().stream().map(OrderLine::getProductId).distinct().toList();
+            Map<Long, List<ProductUnit>> conversions = productUnitDao.listByProducts(conn, productIds);
+            for (long productId : productIds) {
+                Product p = productDao.findById(conn, productId, false);
+                List<NamedItem> units = new ArrayList<>();
+                units.add(new NamedItem(p.getBaseUnitId(), p.getBaseUnitName()));
+                for (ProductUnit pu : conversions.getOrDefault(productId, List.of())) {
+                    units.add(new NamedItem(pu.getUnitId(), pu.getUnitName()));
+                }
+                options.put(productId, units);
+            }
+        }
+        return options;
+    }
+
     /** Tạo đơn nháp rỗng cho đại lý, chọn sẵn điểm giao mặc định. Đại lý bị khoá giao dịch thì không tạo được. */
     public long create(long customerId, User actor) throws SQLException {
         requireOrders(actor);
