@@ -51,7 +51,8 @@ public class AuditEntry {
             Map.entry("DELIVERY_POINT_SAVE", "Lưu điểm giao hàng"),
             Map.entry("DELIVERY_POINT_DEFAULT", "Đặt điểm giao mặc định"),
             Map.entry("DELIVERY_POINT_DELETE", "Xoá điểm giao hàng"),
-            Map.entry("CUSTOMER_CREDIT_UPDATE", "Đổi hạn mức công nợ"));
+            Map.entry("CUSTOMER_CREDIT_UPDATE", "Đổi hạn mức công nợ"),
+            Map.entry("CUSTOMER_TRANSFER", "Chuyển giao đại lý"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");

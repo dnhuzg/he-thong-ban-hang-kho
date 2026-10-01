@@ -1,6 +1,7 @@
 package com.oms.service;
 
 import com.oms.config.Db;
+import com.oms.dao.AssignmentDao;
 import com.oms.dao.AuditLogDao;
 import com.oms.dao.CustomerDao;
 import com.oms.dao.LookupDao;
@@ -15,6 +16,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -30,6 +32,7 @@ public class CustomerService {
 
     private final CustomerDao customerDao = new CustomerDao();
     private final LookupDao lookupDao = new LookupDao();
+    private final AssignmentDao assignmentDao = new AssignmentDao();
     private final AuditLogDao auditDao = new AuditLogDao();
 
     /** Danh sách theo quyền: người chỉ được xem đại lý mình phụ trách luôn bị lọc theo chính họ. */
@@ -78,13 +81,19 @@ public class CustomerService {
         String code = normalizeCode(input.getCode());
         Customer c = validated(input);
         c.setCode(code);
+        if (!PermissionPolicy.canAssignCustomers(actor.getRoles())) {
+            c.setSalesRepId(null);
+        }
         return Db.inTransaction(conn -> {
             if (customerDao.existsCode(conn, code)) {
                 throw new ServiceException("Mã đại lý \"" + code + "\" đã tồn tại. Mỗi đại lý phải có mã riêng.");
             }
-            checkReferences(conn, c);
+            checkReferences(conn, c, true);
             checkTaxCode(conn, c.getTaxCode(), 0);
             long id = customerDao.insert(conn, c);
+            if (c.getSalesRepId() != null) {
+                assignmentDao.insert(conn, id, null, c.getSalesRepId(), "Phân công khi tạo hồ sơ", actor.getId());
+            }
             auditDao.log(conn, actor.getId(), "CUSTOMER_CREATE", "CUSTOMER", id, code, null, describe(customerDao.findById(conn, id)));
             return id;
         });
@@ -98,11 +107,18 @@ public class CustomerService {
             if (existing == null) {
                 throw new NotFoundException();
             }
-            checkReferences(conn, changes);
+            if (!PermissionPolicy.canAssignCustomers(actor.getRoles())) {
+                changes.setSalesRepId(existing.getSalesRepId());
+            }
+            boolean repChanged = !Objects.equals(existing.getSalesRepId(), changes.getSalesRepId());
+            checkReferences(conn, changes, repChanged);
             checkTaxCode(conn, changes.getTaxCode(), id);
             changes.setId(id);
             String before = describe(existing);
             customerDao.update(conn, changes);
+            if (repChanged) {
+                assignmentDao.insert(conn, id, existing.getSalesRepId(), changes.getSalesRepId(), "Đổi trong hồ sơ đại lý", actor.getId());
+            }
             String after = describe(customerDao.findById(conn, id));
             if (!before.equals(after)) {
                 auditDao.log(conn, actor.getId(), "CUSTOMER_UPDATE", "CUSTOMER", id, existing.getCode(), before, after);
@@ -147,14 +163,15 @@ public class CustomerService {
                 || (c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId());
     }
 
-    private void checkReferences(Connection conn, Customer c) throws SQLException {
+    /** checkRep = false khi người phụ trách không đổi: nhân viên đã bị khoá vẫn giữ trong hồ sơ cho tới khi được bàn giao. */
+    private void checkReferences(Connection conn, Customer c, boolean checkRep) throws SQLException {
         if (c.getGroupId() == null || lookupDao.customerGroups(conn).stream().noneMatch(g -> g.getId() == c.getGroupId())) {
             throw new ServiceException("Vui lòng chọn nhóm khách hàng (nhóm quyết định bảng giá áp dụng).");
         }
         if (c.getAreaId() != null && lookupDao.areas(conn).stream().noneMatch(a -> a.getId() == c.getAreaId())) {
             throw new ServiceException("Khu vực được chọn không tồn tại. Vui lòng tải lại trang.");
         }
-        if (c.getSalesRepId() != null && lookupDao.salesReps(conn).stream().noneMatch(r -> r.getId() == c.getSalesRepId())) {
+        if (checkRep && c.getSalesRepId() != null && lookupDao.salesReps(conn).stream().noneMatch(r -> r.getId() == c.getSalesRepId())) {
             throw new ServiceException("Người phụ trách phải là nhân viên kinh doanh đang hoạt động.");
         }
     }

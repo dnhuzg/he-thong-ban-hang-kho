@@ -27,11 +27,41 @@ public class CustomerDao {
             + "LEFT JOIN users u ON u.id = c.sales_rep_id";
 
     /** Đại lý thuộc một nhân viên đã bị khoá: cần bàn giao cho người khác. */
-    public record HandoverItem(String customerCode, String customerName, String repFullName, String repUsername) {
+    public record HandoverItem(String customerCode, String customerName, long repId, String repFullName, String repUsername) {
+        public long getRepId() { return repId; }
         public String getCustomerCode() { return customerCode; }
         public String getCustomerName() { return customerName; }
         public String getRepFullName() { return repFullName; }
         public String getRepUsername() { return repUsername; }
+    }
+
+    /** Nhân viên đang phụ trách ít nhất một đại lý, kèm số đại lý; locked để đánh dấu người đã bị khoá. */
+    public record RepLoad(long id, String name, boolean locked, long customers) {
+        public long getId() { return id; }
+        public String getName() { return name; }
+        public boolean isLocked() { return locked; }
+        public long getCustomers() { return customers; }
+    }
+
+    public List<RepLoad> repsWithCustomers(Connection conn) throws SQLException {
+        List<RepLoad> reps = new ArrayList<>();
+        String sql = "SELECT u.id, CONCAT(u.full_name, ' (', u.username, ')'), u.status, COUNT(*) FROM customers c "
+                + "JOIN users u ON u.id = c.sales_rep_id GROUP BY u.id, u.full_name, u.username, u.status ORDER BY u.full_name, u.username";
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                reps.add(new RepLoad(rs.getLong(1), rs.getString(2), "LOCKED".equals(rs.getString(3)), rs.getLong(4)));
+            }
+        }
+        return reps;
+    }
+
+    public void updateSalesRep(Connection conn, long id, Long repId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE customers SET sales_rep_id = ? WHERE id = ?")) {
+            setLong(ps, 1, repId);
+            ps.setLong(2, id);
+            ps.executeUpdate();
+        }
     }
 
     /** Điều kiện tìm đại lý; trường null hoặc rỗng là không lọc. ownRepId chỉ dùng cho người chỉ xem đại lý của mình. */
@@ -191,12 +221,12 @@ public class CustomerDao {
 
     public List<HandoverItem> findNeedingHandover(Connection conn) throws SQLException {
         List<HandoverItem> items = new ArrayList<>();
-        String sql = "SELECT c.code, c.name, u.full_name, u.username FROM customers c "
+        String sql = "SELECT c.code, c.name, u.id, u.full_name, u.username FROM customers c "
                 + "JOIN users u ON u.id = c.sales_rep_id WHERE u.status = 'LOCKED' ORDER BY u.full_name, c.name";
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                items.add(new HandoverItem(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)));
+                items.add(new HandoverItem(rs.getString(1), rs.getString(2), rs.getLong(3), rs.getString(4), rs.getString(5)));
             }
         }
         return items;
