@@ -74,6 +74,11 @@ public class PermissionPolicy {
         return roles.contains(Role.ADMIN) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ACCOUNTANT);
     }
 
+    /** Ràng buộc cố định: hạn mức công nợ và số ngày nợ chỉ Kế toán công nợ, Quản lý kinh doanh (và Admin) sửa. */
+    public static boolean canManageCredit(Set<Role> roles) {
+        return roles.contains(Role.ACCOUNTANT) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
+    }
+
     /** Đại lý (tài khoản khách) chưa có cổng riêng nên không xem được danh sách đại lý; kho cũng không có quyền xem. */
     public static boolean canBrowseCustomers(Set<Role> roles) {
         return canManageCustomers(roles) || roles.contains(Role.SALES_REP);
