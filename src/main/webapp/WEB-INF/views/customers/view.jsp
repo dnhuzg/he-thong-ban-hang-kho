@@ -1,5 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<fmt:setLocale value="vi_VN"/>
 <c:set var="pageTitle" value="${customer.name}"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 
@@ -30,6 +32,88 @@
             <div><dt>Người phụ trách</dt><dd><c:out value="${empty customer.salesRepName ? 'Chưa phân công' : customer.salesRepName}"/></dd></div>
           </dl>
         </section>
+
+        <section class="card credit-card" id="han-muc-cong-no">
+          <div class="card__header dp-card__header">
+            <div>
+              <h2>Hạn mức công nợ</h2>
+              <p>Kiểm tra ngay khi chốt đơn: đơn vượt hạn mức hoặc quá số ngày nợ phải qua duyệt.</p>
+            </div>
+            <c:if test="${canManageCredit}">
+              <button class="btn btn--secondary btn--sm" type="button" data-dialog-open="credit-edit">Sửa hạn mức</button>
+            </c:if>
+          </div>
+          <div class="credit-stats">
+            <div class="credit-stat">
+              <p class="credit-stat__label">Hạn mức nợ tối đa</p>
+              <p class="credit-stat__value">
+                <c:choose>
+                  <c:when test="${customer.creditLimit.signum() == 0}">Không cho nợ</c:when>
+                  <c:otherwise><fmt:formatNumber value="${customer.creditLimit}" maxFractionDigits="2"/> ₫</c:otherwise>
+                </c:choose>
+              </p>
+            </div>
+            <div class="credit-stat">
+              <p class="credit-stat__label">Số ngày nợ tối đa</p>
+              <p class="credit-stat__value">
+                <c:choose>
+                  <c:when test="${customer.creditDays == 0}">Thanh toán ngay</c:when>
+                  <c:otherwise>${customer.creditDays} ngày</c:otherwise>
+                </c:choose>
+              </p>
+            </div>
+          </div>
+          <div class="credit-history">
+            <h3>Lịch sử thay đổi</h3>
+            <c:if test="${empty creditHistory}"><p class="text-muted credit-history__empty">Chưa có thay đổi nào.</p></c:if>
+            <c:forEach var="ch" items="${creditHistory}">
+              <article class="credit-change">
+                <p class="credit-change__what">
+                  <fmt:formatNumber value="${ch.oldLimit}" maxFractionDigits="2"/> ₫ / ${ch.oldDays} ngày
+                  <span aria-hidden="true">→</span><span class="visually-hidden">thành</span>
+                  <strong><fmt:formatNumber value="${ch.newLimit}" maxFractionDigits="2"/> ₫ / ${ch.newDays} ngày</strong>
+                </p>
+                <p class="credit-change__reason">Lý do: <c:out value="${ch.reason}"/></p>
+                <p class="credit-change__meta"><c:out value="${ch.changedByName}"/> · <c:out value="${ch.changedAt.toString().replace('T', ' ').substring(0, 16)}"/></p>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+
+        <c:if test="${canManageCredit}">
+          <dialog class="dialog" id="credit-edit" aria-labelledby="credit-edit-title">
+            <form action="${ctx}/customers/credit/save" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="customerId" value="${customer.id}">
+              <div class="dialog__header"><h2 id="credit-edit-title">Sửa hạn mức công nợ</h2></div>
+              <div class="dialog__body dp-form">
+                <div class="form-card__row">
+                  <div class="form-field">
+                    <label class="form-label" for="credit-limit">Hạn mức nợ tối đa (₫) <span class="required">*</span></label>
+                    <input class="input" id="credit-limit" name="creditLimit" inputmode="decimal" required aria-describedby="credit-limit-hint"
+                           value="${customer.creditLimit.stripTrailingZeros().toPlainString()}">
+                    <p class="form-hint" id="credit-limit-hint">Nhập 0 nếu không cho nợ.</p>
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="credit-days">Số ngày nợ tối đa <span class="required">*</span></label>
+                    <input class="input" id="credit-days" name="creditDays" inputmode="numeric" required aria-describedby="credit-days-hint"
+                           value="${customer.creditDays}">
+                    <p class="form-hint" id="credit-days-hint">Từ 0 đến 365 ngày.</p>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="credit-reason">Lý do thay đổi <span class="required">*</span></label>
+                  <textarea class="textarea" id="credit-reason" name="reason" maxlength="500" required></textarea>
+                  <p class="form-hint">Lý do được lưu vào lịch sử và nhật ký thao tác, không sửa hay xoá được.</p>
+                </div>
+              </div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--primary" type="submit">Lưu hạn mức</button>
+              </div>
+            </form>
+          </dialog>
+        </c:if>
 
         <section class="card dp-card" id="diem-giao-hang">
           <div class="card__header dp-card__header">

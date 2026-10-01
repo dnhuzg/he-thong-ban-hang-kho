@@ -126,3 +126,7 @@ WHERE pl.code IN ('BG-DL1', 'BG-DL2', 'BG-LE') AND pl.version = 1 AND p.cost_pri
 -- Điểm giao hàng mẫu (S3-04): trụ sở làm điểm mặc định của mỗi đại lý
 INSERT INTO customer_delivery_points (customer_id, address, receiver_name, receiver_phone, is_default)
 SELECT c.id, CONCAT('Trụ sở ', c.name), c.name, COALESCE(c.phone, '0900000000'), TRUE FROM customers c;
+
+-- Hạn mức công nợ mẫu (S3-05): đại lý cấp 1 nợ tối đa 500 triệu / 30 ngày, cấp 2 là 200 triệu / 15 ngày
+UPDATE customers SET credit_limit = 500000000, credit_days = 30 WHERE group_id = (SELECT id FROM customer_groups WHERE code = 'DL1');
+UPDATE customers SET credit_limit = 200000000, credit_days = 15 WHERE group_id = (SELECT id FROM customer_groups WHERE code = 'DL2');

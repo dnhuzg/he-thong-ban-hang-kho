@@ -51,8 +51,15 @@ public abstract class DatabaseTest {
                     CREATE TABLE customers (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(200),
                         phone VARCHAR(20), tax_code VARCHAR(14) UNIQUE, area_id BIGINT REFERENCES areas(id),
                         group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id),
-                        status VARCHAR(20) DEFAULT 'ACTIVE', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        status VARCHAR(20) DEFAULT 'ACTIVE', credit_limit DECIMAL(15,2) DEFAULT 0 NOT NULL,
+                        credit_days INT DEFAULT 0 NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_credit_history (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, old_limit DECIMAL(15,2),
+                        new_limit DECIMAL(15,2), old_days INT, new_days INT, reason VARCHAR(500),
+                        changed_by BIGINT REFERENCES users(id), changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
             statement.execute("""
                     CREATE TABLE customer_delivery_points (id BIGINT AUTO_INCREMENT PRIMARY KEY,

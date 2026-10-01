@@ -3,6 +3,7 @@ package com.oms.dao;
 import com.oms.model.Customer;
 import com.oms.model.PageResult;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,7 +22,7 @@ import java.util.Map;
 public class CustomerDao {
 
     private static final String SELECT = "SELECT c.id, c.code, c.name, c.phone, c.tax_code, c.group_id, g.name AS group_name, "
-            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.created_at "
+            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.credit_limit, c.credit_days, c.created_at "
             + "FROM customers c LEFT JOIN customer_groups g ON g.id = c.group_id LEFT JOIN areas a ON a.id = c.area_id "
             + "LEFT JOIN users u ON u.id = c.sales_rep_id";
 
@@ -137,6 +138,15 @@ public class CustomerDao {
         }
     }
 
+    public void updateCredit(Connection conn, long id, BigDecimal limit, int days) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE customers SET credit_limit = ?, credit_days = ? WHERE id = ?")) {
+            ps.setBigDecimal(1, limit);
+            ps.setInt(2, days);
+            ps.setLong(3, id);
+            ps.executeUpdate();
+        }
+    }
+
     public void delete(Connection conn, long id) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("DELETE FROM customers WHERE id = ?")) {
             ps.setLong(1, id);
@@ -236,6 +246,8 @@ public class CustomerDao {
         c.setSalesRepId(longOrNull(rs, "sales_rep_id"));
         c.setSalesRepName(rs.getString("rep_name"));
         c.setStatus(Customer.Status.valueOf(rs.getString("status")));
+        c.setCreditLimit(rs.getBigDecimal("credit_limit"));
+        c.setCreditDays(rs.getInt("credit_days"));
         Timestamp created = rs.getTimestamp("created_at");
         c.setCreatedAt(created == null ? null : created.toLocalDateTime());
         return c;

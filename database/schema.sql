@@ -103,6 +103,8 @@ CREATE TABLE customers (
   group_id      BIGINT       NULL,
   sales_rep_id  BIGINT       NULL,
   status        ENUM('ACTIVE','LOCKED') NOT NULL DEFAULT 'ACTIVE',
+  credit_limit  DECIMAL(15,2) NOT NULL DEFAULT 0,
+  credit_days   INT          NOT NULL DEFAULT 0,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -110,6 +112,7 @@ CREATE TABLE customers (
   UNIQUE KEY uk_customers_tax_code (tax_code),
   KEY idx_customers_name (name),
   KEY idx_customers_sales_rep (sales_rep_id),
+  CONSTRAINT chk_customers_credit CHECK (credit_limit >= 0 AND credit_days >= 0),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
   CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
@@ -129,6 +132,23 @@ CREATE TABLE customer_delivery_points (
   PRIMARY KEY (id),
   KEY idx_delivery_points_customer (customer_id),
   CONSTRAINT fk_delivery_points_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-05: lịch sử thay đổi hạn mức công nợ (chỉ thêm, không sửa / xoá); mọi lần đổi bắt buộc có lý do
+CREATE TABLE customer_credit_history (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  old_limit     DECIMAL(15,2) NOT NULL,
+  new_limit     DECIMAL(15,2) NOT NULL,
+  old_days      INT           NOT NULL,
+  new_days      INT           NOT NULL,
+  reason        VARCHAR(500)  NOT NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_credit_history_customer (customer_id, changed_at),
+  CONSTRAINT fk_credit_history_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_credit_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.

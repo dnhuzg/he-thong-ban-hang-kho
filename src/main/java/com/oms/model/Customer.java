@@ -1,5 +1,6 @@
 package com.oms.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /** Đại lý (EP-03). Nhóm khách hàng quyết định bảng giá áp dụng; người phụ trách quyết định ai được xem. */
@@ -36,6 +37,8 @@ public class Customer {
     private Long salesRepId;
     private String salesRepName;
     private Status status = Status.ACTIVE;
+    private BigDecimal creditLimit = BigDecimal.ZERO;
+    private int creditDays;
     private LocalDateTime createdAt;
 
     public boolean isLocked() {
@@ -66,6 +69,12 @@ public class Customer {
     public void setSalesRepName(String salesRepName) { this.salesRepName = salesRepName; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    /** Hạn mức nợ tối đa (₫); 0 là không cho nợ. */
+    public BigDecimal getCreditLimit() { return creditLimit; }
+    public void setCreditLimit(BigDecimal creditLimit) { this.creditLimit = creditLimit; }
+    /** Số ngày nợ tối đa; 0 là phải thanh toán ngay. */
+    public int getCreditDays() { return creditDays; }
+    public void setCreditDays(int creditDays) { this.creditDays = creditDays; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
