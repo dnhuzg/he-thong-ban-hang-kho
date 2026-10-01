@@ -151,6 +151,24 @@ CREATE TABLE customer_credit_history (
   CONSTRAINT fk_credit_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S3-06: lịch sử phân công người phụ trách đại lý (chỉ thêm, không sửa / xoá); null là chưa có người phụ trách
+CREATE TABLE customer_assignments (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  from_user_id  BIGINT        NULL,
+  to_user_id    BIGINT        NULL,
+  reason        VARCHAR(500)  NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_assignments_customer (customer_id, changed_at),
+  KEY idx_assignments_changed_at (changed_at),
+  CONSTRAINT fk_assignments_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_assignments_from FOREIGN KEY (from_user_id) REFERENCES users (id),
+  CONSTRAINT fk_assignments_to FOREIGN KEY (to_user_id) REFERENCES users (id),
+  CONSTRAINT fk_assignments_by FOREIGN KEY (changed_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
 CREATE TABLE product_categories (
   id          BIGINT       NOT NULL AUTO_INCREMENT,
