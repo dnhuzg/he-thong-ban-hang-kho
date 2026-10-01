@@ -157,6 +157,15 @@ document.addEventListener("DOMContentLoaded", () => {
     content.prepend(alert);
   }
 
+  // Chính sách chiết khấu: chỉ hiện ô chọn sản phẩm hoặc nhóm hàng theo phạm vi đã chọn
+  document.querySelectorAll("select[data-scope-switch]").forEach((select) => {
+    const apply = () => document.querySelectorAll("[data-scope-field]").forEach((el) => {
+      el.hidden = el.dataset.scopeField !== select.value;
+    });
+    select.addEventListener("change", apply);
+    apply();
+  });
+
   // Mở / đóng <dialog>
   document.querySelectorAll("[data-dialog-open]").forEach((btn) => {
     btn.addEventListener("click", () => {

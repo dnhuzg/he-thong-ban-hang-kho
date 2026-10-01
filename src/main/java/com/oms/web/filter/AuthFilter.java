@@ -71,6 +71,7 @@ public class AuthFilter implements Filter {
                 req.setAttribute(SessionKeys.CURRENT_USER, user);
                 req.setAttribute("menu", Menu.build(user, policy, path));
                 req.setAttribute("canViewCostPrice", PermissionPolicy.canViewCostPrice(user.getRoles()));
+                req.setAttribute("canManageDiscounts", PermissionPolicy.canManageDiscounts(user.getRoles()));
             }
 
             if (AccessRules.isPublic(path)) {
