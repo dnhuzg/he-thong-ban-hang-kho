@@ -65,7 +65,7 @@
                   <th scope="col" class="col-unit">ĐVT cơ sở</th>
                   <c:if test="${canViewCostPrice}"><th scope="col" class="num col-cost">Giá vốn</th></c:if>
                   <th scope="col" class="col-status">Trạng thái</th>
-                  <c:if test="${canWrite}"><th scope="col" class="col-menu"><span class="visually-hidden">Thao tác</span></th></c:if>
+                  <c:if test="${canWrite or canViewPriceLists}"><th scope="col" class="col-menu"><span class="visually-hidden">Thao tác</span></th></c:if>
                 </tr>
               </thead>
               <tbody>
@@ -102,13 +102,16 @@
                     <td>
                       <span class="badge ${p.status == 'ACTIVE' ? 'badge--success' : ''}"><c:out value="${p.status.label}"/></span>
                     </td>
-                    <c:if test="${canWrite}">
+                    <c:if test="${canWrite or canViewPriceLists}">
                       <td>
                         <details class="row-menu">
                           <summary aria-label="Thao tác với <c:out value='${p.sku}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
                           <div class="row-menu__panel">
-                            <a href="${ctx}/products/edit?id=${p.id}">Sửa</a>
-                            <button type="button" class="is-danger" data-dialog-open="delete-${p.id}">Xoá</button>
+                            <c:if test="${canViewPriceLists}"><a href="${ctx}/products/price-history?id=${p.id}">Lịch sử giá</a></c:if>
+                            <c:if test="${canWrite}">
+                              <a href="${ctx}/products/edit?id=${p.id}">Sửa</a>
+                              <button type="button" class="is-danger" data-dialog-open="delete-${p.id}">Xoá</button>
+                            </c:if>
                           </div>
                         </details>
                       </td>
@@ -134,12 +137,15 @@
                     <p class="product-card__name"><c:out value="${p.name}"/></p>
                     <p class="product-card__sku"><c:out value="${p.sku}"/></p>
                   </div>
-                  <c:if test="${canWrite}">
+                  <c:if test="${canWrite or canViewPriceLists}">
                     <details class="row-menu">
                       <summary aria-label="Thao tác với <c:out value='${p.sku}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
                       <div class="row-menu__panel">
-                        <a href="${ctx}/products/edit?id=${p.id}">Sửa</a>
-                        <button type="button" class="is-danger" data-dialog-open="delete-${p.id}">Xoá</button>
+                        <c:if test="${canViewPriceLists}"><a href="${ctx}/products/price-history?id=${p.id}">Lịch sử giá</a></c:if>
+                        <c:if test="${canWrite}">
+                          <a href="${ctx}/products/edit?id=${p.id}">Sửa</a>
+                          <button type="button" class="is-danger" data-dialog-open="delete-${p.id}">Xoá</button>
+                        </c:if>
                       </div>
                     </details>
                   </c:if>

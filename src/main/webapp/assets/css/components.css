@@ -1655,3 +1655,17 @@ a.pl-row:hover .pl-row__title {
 .toolbar .toolbar__wide {
   flex: 0 1 340px;
 }
+
+/* Lịch sử đổi giá của sản phẩm (S3-02) */
+.price-history__old {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.price-history__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+}

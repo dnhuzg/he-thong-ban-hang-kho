@@ -49,6 +49,7 @@ public final class AccessRules {
             Map.entry("/suppliers/new", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/suppliers/edit", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/suppliers/delete", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/products/price-history", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/price-lists", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/price-lists/view", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/price-lists/new", new Rule(Kind.WRITE, Module.PRODUCT)),
