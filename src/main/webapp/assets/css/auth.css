@@ -55,3 +55,177 @@
   text-align: center;
   font-size: var(--font-size-sm);
 }
+
+/* ---------- Đăng nhập hai cột (theo thiết kế Figma): giới thiệu bên trái, biểu mẫu bên phải ---------- */
+
+.auth-split {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.auth-hero {
+  flex: 0 0 640px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: 64px;
+  background: var(--color-brand-dark);
+  color: var(--color-text-inverse);
+}
+
+.auth-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.logo-mark--lg {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+}
+
+.logo-mark--sm {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.auth-hero__title {
+  margin: 0 0 var(--space-4);
+  font-size: 2.5rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--color-text-inverse);
+}
+
+.auth-hero__text {
+  margin: 0 0 var(--space-6);
+  color: var(--color-brand-text);
+  font-size: 1rem;
+}
+
+.auth-flow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-5);
+  border: 1px solid var(--color-on-brand-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-on-brand-faint);
+}
+
+.auth-flow__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.75rem;
+  color: var(--color-brand-text);
+}
+
+.auth-flow__tile {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  background: var(--color-on-brand-soft);
+}
+
+.auth-flow__arrow {
+  align-self: flex-start;
+  margin-top: 26px;
+}
+
+.auth-hero__foot {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-brand-text);
+}
+
+.auth-split__panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: 64px var(--space-5);
+}
+
+.auth-card--split {
+  max-width: 416px;
+  padding: var(--space-6);
+  box-shadow: none;
+}
+
+.auth-card--split .auth-card__brand {
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.auth-card__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+.auth-card__brand-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.auth-card__brand-tag {
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.auth-card__head {
+  margin-bottom: var(--space-5);
+}
+
+.auth-card--split .auth-card__title {
+  margin-bottom: var(--space-2);
+  font-size: 1.75rem;
+}
+
+.auth-card__subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.auth-card--split .input {
+  min-height: 44px;
+}
+
+.auth-card--split .btn--block {
+  min-height: 44px;
+}
+
+.auth-split__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 960px) {
+  .auth-hero {
+    display: none;
+  }
+
+  .auth-split__panel {
+    padding: var(--space-4);
+  }
+}
