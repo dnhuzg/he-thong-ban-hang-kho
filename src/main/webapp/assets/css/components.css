@@ -827,6 +827,18 @@
   border: 0;
 }
 
+/* Ô tìm cần nút Tìm nhìn thấy (người dùng không biết nhấn Enter): đơn hàng, chọn đại lý */
+.toolbar__submit.toolbar__submit--show {
+  position: static;
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  overflow: visible;
+  clip: auto;
+  border: 1px solid var(--color-border);
+}
+
 .list-summary {
   display: flex;
   align-items: center;

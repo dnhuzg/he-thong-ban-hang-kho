@@ -79,7 +79,7 @@
                 <span class="icon icon--search" aria-hidden="true"></span>
                 <input id="pq" name="q" type="search" placeholder="Mã hoặc tên sản phẩm" value="<c:out value='${q}'/>">
               </div>
-              <button class="btn btn--secondary toolbar__submit" type="submit">Tìm</button>
+              <button class="btn btn--secondary toolbar__submit toolbar__submit--show" type="submit">Tìm</button>
             </form>
 
             <c:if test="${not empty q and empty choices}">
