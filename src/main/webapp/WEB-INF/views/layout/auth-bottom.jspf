@@ -5,5 +5,6 @@
   </c:if>
   </main>
   <script src="${ctx}/assets/js/app.js?v=${assetVersion}"></script>
+  <script src="${ctx}/assets/js/effects.js?v=${assetVersion}"></script>
 </body>
 </html>

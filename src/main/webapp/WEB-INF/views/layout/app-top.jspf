@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
-  <%@ include file="/WEB-INF/views/layout/theme-init.jspf" %>
+  <%@ include file="/WEB-INF/views/effects/theme-init.jspf" %>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="${ctx}/assets/css/layout.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/icons.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/effects.css?v=${assetVersion}">
 </head>
 <body data-ctx="${ctx}">
   <div class="app">
@@ -59,7 +60,7 @@
         </a>
         <p class="topbar__context"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span>Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
         <c:set var="themeSwitchFloating" value="${false}"/>
-        <%@ include file="/WEB-INF/views/layout/theme-switch.jspf" %>
+        <%@ include file="/WEB-INF/views/effects/theme-switch.jspf" %>
         <details class="user-menu">
           <summary>
             <c:choose>
