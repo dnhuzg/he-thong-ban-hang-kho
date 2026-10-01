@@ -44,7 +44,7 @@
                     <td class="num">${cat.totalProductCount}</td>
                     <c:if test="${canWrite}">
                       <td>
-                        <div class="table__actions">
+                        <div class="table__actions table__actions--slots">
                           <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="add-${cat.id}">+ Nhóm con</button>
                           <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="rename-${cat.id}">Đổi tên</button>
                           <c:if test="${cat.productCount > 0}">
@@ -53,6 +53,7 @@
                           <c:if test="${cat.productCount == 0 and not cat.hasChildren}">
                             <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="delete-${cat.id}">Xoá</button>
                           </c:if>
+                          <c:if test="${cat.productCount == 0 and cat.hasChildren}"><span></span></c:if>
                         </div>
 
                         <dialog class="dialog" id="add-${cat.id}" aria-labelledby="add-title-${cat.id}">
