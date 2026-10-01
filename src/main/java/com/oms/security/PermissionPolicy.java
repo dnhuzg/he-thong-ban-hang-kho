@@ -84,6 +84,11 @@ public class PermissionPolicy {
         return roles.contains(Role.ACCOUNTANT) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
     }
 
+    /** Ràng buộc cố định: chính sách chiết khấu theo sản lượng chỉ Quản lý kinh doanh (và Admin) khai báo. */
+    public static boolean canManageDiscounts(Set<Role> roles) {
+        return roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
+    }
+
     /** Đại lý (tài khoản khách) chưa có cổng riêng nên không xem được danh sách đại lý; kho cũng không có quyền xem. */
     public static boolean canBrowseCustomers(Set<Role> roles) {
         return canManageCustomers(roles) || roles.contains(Role.SALES_REP);
