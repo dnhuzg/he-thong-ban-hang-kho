@@ -53,6 +53,8 @@ File này hướng dẫn Claude Code cách làm việc trong repo này. Hãy đ�
 
 ## Cơ sở dữ liệu
 
+Dữ liệu demo lớn (118 nhóm hàng nhiều cấp, 416 sản phẩm FMCG kèm quy đổi đơn vị) nằm ở `database/demo/demo_catalog.sql` (chạy lại an toàn, không đổi dữ liệu có sẵn); gỡ bằng `demo_catalog_remove.sql`; nguồn có cấu trúc ở `database/demo/source/` (sửa `data.js` rồi chạy `gen.js`). Không phải migration, chỉ chạy khi cần dữ liệu thử.
+
 Hiện dùng schema tự thiết kế cho Sprint 1 trong `database/schema.sql` + `seed.sql`. Thiết kế đầy đủ của nhóm là `OMS_schema_mysql.sql` (69 bảng) nhưng file này chưa có trong repo; khi có thì phải đối chiếu và chuyển sang.
 
 ## Môi trường
