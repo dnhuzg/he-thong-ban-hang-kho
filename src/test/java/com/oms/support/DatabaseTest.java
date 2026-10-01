@@ -113,6 +113,13 @@ public abstract class DatabaseTest {
                         product_id BIGINT REFERENCES products(id), sale_price DECIMAL(15,2), floor_price DECIMAL(15,2),
                         PRIMARY KEY (price_list_id, product_id), CHECK (floor_price >= 0 AND floor_price <= sale_price))
                     """);
+            statement.execute("""
+                    CREATE TABLE price_history (id BIGINT AUTO_INCREMENT PRIMARY KEY, product_id BIGINT REFERENCES products(id),
+                        price_list_id BIGINT REFERENCES price_lists(id), change_type VARCHAR(10),
+                        old_sale_price DECIMAL(15,2), old_floor_price DECIMAL(15,2), new_sale_price DECIMAL(15,2),
+                        new_floor_price DECIMAL(15,2), effective_from DATE, changed_by BIGINT REFERENCES users(id),
+                        changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
