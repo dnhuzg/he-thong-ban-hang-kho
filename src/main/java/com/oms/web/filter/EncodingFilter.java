@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -21,6 +22,11 @@ public class EncodingFilter implements Filter {
         resp.setHeader("X-Content-Type-Options", "nosniff");
         resp.setHeader("X-Frame-Options", "DENY");
         resp.setHeader("Referrer-Policy", "same-origin");
+        // Bắt trình duyệt hỏi lại máy chủ (ETag) trước khi dùng CSS/JS đã lưu, để sửa giao diện có hiệu lực ngay
+        HttpServletRequest req = (HttpServletRequest) request;
+        if (req.getRequestURI().startsWith(req.getContextPath() + "/assets/")) {
+            resp.setHeader("Cache-Control", "no-cache");
+        }
         chain.doFilter(request, response);
     }
 }
