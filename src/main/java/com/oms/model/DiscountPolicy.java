@@ -110,6 +110,10 @@ public class DiscountPolicy {
     }
 
     public String valueText(BigDecimal value) {
+        return valueText(type, value);
+    }
+
+    public static String valueText(Type type, BigDecimal value) {
         NumberFormat nf = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
         nf.setMaximumFractionDigits(2);
         return type == Type.PERCENT ? nf.format(value) + "%" : nf.format(value) + " ₫/đơn vị";

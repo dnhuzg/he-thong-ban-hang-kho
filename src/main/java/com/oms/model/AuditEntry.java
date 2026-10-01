@@ -48,6 +48,9 @@ public class AuditEntry {
             Map.entry("DISCOUNT_CREATE", "Tạo chính sách chiết khấu"),
             Map.entry("DISCOUNT_UPDATE", "Sửa chính sách chiết khấu"),
             Map.entry("DISCOUNT_DELETE", "Xoá chính sách chiết khấu"),
+            Map.entry("ORDER_CREATE", "Tạo đơn nháp"),
+            Map.entry("ORDER_UPDATE", "Sửa thông tin giao hàng của đơn"),
+            Map.entry("ORDER_DELETE", "Xoá đơn nháp"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
             Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
             Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),
@@ -73,6 +76,7 @@ public class AuditEntry {
         TARGET_LABELS.put("SUPPLIER", "Nhà cung cấp");
         TARGET_LABELS.put("PRICE_LIST", "Bảng giá");
         TARGET_LABELS.put("CUSTOMER", "Đại lý");
+        TARGET_LABELS.put("ORDER", "Đơn hàng");
         TARGET_LABELS.put("DISCOUNT_POLICY", "Chính sách chiết khấu");
     }
 
