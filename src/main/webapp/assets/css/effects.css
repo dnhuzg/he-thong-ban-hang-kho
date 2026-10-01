@@ -281,3 +281,398 @@
     transition: none !important;
   }
 }
+
+/* Chiếc TV nhiễu hạt cho trang "Không tìm thấy" (nguồn: Uiverse.io, Praashoo7). Mọi selector nằm trong .tv-scene */
+.tv-scene {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30em;
+  height: 25em;
+  margin: 0 auto;
+  font-size: min(0.85rem, 2.9vw);
+  font-family: var(--font-family);
+}
+
+.tv-scene .main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5em;
+}
+
+.tv-scene .antenna {
+  width: 5em;
+  height: 5em;
+  margin-bottom: -6em;
+  background-color: var(--tv-antenna);
+  border: 2px solid var(--tv-black);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.tv-scene .antenna_shadow {
+  position: absolute;
+  width: 50px;
+  height: 56px;
+  margin-left: 1.68em;
+  background-color: transparent;
+  border: 4px solid transparent;
+  border-radius: 45%;
+  box-shadow:
+    inset 0 16px var(--tv-antenna-shadow),
+    inset 0 16px 1px 1px var(--tv-antenna-shadow);
+  transform: rotate(140deg);
+}
+
+.tv-scene .antenna::after {
+  content: "";
+  position: absolute;
+  width: 1em;
+  height: 0.5em;
+  margin-top: -9.4em;
+  margin-left: 0.4em;
+  background-color: var(--tv-antenna-shine);
+  border-radius: 50%;
+  transform: rotate(-25deg);
+}
+
+.tv-scene .antenna::before {
+  content: "";
+  position: absolute;
+  width: 1.5em;
+  height: 0.8em;
+  margin-top: 0.2em;
+  margin-left: 1.25em;
+  background-color: var(--tv-antenna-shine);
+  border-radius: 50%;
+  transform: rotate(-20deg);
+}
+
+.tv-scene .a1 {
+  position: relative;
+  top: -102%;
+  left: -130%;
+  width: 12em;
+  height: 5.5em;
+  background-image: linear-gradient(var(--tv-rod-1), var(--tv-rod-1), var(--tv-rod-2), var(--tv-rod-2), var(--tv-rod-1));
+  border-radius: 50px;
+  clip-path: polygon(50% 0%, 49% 100%, 52% 100%);
+  transform: rotate(-29deg);
+}
+
+.tv-scene .a1d,
+.tv-scene .a2d {
+  position: relative;
+  width: 0.5em;
+  height: 0.5em;
+  background-color: var(--tv-tip);
+  border: 2px solid var(--tv-black);
+  border-radius: 50%;
+  z-index: 99;
+}
+
+.tv-scene .a1d {
+  top: -211%;
+  left: -35%;
+  transform: rotate(45deg);
+}
+
+.tv-scene .a2 {
+  position: relative;
+  top: -210%;
+  left: -10%;
+  width: 12em;
+  height: 4em;
+  margin-right: 5em;
+  background-color: var(--tv-rod-1);
+  background-image: linear-gradient(var(--tv-rod-1), var(--tv-rod-1), var(--tv-rod-2), var(--tv-rod-2), var(--tv-rod-1));
+  border-radius: 50px;
+  clip-path: polygon(47% 0, 47% 0, 34% 34%, 54% 25%, 32% 100%, 29% 96%, 49% 32%, 30% 38%);
+  transform: rotate(-8deg);
+}
+
+.tv-scene .a2d {
+  top: -294%;
+  left: 94%;
+}
+
+.tv-scene .notfound_text {
+  padding-right: 0.3em;
+  padding-left: 0.3em;
+  background-color: var(--tv-black);
+  border-radius: 5px;
+  color: var(--tv-white);
+  font-size: 0.75em;
+  letter-spacing: 0;
+  z-index: 10;
+}
+
+.tv-scene .tv {
+  display: flex;
+  justify-content: center;
+  width: 17em;
+  height: 9em;
+  margin-top: 3em;
+  background-color: var(--tv-body);
+  border: 2px solid var(--tv-line);
+  border-radius: 15px;
+  box-shadow: inset 0.2em 0.2em var(--tv-body-light);
+}
+
+.tv-scene .tv::after {
+  content: "";
+  position: absolute;
+  width: 17em;
+  height: 9em;
+  background:
+    repeating-radial-gradient(var(--tv-body) 0 0.0001%, #00000070 0 0.0002%) 50% 0 / 2500px 2500px,
+    repeating-conic-gradient(var(--tv-body) 0 0.0001%, #00000070 0 0.0002%) 60% 60% / 2500px 2500px;
+  background-blend-mode: difference;
+  border-radius: 15px;
+  opacity: 0.09;
+}
+
+.tv-scene .display_div {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  border-radius: 15px;
+  box-shadow: 3.5px 3.5px 0 var(--tv-body-light);
+}
+
+.tv-scene .screen_out1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 11em;
+  height: 7.75em;
+  border-radius: 10px;
+}
+
+.tv-scene .screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13em;
+  height: 7.85em;
+  background:
+    repeating-radial-gradient(var(--tv-black) 0 0.0001%, var(--tv-white) 0 0.0002%) 50% 0 / 2500px 2500px,
+    repeating-conic-gradient(var(--tv-black) 0 0.0001%, var(--tv-white) 0 0.0002%) 60% 60% / 2500px 2500px;
+  background-blend-mode: difference;
+  border: 2px solid var(--tv-line);
+  border-radius: 10px;
+  animation: tv-static 0.2s infinite alternate;
+  color: var(--tv-screen-text);
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-align: center;
+  z-index: 99;
+}
+
+@keyframes tv-static {
+  100% { background-position: 50% 0, 60% 50%; }
+}
+
+.tv-scene .lines {
+  display: flex;
+  align-self: flex-end;
+  column-gap: 0.1em;
+}
+
+.tv-scene .line1,
+.tv-scene .line3 {
+  width: 2px;
+  height: 0.5em;
+  margin-top: 0.5em;
+  background-color: var(--tv-black);
+  border-radius: 25px 25px 0 0;
+}
+
+.tv-scene .line2 {
+  flex-grow: 1;
+  width: 2px;
+  height: 1em;
+  background-color: var(--tv-black);
+  border-radius: 25px 25px 0 0;
+}
+
+.tv-scene .buttons_div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  row-gap: 0.75em;
+  width: 4.25em;
+  height: 8em;
+  padding: 0.6em;
+  background-color: var(--tv-body-light);
+  border: 2px solid var(--tv-line);
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--tv-body-light);
+}
+
+.tv-scene .b1,
+.tv-scene .b2 {
+  width: 1.65em;
+  height: 1.65em;
+  background-color: var(--tv-knob);
+  border: 2px solid var(--tv-black);
+  border-radius: 50%;
+  box-shadow:
+    inset 2px 2px 1px var(--tv-knob-light),
+    -2px 0 var(--tv-knob-dark),
+    -2px 0 0 1px var(--tv-black);
+}
+
+.tv-scene .b1::before {
+  content: "";
+  position: absolute;
+  width: 0.1em;
+  height: 0.4em;
+  margin-top: 1em;
+  margin-left: 0.5em;
+  background-color: var(--tv-black);
+  border-radius: 5px;
+  transform: rotate(47deg);
+}
+
+.tv-scene .b1::after {
+  content: "";
+  position: absolute;
+  width: 0.1em;
+  height: 0.55em;
+  margin-top: 0.9em;
+  margin-left: 0.8em;
+  background-color: var(--tv-black);
+  border-radius: 5px;
+  transform: rotate(47deg);
+}
+
+.tv-scene .b1 div {
+  position: absolute;
+  width: 0.15em;
+  height: 1.5em;
+  margin-top: -0.1em;
+  margin-left: 0.65em;
+  background-color: var(--tv-black);
+  transform: rotate(45deg);
+}
+
+.tv-scene .b2::before {
+  content: "";
+  position: absolute;
+  width: 0.15em;
+  height: 0.4em;
+  margin-top: 1.05em;
+  margin-left: 0.8em;
+  background-color: var(--tv-black);
+  border-radius: 5px;
+  transform: rotate(-45deg);
+}
+
+.tv-scene .b2::after {
+  content: "";
+  position: absolute;
+  width: 0.15em;
+  height: 1.5em;
+  margin-top: -0.1em;
+  margin-left: 0.65em;
+  background-color: var(--tv-black);
+  transform: rotate(-45deg);
+}
+
+.tv-scene .speakers {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5em;
+}
+
+.tv-scene .g1 {
+  display: flex;
+  column-gap: 0.25em;
+}
+
+.tv-scene .g11,
+.tv-scene .g12,
+.tv-scene .g13 {
+  width: 0.65em;
+  height: 0.65em;
+  background-color: var(--tv-knob);
+  border: 2px solid var(--tv-black);
+  border-radius: 50%;
+  box-shadow: inset 1.25px 1.25px 1px var(--tv-knob-light);
+}
+
+.tv-scene .g {
+  width: auto;
+  height: 2px;
+  background-color: var(--tv-rod-1);
+}
+
+.tv-scene .bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 8.7em;
+  width: 100%;
+}
+
+.tv-scene .base1,
+.tv-scene .base2 {
+  width: 2em;
+  height: 1em;
+  margin-top: -0.15em;
+  background-color: var(--tv-base);
+  border: 2px solid var(--tv-rod-1);
+  z-index: -1;
+}
+
+.tv-scene .base3 {
+  position: absolute;
+  width: 17.5em;
+  height: 0.15em;
+  margin-top: 0.8em;
+  background-color: var(--tv-rod-1);
+}
+
+.tv-scene .text_404 {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  column-gap: 6em;
+  margin-bottom: 2em;
+  opacity: 0.5;
+  z-index: -5;
+}
+
+.tv-scene .text_4041,
+.tv-scene .text_4042,
+.tv-scene .text_4043 {
+  transform: scaleY(24.5) scaleX(9);
+}
+
+@media (max-width: 395px) {
+  .tv-scene .text_404 {
+    column-gap: 4em;
+  }
+
+  .tv-scene .text_4041,
+  .tv-scene .text_4042,
+  .tv-scene .text_4043 {
+    transform: scaleY(25) scaleX(8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-scene .screen {
+    animation: none;
+  }
+}
