@@ -14,7 +14,6 @@
   <link rel="stylesheet" href="${ctx}/assets/css/auth.css?v=${assetVersion}">
 </head>
 <body>
-  <%@ include file="/WEB-INF/views/layout/icons.jspf" %>
   <c:choose>
     <%-- Trang đăng nhập dùng bố cục hai cột (authSplit = true): giới thiệu bên trái, biểu mẫu bên phải --%>
     <c:when test="${authSplit}">

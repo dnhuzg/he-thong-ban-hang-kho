@@ -1,4 +1,17 @@
       </main>
+      <%-- Điều hướng nhanh trên điện thoại: các mục đánh dấu shortcut trong Menu --%>
+      <nav class="bottom-nav" aria-label="Điều hướng nhanh">
+        <c:forEach var="group" items="${menu}">
+          <c:forEach var="item" items="${group.items}">
+            <c:if test="${item.shortcut}">
+              <a class="bottom-nav__item${item.active ? ' is-active' : ''}" href="${ctx}${item.url}"${item.active ? ' aria-current="page"' : ''}>
+                <span class="icon icon--md icon--${item.icon}" aria-hidden="true"></span>
+                <span><c:out value="${item.label}"/></span>
+              </a>
+            </c:if>
+          </c:forEach>
+        </c:forEach>
+      </nav>
     </div>
   </div>
   <script src="${ctx}/assets/js/app.js?v=${assetVersion}"></script>
