@@ -32,6 +32,7 @@ public class DiscountServlet extends BaseServlet {
             switch (req.getServletPath()) {
                 case "/products/discounts" -> {
                     req.setAttribute("policies", discountService.list(currentUser(req)));
+                    req.setAttribute("canViewPriceLists", true);
                     render(req, resp, "products/discounts");
                 }
                 case "/products/discounts/new" -> {

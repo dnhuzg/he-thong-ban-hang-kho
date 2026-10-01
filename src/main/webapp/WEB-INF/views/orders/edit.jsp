@@ -77,40 +77,14 @@
               <label class="visually-hidden" for="pq">Tìm sản phẩm</label>
               <div class="search-field toolbar__search">
                 <span class="icon icon--search" aria-hidden="true"></span>
-                <input id="pq" name="q" type="search" placeholder="Mã hoặc tên sản phẩm" value="<c:out value='${q}'/>">
+                <input id="pq" name="q" type="search" placeholder="Mã hoặc tên sản phẩm" autocomplete="off" data-live-search="product-results" value="<c:out value='${q}'/>">
               </div>
-              <button class="btn btn--secondary toolbar__submit" type="submit">Tìm</button>
+              <button class="btn btn--secondary toolbar__submit toolbar__submit--show" type="submit">Tìm</button>
             </form>
 
-            <c:if test="${not empty q and empty choices}">
-              <p class="text-muted">Không có sản phẩm đang kinh doanh nào khớp "<c:out value="${q}"/>".</p>
-            </c:if>
-            <c:forEach var="ch" items="${choices}">
-              <form class="order-add" action="${ctx}/orders/lines/add" method="post">
-                <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-                <input type="hidden" name="id" value="${order.id}">
-                <input type="hidden" name="productId" value="${ch.productId}">
-                <div class="order-add__info">
-                  <p class="order-add__name"><c:out value="${ch.name}"/></p>
-                  <p class="order-add__meta">
-                    <c:out value="${ch.sku}"/> ·
-                    <c:choose>
-                      <c:when test="${empty ch.basePrice}"><span class="badge badge--warning">Chưa có giá</span></c:when>
-                      <c:otherwise><fmt:formatNumber value="${ch.basePrice}" maxFractionDigits="2"/> ₫/<c:out value="${ch.baseUnitName}"/></c:otherwise>
-                    </c:choose>
-                  </p>
-                </div>
-                <div class="order-add__controls">
-                  <label class="visually-hidden" for="au-${ch.productId}">Đơn vị tính</label>
-                  <select class="select" id="au-${ch.productId}" name="unitId">
-                    <c:forEach var="u" items="${ch.units}"><option value="${u.id}"><c:out value="${u.name}"/></option></c:forEach>
-                  </select>
-                  <label class="visually-hidden" for="aq-${ch.productId}">Số lượng</label>
-                  <input class="input order-qty" id="aq-${ch.productId}" name="quantity" type="number" min="1" step="1" inputmode="numeric" value="1" required>
-                  <button class="btn btn--primary" type="submit" ${empty ch.basePrice ? 'disabled' : ''}>Thêm</button>
-                </div>
-              </form>
-            </c:forEach>
+            <div id="product-results" data-url="${ctx}/orders/products?id=${order.id}">
+<%@ include file="/WEB-INF/views/orders/product-results.jspf" %>
+            </div>
           </div>
         </section>
 

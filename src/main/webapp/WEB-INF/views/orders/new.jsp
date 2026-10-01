@@ -18,7 +18,7 @@
               <span class="icon icon--search" aria-hidden="true"></span>
               <input id="q" name="q" type="search" placeholder="Tìm đại lý theo mã, tên hoặc số điện thoại" value="<c:out value='${q}'/>" autofocus>
             </div>
-            <button class="btn btn--secondary toolbar__submit" type="submit">Tìm</button>
+            <button class="btn btn--secondary toolbar__submit toolbar__submit--show" type="submit">Tìm</button>
           </form>
 
           <c:choose>

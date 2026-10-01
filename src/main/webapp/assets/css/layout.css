@@ -379,8 +379,12 @@ img.user-menu__avatar {
     display: none;
   }
 
-  .topbar .user-menu {
+  .topbar .theme-switch {
     margin-left: auto;
+  }
+
+  .topbar .user-menu {
+    margin-left: 0;
   }
 
   .user-menu__text {
