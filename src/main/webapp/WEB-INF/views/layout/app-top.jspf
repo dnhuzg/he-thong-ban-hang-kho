@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="${ctx}/assets/css/components.css">
 </head>
 <body data-ctx="${ctx}">
+  <%@ include file="/WEB-INF/views/layout/icons.jspf" %>
   <div class="app">
     <%-- Menu chỉ gồm mục thuộc quyền, dựng ở server (Menu.build) --%>
     <aside class="sidebar" id="sidebar">
@@ -27,13 +28,13 @@
           <c:forEach var="item" items="${group.items}">
             <c:choose>
               <c:when test="${item.comingSoon}">
-                <a class="sidebar__link is-disabled" aria-disabled="true"><c:out value="${item.label}"/> <span class="badge">Sắp có</span></a>
+                <a class="sidebar__link is-disabled" aria-disabled="true"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span><span class="badge">Sắp có</span></a>
               </c:when>
               <c:when test="${item.active}">
-                <a class="sidebar__link is-active" href="${ctx}${item.url}" aria-current="page"><c:out value="${item.label}"/></a>
+                <a class="sidebar__link is-active" href="${ctx}${item.url}" aria-current="page"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span></a>
               </c:when>
               <c:otherwise>
-                <a class="sidebar__link" href="${ctx}${item.url}"><c:out value="${item.label}"/></a>
+                <a class="sidebar__link" href="${ctx}${item.url}"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span></a>
               </c:otherwise>
             </c:choose>
           </c:forEach>
