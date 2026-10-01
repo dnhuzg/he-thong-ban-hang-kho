@@ -62,7 +62,9 @@ public final class Menu {
 
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
             groups.add(new Group("Tồn kho & nhập kho",
-                    List.of(item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false))));
+                    List.of(
+                            item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
+                            item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false))));
         }
 
         List<Item> admin = new ArrayList<>();
