@@ -29,6 +29,12 @@
   --color-info-soft: #eef7fd;
   --color-info-border: #bae0f7;
 
+  --color-brand-dark: #163b81;
+  --color-brand-text: #ceddf7;
+  --color-on-brand-faint: rgba(255, 255, 255, 0.05);
+  --color-on-brand-soft: rgba(255, 255, 255, 0.07);
+  --color-on-brand-border: rgba(255, 255, 255, 0.15);
+
   --color-overlay: rgba(15, 23, 42, 0.35);
   --color-auth-glow-1: #e3ecff;
   --color-auth-glow-2: #e6f4ff;
