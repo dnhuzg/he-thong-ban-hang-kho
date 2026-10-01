@@ -1426,3 +1426,31 @@ a.pl-row:hover .pl-row__title {
   border-radius: var(--radius-lg);
   font-size: 0.75rem;
 }
+
+/* ---------- Cây nhóm hàng: đường nối cha - con và cột số thẳng hàng ---------- */
+
+.table td[class^="tree-l"] {
+  position: relative;
+}
+
+/* Đường nối chữ L nằm ngay trước tên nhóm con, bắt đầu từ mép trên của dòng */
+.table td[class^="tree-l"]:not(.tree-l1)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 50%;
+  border-left: 1px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--color-border-strong);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.table td.tree-l2::before { left: calc(20px + 24px - 16px); }
+.table td.tree-l3::before { left: calc(20px + 48px - 16px); }
+.table td.tree-l4::before { left: calc(20px + 72px - 16px); }
+.table td.tree-l5::before { left: calc(20px + 96px - 16px); }
+.table td.tree-l6::before { left: calc(20px + 120px - 16px); }
+
+.table .col-count {
+  width: 180px;
+}

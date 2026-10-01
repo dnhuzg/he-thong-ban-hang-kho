@@ -22,8 +22,8 @@
               <thead>
                 <tr>
                   <th scope="col">Nhóm hàng</th>
-                  <th scope="col" class="num">Sản phẩm trực tiếp</th>
-                  <th scope="col" class="num">Tổng (gồm nhóm con)</th>
+                  <th scope="col" class="num col-count">Sản phẩm trực tiếp</th>
+                  <th scope="col" class="num col-count">Tổng (gồm nhóm con)</th>
                   <c:if test="${canWrite}"><th scope="col"><span class="visually-hidden">Thao tác</span></th></c:if>
                 </tr>
               </thead>
