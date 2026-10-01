@@ -146,6 +146,9 @@ public abstract class DatabaseTest {
                     """);
             statement.execute("CREATE TABLE customer_receivables (id BIGINT AUTO_INCREMENT PRIMARY KEY, customer_id BIGINT REFERENCES customers(id), document_code VARCHAR(50) UNIQUE, issued_on DATE, outstanding DECIMAL(15,2))");
             statement.execute("CREATE TABLE order_credit_reservations (order_id BIGINT PRIMARY KEY REFERENCES orders(id), customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2))");
+            statement.execute("ALTER TABLE customers ADD serving_warehouse_id BIGINT REFERENCES warehouses(id)");
+            statement.execute("CREATE TABLE warehouse_inventory(warehouse_id BIGINT REFERENCES warehouses(id),product_id BIGINT REFERENCES products(id),on_hand DECIMAL(14,4),reserved DECIMAL(14,4) DEFAULT 0,PRIMARY KEY(warehouse_id,product_id),CHECK(reserved>=0 AND reserved<=on_hand))");
+            statement.execute("CREATE TABLE order_inventory_reservations(order_id BIGINT REFERENCES orders(id),warehouse_id BIGINT,product_id BIGINT,quantity DECIMAL(14,4),PRIMARY KEY(order_id,warehouse_id,product_id),FOREIGN KEY(warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id))");
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
