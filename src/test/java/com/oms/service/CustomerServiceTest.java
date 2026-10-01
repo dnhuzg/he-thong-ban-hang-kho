@@ -124,6 +124,31 @@ class CustomerServiceTest extends DatabaseTest {
         assertThrows(CustomerService.NotFoundException.class, () -> service.delete(id, manager));
     }
 
+    @Test
+    void searchesByCodeNameOrPhoneAndFiltersCombine() throws Exception {
+        Customer a = input("DL10", "Tạp hoá Minh Anh", null, 1L, 30L, rep.getId());
+        a.setPhone("0901234567");
+        service.create(a, manager);
+        service.create(input("DL11", "Siêu thị Bình Dân", null, 2L, 30L, null), manager);
+        long locked = service.create(input("DL12", "Đại lý Phú Quý", null, 1L, null, rep.getId()), manager);
+        new CustomerLockService().lock(locked, "Nợ quá hạn", manager);
+
+        assertEquals(1, service.search("DL10", null, null, null, null, 1, manager).getTotal());
+        assertEquals(1, service.search("Bình Dân", null, null, null, null, 1, manager).getTotal());
+        assertEquals(1, service.search("090 123 4567", null, null, null, null, 1, manager).getTotal());
+        assertEquals(1, service.search("+84901234567", null, null, null, null, 1, manager).getTotal());
+        assertEquals(0, service.search("0987654321", null, null, null, null, 1, manager).getTotal());
+        assertEquals(2, service.search(null, 1L, null, null, null, 1, manager).getTotal());
+        assertEquals(2, service.search(null, null, 30L, null, null, 1, manager).getTotal());
+        assertEquals(1, service.search(null, 1L, 30L, null, null, 1, manager).getTotal());
+        assertEquals(2, service.search(null, null, null, rep.getId(), null, 1, manager).getTotal());
+        assertEquals(1, service.search(null, null, null, null, Customer.Status.LOCKED, 1, manager).getTotal());
+        assertEquals(1, service.search(null, null, null, rep.getId(), Customer.Status.LOCKED, 1, manager).getTotal());
+        assertEquals(2, service.search(null, null, null, null, null, 1, rep).getTotal());
+        // Nhân viên kinh doanh không lọc vượt phạm vi đại lý của mình bằng cách chọn người phụ trách khác
+        assertEquals(0, service.search(null, null, null, manager.getId(), null, 1, rep).getTotal());
+    }
+
     private static Customer input(String code, String name, String tax, Long groupId, Long areaId, Long repId) {
         Customer c = new Customer();
         c.setCode(code);
