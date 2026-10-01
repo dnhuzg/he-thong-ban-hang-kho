@@ -732,12 +732,13 @@
 
 /* ---------- Cây nhóm hàng: thụt lề theo cấp ---------- */
 
-/* Viết kèm ".table td" để thắng padding mặc định của ô bảng */
-.table td.tree-l2 { padding-left: calc(20px + 24px); }
-.table td.tree-l3 { padding-left: calc(20px + 48px); }
-.table td.tree-l4 { padding-left: calc(20px + 72px); }
-.table td.tree-l5 { padding-left: calc(20px + 96px); }
-.table td.tree-l6 { padding-left: calc(20px + 120px); }
+/* Viết kèm ".table td" để thắng padding mặc định của ô bảng. Chừa 24px bên trái cho nút mở / đóng */
+.table td.tree-l1 { padding-left: calc(20px + 24px); }
+.table td.tree-l2 { padding-left: calc(20px + 48px); }
+.table td.tree-l3 { padding-left: calc(20px + 72px); }
+.table td.tree-l4 { padding-left: calc(20px + 96px); }
+.table td.tree-l5 { padding-left: calc(20px + 120px); }
+.table td.tree-l6 { padding-left: calc(20px + 144px); }
 
 .table td[class^="tree-l"] .table__cell-main,
 .table td[class^="tree-l"] .table__cell-sub {
@@ -1445,11 +1446,53 @@ a.pl-row:hover .pl-row__title {
   border-bottom-left-radius: var(--radius-sm);
 }
 
-.table td.tree-l2::before { left: calc(20px + 24px - 16px); }
-.table td.tree-l3::before { left: calc(20px + 48px - 16px); }
-.table td.tree-l4::before { left: calc(20px + 72px - 16px); }
-.table td.tree-l5::before { left: calc(20px + 96px - 16px); }
-.table td.tree-l6::before { left: calc(20px + 120px - 16px); }
+/* Đường nối treo từ giữa nút mở / đóng của nhóm cha, dừng ngay trước nút (hoặc chỗ trống) của nhóm con */
+.table td.tree-l2::before { left: 28px; width: 10px; }
+.table td.tree-l3::before { left: 52px; width: 10px; }
+.table td.tree-l4::before { left: 76px; width: 10px; }
+.table td.tree-l5::before { left: 100px; width: 10px; }
+.table td.tree-l6::before { left: 124px; width: 10px; }
+
+/* Nút mở / đóng nằm trong phần chừa sẵn bên trái tên nhóm cha */
+.tree-toggle {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.tree-toggle:hover {
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
+
+.tree-toggle .icon {
+  transition: transform 0.15s ease;
+}
+
+.tree-toggle[aria-expanded="false"] .icon {
+  transform: rotate(-90deg);
+}
+
+.table td.tree-l1 .tree-toggle { left: 16px; }
+.table td.tree-l2 .tree-toggle { left: 40px; }
+.table td.tree-l3 .tree-toggle { left: 64px; }
+.table td.tree-l4 .tree-toggle { left: 88px; }
+.table td.tree-l5 .tree-toggle { left: 112px; }
+.table td.tree-l6 .tree-toggle { left: 136px; }
+
+.table tr[hidden] {
+  display: none;
+}
 
 .table .col-count {
   width: 180px;

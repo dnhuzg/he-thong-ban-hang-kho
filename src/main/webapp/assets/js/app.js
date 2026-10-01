@@ -34,6 +34,60 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Cây nhóm hàng: mở / đóng nhóm cha, ẩn mọi nhóm con cháu khi nhóm cha đang đóng.
+  // Trạng thái nhớ trong trình duyệt (tiện cho người xem, không ảnh hưởng dữ liệu).
+  document.querySelectorAll("table[data-tree]").forEach((table) => {
+    const key = "oms.categoryTree.collapsed";
+    const rows = [...table.querySelectorAll("tbody tr[data-cat-id]")];
+    const parentOf = new Map(rows.map((r) => [r.dataset.catId, r.dataset.parentId]));
+    let collapsed = new Set();
+    try {
+      collapsed = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+    } catch (e) {
+      collapsed = new Set();
+    }
+
+    const hiddenByAncestor = (id) => {
+      for (let p = parentOf.get(id); p; p = parentOf.get(p)) {
+        if (collapsed.has(p)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const refresh = () => {
+      rows.forEach((row) => {
+        row.hidden = hiddenByAncestor(row.dataset.catId);
+        const btn = row.querySelector("[data-tree-toggle]");
+        if (btn) {
+          btn.setAttribute("aria-expanded", String(!collapsed.has(row.dataset.catId)));
+        }
+      });
+    };
+
+    table.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-tree-toggle]");
+      if (!btn) {
+        return;
+      }
+      const id = btn.closest("tr").dataset.catId;
+      if (collapsed.has(id)) {
+        collapsed.delete(id);
+      } else {
+        collapsed.add(id);
+      }
+      try {
+        localStorage.setItem(key, JSON.stringify([...collapsed]));
+      } catch (e) {
+        // trình duyệt chặn lưu trữ: vẫn dùng được, chỉ không nhớ lần sau
+      }
+      refresh();
+    });
+
+    refresh();
+  });
+
   // Hiện / ẩn mật khẩu
   document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);

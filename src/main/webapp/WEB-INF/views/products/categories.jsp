@@ -18,7 +18,7 @@
 
         <section class="card">
           <div class="table-wrap">
-            <table class="table">
+            <table class="table" data-tree>
               <thead>
                 <tr>
                   <th scope="col">Nhóm hàng</th>
@@ -32,8 +32,12 @@
                   <tr><td colspan="4" class="text-muted">Chưa có nhóm hàng nào.</td></tr>
                 </c:if>
                 <c:forEach var="cat" items="${categories}">
-                  <tr>
+                  <tr data-cat-id="${cat.id}" data-parent-id="${cat.parentId}">
                     <td class="tree-l${cat.level > 6 ? 6 : cat.level}">
+                      <c:if test="${cat.hasChildren}">
+                        <button class="tree-toggle" type="button" data-tree-toggle aria-expanded="true"
+                                aria-label="Thu gọn hoặc mở rộng nhóm <c:out value='${cat.name}'/>"><span class="icon icon--sm icon--chevron-down" aria-hidden="true"></span></button>
+                      </c:if>
                       <span class="table__cell-main"><c:out value="${cat.name}"/></span>
                       <span class="table__cell-sub">Cấp ${cat.level}</span>
                     </td>
