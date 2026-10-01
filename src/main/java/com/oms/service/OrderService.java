@@ -148,11 +148,12 @@ public class OrderService {
     public long create(long customerId, User actor) throws SQLException {
         requireOrders(actor);
         return Db.inTransaction(conn -> {
-            Customer customer = customerDao.findById(conn, customerId);
+            Customer customer = customerDao.findByIdForUpdate(conn, customerId);
             if (customer == null || !canSeeCustomer(actor, customer)) {
                 throw new NotFoundException();
             }
             CustomerLockService.requireTradable(customer);
+            new OrderCreditService().requireNotOverdue(conn, customer);
             Long point = null;
             for (DeliveryPoint p : pointDao.listByCustomer(conn, customerId)) {
                 if (point == null || p.isDefaultPoint()) {
