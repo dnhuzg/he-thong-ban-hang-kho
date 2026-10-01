@@ -148,25 +148,27 @@ public class OrderService {
     /** Tạo đơn nháp rỗng cho đại lý, chọn sẵn điểm giao mặc định. Đại lý bị khoá giao dịch thì không tạo được. */
     public long create(long customerId, User actor) throws SQLException {
         requireOrders(actor);
-        return Db.inTransaction(conn -> {
-            Customer customer = customerDao.findByIdForUpdate(conn, customerId);
-            if (customer == null || !canSeeCustomer(actor, customer)) {
-                throw new NotFoundException();
+        return Db.inTransaction(conn -> create(conn, customerId, actor));
+    }
+
+    long create(Connection conn, long customerId, User actor) throws SQLException {
+        Customer customer = customerDao.findByIdForUpdate(conn, customerId);
+        if (customer == null || !canSeeCustomer(actor, customer)) {
+            throw new NotFoundException();
+        }
+        CustomerLockService.requireTradable(customer);
+        new OrderCreditService().requireNotOverdue(conn, customer);
+        Long point = null;
+        for (DeliveryPoint p : pointDao.listByCustomer(conn, customerId)) {
+            if (point == null || p.isDefaultPoint()) {
+                point = p.getId();
             }
-            CustomerLockService.requireTradable(customer);
-            new OrderCreditService().requireNotOverdue(conn, customer);
-            Long point = null;
-            for (DeliveryPoint p : pointDao.listByCustomer(conn, customerId)) {
-                if (point == null || p.isDefaultPoint()) {
-                    point = p.getId();
-                }
-            }
-            long id = orderDao.insert(conn, customerId, point, actor.getId());
-            String code = String.format("DH%06d", id);
-            orderDao.setCode(conn, id, code);
-            auditDao.log(conn, actor.getId(), "ORDER_CREATE", "ORDER", id, code, null, "Đại lý: " + customer.getCode() + " – " + customer.getName());
-            return id;
-        });
+        }
+        long id = orderDao.insert(conn, customerId, point, actor.getId());
+        String code = String.format("DH%06d", id);
+        orderDao.setCode(conn, id, code);
+        auditDao.log(conn, actor.getId(), "ORDER_CREATE", "ORDER", id, code, null, "Đại lý: " + customer.getCode() + " – " + customer.getName());
+        return id;
     }
 
     /** Điểm giao (có thể để trống khi còn nháp) phải thuộc đại lý của đơn; ngày giao không được ở quá khứ. */
