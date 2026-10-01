@@ -13,6 +13,16 @@ public class Order {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+    public enum Status { DRAFT, PENDING_APPROVAL, APPROVED, PICKING, SHIPPED, DELIVERED, CLOSED, CANCELLED, REJECTED }
+    private Status status = Status.DRAFT;
+    private Long warehouseId;
+    private String approvalReason;
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public String getApprovalReason() { return approvalReason; }
+    public void setApprovalReason(String approvalReason) { this.approvalReason = approvalReason; }
     private long id;
     private String code;
     private long customerId;

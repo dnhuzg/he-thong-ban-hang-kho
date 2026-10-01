@@ -5,6 +5,7 @@ import com.oms.dao.AuditLogDao;
 import com.oms.dao.CustomerDao;
 import com.oms.dao.DeliveryPointDao;
 import com.oms.dao.OrderDao;
+import com.oms.dao.OrderWorkflowDao;
 import com.oms.dao.ProductDao;
 import com.oms.dao.ProductUnitDao;
 import com.oms.model.Customer;
@@ -260,6 +261,7 @@ public class OrderService {
         requireOrders(actor);
         Db.inTransaction(conn -> {
             Order order = lockVisible(conn, orderId, actor);
+            if (new OrderWorkflowDao().hasHistory(conn, orderId)) throw new ServiceException("Đơn đã có lịch sử duyệt; hãy huỷ thay vì xoá.");
             orderDao.delete(conn, orderId);
             auditDao.log(conn, actor.getId(), "ORDER_DELETE", "ORDER", orderId, order.getCode(),
                     "Đại lý: " + order.getCustomerCode() + " – " + order.getCustomerName() + "\nSố dòng hàng: " + order.getLineCount(), null);
@@ -286,6 +288,7 @@ public class OrderService {
     Order lockVisible(Connection conn, long orderId, User viewer) throws SQLException {
         Order order = orderDao.findByIdForUpdate(conn, orderId);
         requireVisible(order, viewer);
+        if (order.getStatus() != Order.Status.DRAFT) throw new ServiceException("Chỉ sửa hoặc xoá được đơn Nháp.");
         return order;
     }
 
@@ -327,6 +330,16 @@ public class OrderService {
      * Dòng của sản phẩm chưa (hoặc không còn) có giá thì để trống tiền và không vào tổng.
      */
     void price(Connection conn, Order order) throws SQLException {
+        if (order.getStatus() != Order.Status.DRAFT) {
+            BigDecimal gross = BigDecimal.ZERO, discount = BigDecimal.ZERO;
+            for (OrderLine line : order.getLines()) {
+                if (!line.isPriced()) throw new ServiceException("Đơn đã chốt thiếu ảnh chụp giá.");
+                gross = gross.add(line.getGrossAmount());
+                discount = discount.add(line.getDiscountAmount());
+            }
+            order.setGrossTotal(gross); order.setDiscountTotal(discount);
+            return;
+        }
         LocalDate today = LocalDate.now();
         Map<Long, BigDecimal> totalBase = new HashMap<>();
         for (OrderLine l : order.getLines()) {

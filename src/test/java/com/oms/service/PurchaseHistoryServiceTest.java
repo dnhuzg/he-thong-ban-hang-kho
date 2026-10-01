@@ -18,10 +18,12 @@ class PurchaseHistoryServiceTest extends DatabaseTest {
         sql("INSERT INTO price_lists(id,code,name,customer_group_id,valid_from) VALUES(100,'BG','Giá',1,'2020-01-01')");
         sql("INSERT INTO price_list_items VALUES(100,500,10000,9000)");
         source=orders.create(900,rep); orders.addLine(source,500,1,"6",rep);
+        sql("UPDATE order_lines SET unit_price=10000,gross_amount=quantity*10000,discount_amount=0 WHERE order_id="+source);
         sql("UPDATE orders SET status='SHIPPED' WHERE id="+source);
     }
     @Test void historyUsesThreeMonthsOnlyAndAveragePerPurchase() throws Exception {
         long next=orders.create(900,rep); orders.addLine(next,500,1,"10",rep);
+        sql("UPDATE order_lines SET unit_price=10000,gross_amount=quantity*10000,discount_amount=0 WHERE order_id="+next);
         sql("UPDATE orders SET status='CLOSED' WHERE id="+next);
         var result=new PurchaseHistoryService().history(900,rep);
         assertEquals(1,result.size()); assertEquals(2,result.get(0).purchases());
