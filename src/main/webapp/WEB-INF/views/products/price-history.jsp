@@ -89,7 +89,7 @@
                   <p>Áp dụng từ <c:out value="${ch.effectiveText}"/></p>
                 </div>
                 <div class="product-card__foot">
-                  <span class="text-muted"><c:out value="${ch.changedByName} · ${ch.changedAtText}"/></span>
+                  <span class="text-muted price-history__who"><c:out value="${ch.changedByName} · ${ch.changedAtText}"/></span>
                 </div>
               </article>
             </c:forEach>

@@ -1669,3 +1669,7 @@ a.pl-row:hover .pl-row__title {
   padding: 0 0 var(--space-3);
   font-size: 0.8125rem;
 }
+
+.price-history__who {
+  font-size: 0.8125rem;
+}
