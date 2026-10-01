@@ -57,6 +57,13 @@
   color: var(--color-text);
 }
 
+.sidebar__link-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
 .sidebar__link:hover {
   background: var(--color-surface-muted);
   text-decoration: none;

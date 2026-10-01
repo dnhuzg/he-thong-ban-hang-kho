@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => {
       const show = input.type === "password";
       input.type = show ? "text" : "password";
-      btn.textContent = show ? "Ẩn" : "Hiện";
+      (btn.querySelector("[data-toggle-label]") || btn).textContent = show ? "Ẩn" : "Hiện";
       btn.setAttribute("aria-pressed", String(show));
     });
   });

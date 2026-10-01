@@ -14,9 +14,45 @@
   <link rel="stylesheet" href="${ctx}/assets/css/auth.css">
 </head>
 <body>
-  <main class="auth-page">
-    <section class="auth-card">
-      <div class="auth-card__brand">
-        <span class="logo-mark">OMS</span>
-        <span>Bán hàng &amp; Kho</span>
-      </div>
+  <%@ include file="/WEB-INF/views/layout/icons.jspf" %>
+  <c:choose>
+    <%-- Trang đăng nhập dùng bố cục hai cột (authSplit = true): giới thiệu bên trái, biểu mẫu bên phải --%>
+    <c:when test="${authSplit}">
+      <main class="auth-split">
+        <aside class="auth-hero">
+          <div class="auth-hero__brand">
+            <span class="logo-mark logo-mark--lg"><img src="${ctx}/assets/img/brand-boxes-lg.svg" alt="" width="24" height="24"></span>
+            <span>Bán hàng &amp; Kho</span>
+          </div>
+          <div class="auth-hero__body">
+            <h2 class="auth-hero__title">Một hệ thống.<br>Vận hành liền mạch.</h2>
+            <p class="auth-hero__text">Không gian làm việc thống nhất cho kinh doanh, kho, kế toán và quản lý.</p>
+            <div class="auth-flow" aria-hidden="true">
+              <div class="auth-flow__step"><span class="auth-flow__tile"><img src="${ctx}/assets/img/flow-package.svg" alt="" width="28" height="28"></span><span>Sản phẩm</span></div>
+              <img class="auth-flow__arrow" src="${ctx}/assets/img/flow-arrow.svg" alt="" width="20" height="20">
+              <div class="auth-flow__step"><span class="auth-flow__tile"><img src="${ctx}/assets/img/flow-tags.svg" alt="" width="28" height="28"></span><span>Bảng giá</span></div>
+              <img class="auth-flow__arrow" src="${ctx}/assets/img/flow-arrow.svg" alt="" width="20" height="20">
+              <div class="auth-flow__step"><span class="auth-flow__tile"><img src="${ctx}/assets/img/flow-users.svg" alt="" width="28" height="28"></span><span>Người dùng</span></div>
+            </div>
+          </div>
+          <p class="auth-hero__foot">Hệ thống quản lý bán hàng và kho</p>
+        </aside>
+        <div class="auth-split__panel">
+          <section class="auth-card auth-card--split">
+            <div class="auth-card__brand">
+              <span class="logo-mark logo-mark--sm"><img src="${ctx}/assets/img/brand-boxes.svg" alt="" width="20" height="20"></span>
+              <span class="auth-card__brand-text">
+                <span class="auth-card__brand-name">Bán hàng &amp; Kho</span>
+                <span class="auth-card__brand-tag">Hệ thống quản trị</span>
+              </span>
+            </div>
+    </c:when>
+    <c:otherwise>
+      <main class="auth-page">
+        <section class="auth-card">
+          <div class="auth-card__brand">
+            <span class="logo-mark">OMS</span>
+            <span>Bán hàng &amp; Kho</span>
+          </div>
+    </c:otherwise>
+  </c:choose>

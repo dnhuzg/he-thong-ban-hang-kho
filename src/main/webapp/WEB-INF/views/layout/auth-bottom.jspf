@@ -1,4 +1,8 @@
     </section>
+  <c:if test="${authSplit}">
+      <p class="auth-split__note"><img src="${ctx}/assets/img/icon-shield-check.svg" alt="" width="14" height="14"> Truy cập an toàn vào hệ thống quản trị</p>
+    </div>
+  </c:if>
   </main>
   <script src="${ctx}/assets/js/app.js"></script>
 </body>

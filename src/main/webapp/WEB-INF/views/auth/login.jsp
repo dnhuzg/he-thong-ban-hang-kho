@@ -1,18 +1,22 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="Đăng nhập"/>
+<c:set var="authSplit" value="${true}"/>
 <%@ include file="/WEB-INF/views/layout/auth-top.jspf" %>
 
-      <h1 class="auth-card__title">Đăng nhập</h1>
+      <div class="auth-card__head">
+        <h1 class="auth-card__title">Đăng nhập</h1>
+        <p class="auth-card__subtitle">Chào mừng bạn trở lại hệ thống.</p>
+      </div>
 
       <c:if test="${not empty param.expired}">
         <div class="alert alert--info" role="status">Phiên đăng nhập đã hết hạn hoặc đã bị thu hồi. Vui lòng đăng nhập lại để tiếp tục.</div>
       </c:if>
       <c:if test="${not empty param.logout}">
-        <div class="alert alert--success" role="status">Bạn đã đăng xuất.</div>
+        <div class="alert alert--success alert--icon" role="status"><img src="${ctx}/assets/img/icon-circle-check.svg" alt="" width="16" height="16"><span>Bạn đã đăng xuất.</span></div>
       </c:if>
       <c:if test="${not empty param.reset}">
-        <div class="alert alert--success" role="status">Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</div>
+        <div class="alert alert--success alert--icon" role="status"><img src="${ctx}/assets/img/icon-circle-check.svg" alt="" width="16" height="16"><span>Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</span></div>
       </c:if>
       <c:if test="${not empty error}">
         <div class="alert alert--danger" role="alert"><c:out value="${error}"/></div>
@@ -30,7 +34,7 @@
           <label class="form-label" for="password">Mật khẩu</label>
           <div class="input-group">
             <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
-            <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false">Hiện</button>
+            <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false"><img src="${ctx}/assets/img/icon-eye.svg" alt="" width="16" height="16"><span data-toggle-label>Hiện</span></button>
           </div>
         </div>
 
