@@ -68,6 +68,16 @@ public class CustomerDao {
     public record Filter(String keyword, Long groupId, Long areaId, Long salesRepId, Customer.Status status, Long ownRepId) {
     }
 
+    /** Số điện thoại lưu dạng 0xxxxxxxxx; người dùng hay gõ có dấu cách, dấu chấm hoặc +84 nên đưa về cùng dạng trước khi so khớp. */
+    private static String phoneDigits(String keyword) {
+        String k = keyword.trim();
+        if (!k.matches("[+\\d\\s.()-]+")) {
+            return k;
+        }
+        k = k.replaceAll("[\\s.()-]", "");
+        return k.startsWith("+84") ? "0" + k.substring(3) : k;
+    }
+
     public PageResult<Customer> search(Connection conn, Filter f, int page, int pageSize) throws SQLException {
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         List<Object> params = new ArrayList<>();
@@ -76,7 +86,7 @@ public class CustomerDao {
             String like = "%" + f.keyword().trim() + "%";
             params.add(like);
             params.add(like);
-            params.add(like);
+            params.add("%" + phoneDigits(f.keyword()) + "%");
         }
         addEquals(where, params, "c.group_id", f.groupId());
         addEquals(where, params, "c.area_id", f.areaId());

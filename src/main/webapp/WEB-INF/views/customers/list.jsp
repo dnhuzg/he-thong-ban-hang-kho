@@ -18,6 +18,50 @@
         </div>
 
         <section class="card list-card">
+          <form class="toolbar" action="${ctx}/customers" method="get" role="search">
+            <label class="visually-hidden" for="q">Tìm đại lý</label>
+            <div class="search-field toolbar__search">
+              <span class="icon icon--search" aria-hidden="true"></span>
+              <input id="q" name="q" type="search" placeholder="Tìm theo mã, tên hoặc số điện thoại" value="<c:out value='${q}'/>">
+            </div>
+
+            <label class="visually-hidden" for="group">Nhóm khách hàng</label>
+            <select class="select" id="group" name="group" data-autosubmit>
+              <option value="">Tất cả nhóm</option>
+              <c:forEach var="g" items="${groups}">
+                <option value="${g.id}" ${g.id == selectedGroup ? 'selected' : ''}><c:out value="${g.name}"/></option>
+              </c:forEach>
+            </select>
+
+            <label class="visually-hidden" for="area">Khu vực</label>
+            <select class="select" id="area" name="area" data-autosubmit>
+              <option value="">Tất cả khu vực</option>
+              <c:forEach var="a" items="${areas}">
+                <option value="${a.id}" ${a.id == selectedArea ? 'selected' : ''}><c:out value="${a.name}"/></option>
+              </c:forEach>
+            </select>
+
+            <c:if test="${canManage}">
+              <label class="visually-hidden" for="rep">Người phụ trách</label>
+              <select class="select" id="rep" name="rep" data-autosubmit>
+                <option value="">Tất cả người phụ trách</option>
+                <c:forEach var="r" items="${reps}">
+                  <option value="${r.id}" ${r.id == selectedRep ? 'selected' : ''}><c:out value="${r.name}"/></option>
+                </c:forEach>
+              </select>
+            </c:if>
+
+            <label class="visually-hidden" for="status">Trạng thái</label>
+            <select class="select" id="status" name="status" data-autosubmit>
+              <option value="">Tất cả trạng thái</option>
+              <c:forEach var="st" items="${statuses}">
+                <option value="${st.name()}" ${st.name() == selectedStatus ? 'selected' : ''}><c:out value="${st.label}"/></option>
+              </c:forEach>
+            </select>
+
+            <button class="btn btn--secondary toolbar__submit" type="submit">Lọc</button>
+          </form>
+
           <div class="list-summary">
             <span class="list-summary__title">Tất cả đại lý</span>
             <span class="badge badge--primary"><c:out value="${result.total}"/></span>
@@ -38,7 +82,7 @@
               </thead>
               <tbody>
                 <c:if test="${empty result.items}">
-                  <tr><td colspan="7" class="text-muted">Chưa có đại lý nào.</td></tr>
+                  <tr><td colspan="7" class="text-muted">Không có đại lý nào khớp.</td></tr>
                 </c:if>
                 <c:forEach var="cu" items="${result.items}">
                   <tr>
@@ -72,7 +116,7 @@
           <%-- Điện thoại: mỗi đại lý một thẻ --%>
           <div class="product-cards">
             <c:if test="${empty result.items}">
-              <p class="text-muted">Chưa có đại lý nào.</p>
+              <p class="text-muted">Không có đại lý nào khớp.</p>
             </c:if>
             <c:forEach var="cu" items="${result.items}">
               <article class="product-card">
@@ -127,11 +171,35 @@
           <nav class="pagination" aria-label="Phân trang">
             <span class="text-muted">Hiển thị ${result.from}–${result.to} trên ${result.total} đại lý</span>
             <div class="pagination__pages">
-              <a class="pagination__page ${result.page <= 1 ? 'is-disabled' : ''}" href="${ctx}/customers?page=${result.page - 1}" rel="prev">Trước</a>
+              <c:url var="prevUrl" value="/customers">
+                <c:param name="q" value="${q}"/>
+                <c:param name="group" value="${selectedGroup}"/>
+                <c:param name="area" value="${selectedArea}"/>
+                <c:param name="rep" value="${selectedRep}"/>
+                <c:param name="status" value="${selectedStatus}"/>
+                <c:param name="page" value="${result.page - 1}"/>
+              </c:url>
+              <c:url var="nextUrl" value="/customers">
+                <c:param name="q" value="${q}"/>
+                <c:param name="group" value="${selectedGroup}"/>
+                <c:param name="area" value="${selectedArea}"/>
+                <c:param name="rep" value="${selectedRep}"/>
+                <c:param name="status" value="${selectedStatus}"/>
+                <c:param name="page" value="${result.page + 1}"/>
+              </c:url>
+              <a class="pagination__page ${result.page <= 1 ? 'is-disabled' : ''}" href="${prevUrl}" rel="prev">Trước</a>
               <c:forEach var="pg" begin="1" end="${result.totalPages}">
-                <a class="pagination__page ${pg == result.page ? 'is-current' : ''}" href="${ctx}/customers?page=${pg}" ${pg == result.page ? 'aria-current="page"' : ''}>${pg}</a>
+                <c:url var="pageUrl" value="/customers">
+                <c:param name="q" value="${q}"/>
+                <c:param name="group" value="${selectedGroup}"/>
+                <c:param name="area" value="${selectedArea}"/>
+                <c:param name="rep" value="${selectedRep}"/>
+                <c:param name="status" value="${selectedStatus}"/>
+                <c:param name="page" value="${pg}"/>
+                </c:url>
+                <a class="pagination__page ${pg == result.page ? 'is-current' : ''}" href="${pageUrl}" ${pg == result.page ? 'aria-current="page"' : ''}>${pg}</a>
               </c:forEach>
-              <a class="pagination__page ${result.page >= result.totalPages ? 'is-disabled' : ''}" href="${ctx}/customers?page=${result.page + 1}" rel="next">Sau</a>
+              <a class="pagination__page ${result.page >= result.totalPages ? 'is-disabled' : ''}" href="${nextUrl}" rel="next">Sau</a>
             </div>
           </nav>
         </section>
