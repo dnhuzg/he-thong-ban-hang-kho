@@ -20,6 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Ô chọn bộ lọc tự gửi form khi đổi giá trị (nút Lọc vẫn dùng được khi tắt JavaScript)
+  document.querySelectorAll("select[data-autosubmit]").forEach((select) => {
+    select.addEventListener("change", () => select.form.requestSubmit());
+  });
+
   // Hiện / ẩn mật khẩu
   document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);
