@@ -16,9 +16,23 @@
             <c:if test="${canManage}">
               <a class="btn btn--secondary" href="${ctx}/customers/edit?id=${customer.id}">Sửa hồ sơ</a>
             </c:if>
+            <c:if test="${canManageCredit}">
+              <button class="btn ${customer.locked ? 'btn--primary' : 'btn--secondary'}" type="button" data-dialog-open="trade-toggle"><c:out value="${customer.locked ? 'Mở giao dịch' : 'Khoá giao dịch'}"/></button>
+            </c:if>
             <a class="btn btn--secondary" href="${ctx}/customers"><span class="icon icon--sm icon--arrow-left" aria-hidden="true"></span>Quay lại danh sách</a>
           </div>
         </div>
+
+        <c:if test="${customer.locked}">
+          <div class="alert alert--danger alert--icon" role="alert">
+            <span class="icon icon--sm icon--lock-keyhole" aria-hidden="true"></span>
+            <span>
+              Giao dịch với đại lý này đang bị khoá, không tạo được đơn mới (đơn đang dở vẫn xử lý tiếp được).
+              <c:if test="${not empty customer.lockReason}"><c:out value=" Lý do: ${customer.lockReason}."/></c:if>
+              <c:if test="${not empty customer.lockedByName}"><c:out value=" Khoá bởi ${customer.lockedByName} lúc ${customer.lockedAtText}."/></c:if>
+            </span>
+          </div>
+        </c:if>
 
         <section class="card">
           <div class="card__header"><h2>Thông tin đại lý</h2></div>
@@ -32,6 +46,65 @@
             <div><dt>Người phụ trách</dt><dd><c:out value="${empty customer.salesRepName ? 'Chưa phân công' : customer.salesRepName}"/></dd></div>
           </dl>
         </section>
+
+        <section class="card credit-card" id="lich-su-khoa">
+          <div class="card__header"><h2>Lịch sử khoá / mở giao dịch</h2></div>
+          <div class="credit-history">
+            <c:if test="${empty lockHistory}"><p class="text-muted credit-history__empty">Chưa khoá hay mở giao dịch lần nào.</p></c:if>
+            <c:forEach var="lc" items="${lockHistory}">
+              <article class="credit-change">
+                <p class="credit-change__what"><strong><c:out value="${lc.actionLabel}"/></strong></p>
+                <c:if test="${not empty lc.reason}"><p class="credit-change__reason">Lý do: <c:out value="${lc.reason}"/></p></c:if>
+                <p class="credit-change__meta"><c:out value="${lc.changedByName}"/> · <c:out value="${lc.timeText}"/></p>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+
+        <c:if test="${canManageCredit}">
+          <c:choose>
+            <c:when test="${customer.locked}">
+              <dialog class="dialog" id="trade-toggle" aria-labelledby="trade-toggle-title">
+                <form action="${ctx}/customers/unlock" method="post">
+                  <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                  <input type="hidden" name="customerId" value="${customer.id}">
+                  <div class="dialog__header"><h2 id="trade-toggle-title">Mở lại giao dịch với <c:out value="${customer.name}"/></h2></div>
+                  <div class="dialog__body dp-form">
+                    <p>Đại lý sẽ tạo được đơn mới trở lại.</p>
+                    <div class="form-field">
+                      <label class="form-label" for="unlock-reason">Lý do mở lại</label>
+                      <textarea class="textarea" id="unlock-reason" name="reason" maxlength="500" placeholder="Ví dụ: đã thanh toán đủ công nợ"></textarea>
+                    </div>
+                  </div>
+                  <div class="dialog__footer">
+                    <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                    <button class="btn btn--primary" type="submit">Mở giao dịch</button>
+                  </div>
+                </form>
+              </dialog>
+            </c:when>
+            <c:otherwise>
+              <dialog class="dialog" id="trade-toggle" aria-labelledby="trade-toggle-title">
+                <form action="${ctx}/customers/lock" method="post">
+                  <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                  <input type="hidden" name="customerId" value="${customer.id}">
+                  <div class="dialog__header"><h2 id="trade-toggle-title">Khoá giao dịch với <c:out value="${customer.name}"/></h2></div>
+                  <div class="dialog__body dp-form">
+                    <p>Đại lý sẽ không tạo được đơn mới, kể cả trên cổng đặt hàng. Đơn đang dở vẫn xử lý tiếp được nhưng có cảnh báo.</p>
+                    <div class="form-field">
+                      <label class="form-label" for="lock-reason">Lý do khoá <span class="required">*</span></label>
+                      <textarea class="textarea" id="lock-reason" name="reason" maxlength="500" required></textarea>
+                    </div>
+                  </div>
+                  <div class="dialog__footer">
+                    <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                    <button class="btn btn--danger" type="submit">Khoá giao dịch</button>
+                  </div>
+                </form>
+              </dialog>
+            </c:otherwise>
+          </c:choose>
+        </c:if>
 
         <section class="card credit-card" id="lich-su-phan-cong">
           <div class="card__header"><h2>Lịch sử phân công</h2></div>
