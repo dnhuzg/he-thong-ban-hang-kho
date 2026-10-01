@@ -122,8 +122,11 @@ Những điểm cần đọc nhiều file mới thấy:
 ### Giao diện (assets)
 
 - `base.css`: design token (`:root`), reset, tiện ích. Muốn đổi màu hay khoảng cách thì sửa ở đây.
-- `layout.css`: sidebar, topbar, responsive. `components.css`: nút, form, alert, card, bảng, badge, phân trang, dialog, trang lỗi. `auth.css`: các trang trước đăng nhập.
-- `js/app.js`: chỉ tương tác UI (menu trên màn hình nhỏ, hiện mật khẩu, `<dialog>` qua `data-dialog-open`).
+- `layout.css`: sidebar, topbar, thanh điều hướng nhanh trên điện thoại, responsive. `components.css`: nút, form, alert, card, bảng, badge, phân trang, dialog, danh sách / thẻ trên điện thoại, trang lỗi. `auth.css`: các trang trước đăng nhập (đăng nhập hai cột).
+- `icons.css` + `assets/img/icons/*.svg`: biểu tượng tải từ Figma, dùng `<span class="icon icon--tên"></span>` (mặt nạ CSS, màu theo màu chữ). Thêm biểu tượng: lưu SVG vào `img/icons` và thêm một dòng `.icon--tên` trong `icons.css`.
+- `js/app.js`: chỉ tương tác UI (menu trên màn hình nhỏ, hiện mật khẩu, `<dialog>` qua `data-dialog-open`, ô chọn bộ lọc `data-autosubmit`).
+- CSS/JS gắn `?v=${assetVersion}` (đổi mỗi lần khởi động ứng dụng) nên không cần Ctrl+F5 sau khi triển khai.
+- Thiết kế giao diện nằm trong file Figma của nhóm (đăng nhập, sản phẩm, form sản phẩm, bảng giá, người dùng; desktop và điện thoại). Làm giao diện chỉ đổi cách hiển thị, không đổi chức năng.
 - Giao diện sáng, màu nhấn xanh dương. Chỉ dùng biến trong `base.css`, không hardcode mã màu ở file khác; không viết `style` inline.
 
 ## Quy ước code
