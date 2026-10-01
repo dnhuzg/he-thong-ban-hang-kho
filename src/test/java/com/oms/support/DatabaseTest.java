@@ -47,7 +47,13 @@ public abstract class DatabaseTest {
                     """);
             statement.execute("CREATE TABLE customer_groups (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(100))");
             statement.execute("INSERT INTO customer_groups (id, code, name) VALUES (1, 'DL1', 'Đại lý cấp 1'), (2, 'DL2', 'Đại lý cấp 2'), (3, 'LE', 'Khách lẻ')");
-            statement.execute("CREATE TABLE customers (id BIGINT PRIMARY KEY, code VARCHAR(20), name VARCHAR(200), sales_rep_id BIGINT, group_id BIGINT REFERENCES customer_groups(id))");
+            statement.execute("""
+                    CREATE TABLE customers (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(200),
+                        phone VARCHAR(20), tax_code VARCHAR(14) UNIQUE, area_id BIGINT REFERENCES areas(id),
+                        group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id),
+                        status VARCHAR(20) DEFAULT 'ACTIVE', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             // Danh mục sản phẩm (S2-05, S2-06); dữ liệu mẫu: cây 3 cấp 1 → 2 → 3 và nhóm gốc 4
             statement.execute("CREATE TABLE product_categories (id BIGINT AUTO_INCREMENT PRIMARY KEY, parent_id BIGINT REFERENCES product_categories(id), name VARCHAR(150), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("CREATE TABLE units (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(50))");
