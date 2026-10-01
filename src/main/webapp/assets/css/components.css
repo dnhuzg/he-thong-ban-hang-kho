@@ -705,9 +705,8 @@
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-5);
-  overflow-x: auto;
-  white-space: nowrap;
   margin-bottom: var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
@@ -1890,4 +1889,14 @@ a.pl-row:hover .pl-row__title {
 .order-line__money .order-line__meta {
   flex-basis: 100%;
   margin-top: 0;
+}
+
+/* Điện thoại: các tab không rớt dòng mà cuộn ngang (chừa 2px dưới để không cắt vạch tab đang chọn) */
+@media (max-width: 720px) {
+  .tabs {
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }
