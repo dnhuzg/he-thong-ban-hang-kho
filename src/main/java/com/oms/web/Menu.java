@@ -36,12 +36,16 @@ public final class Menu {
         if (policy.canRead(user.getRoles(), Module.PRODUCT)) {
             boolean categories = path.startsWith("/products/categories");
             boolean prices = path.startsWith("/products/price-lists");
+            boolean discounts = path.startsWith("/products/discounts");
             List<Item> items = new ArrayList<>();
-            items.add(item("Sản phẩm", "/products", "package", path.startsWith("/products") && !categories && !prices, true));
+            items.add(item("Sản phẩm", "/products", "package", path.startsWith("/products") && !categories && !prices && !discounts, true));
             items.add(item("Nhóm hàng", "/products/categories", "layers", categories, false));
             // Đại lý (chỉ xem dữ liệu của mình) chưa có cổng riêng nên không thấy bảng giá của mọi nhóm
             if (!policy.isOwnScopeOnly(user.getRoles(), Module.PRODUCT)) {
                 items.add(item("Bảng giá", "/products/price-lists", "tags", prices, true));
+            }
+            if (PermissionPolicy.canManageDiscounts(user.getRoles())) {
+                items.add(item("Chiết khấu", "/products/discounts", "percent", discounts, false));
             }
             groups.add(new Group("Sản phẩm & bảng giá", items));
         }

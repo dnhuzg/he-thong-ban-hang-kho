@@ -120,6 +120,17 @@ public abstract class DatabaseTest {
                         new_floor_price DECIMAL(15,2), effective_from DATE, changed_by BIGINT REFERENCES users(id),
                         changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
+            statement.execute("""
+                    CREATE TABLE discount_policies (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150),
+                        product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
+                        category_id BIGINT REFERENCES product_categories(id) ON DELETE CASCADE,
+                        discount_type VARCHAR(10), valid_from DATE, valid_to DATE, status VARCHAR(10) DEFAULT 'ACTIVE',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE discount_tiers (policy_id BIGINT REFERENCES discount_policies(id) ON DELETE CASCADE,
+                        min_qty INT, discount_value DECIMAL(15,2), PRIMARY KEY (policy_id, min_qty))
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");

@@ -1673,3 +1673,15 @@ a.pl-row:hover .pl-row__title {
 .price-history__who {
   font-size: 0.8125rem;
 }
+
+/* Chính sách chiết khấu (S3-01): lưới các bậc theo số lượng */
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+  max-width: 560px;
+}
+
+.tier-grid .form-field + .form-field {
+  margin-top: 0;
+}
