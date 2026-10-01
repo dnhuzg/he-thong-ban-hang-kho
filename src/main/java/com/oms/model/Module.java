@@ -3,7 +3,7 @@ package com.oms.model;
 /** Module nghiệp vụ trong ma trận phân quyền. url = null nghĩa là chưa làm (hiện "Sắp có" trên menu). */
 public enum Module {
     PRODUCT("Sản phẩm & bảng giá", "/products"),
-    CUSTOMER_CREDIT("Đại lý & hạn mức công nợ", null),
+    CUSTOMER_CREDIT("Đại lý & hạn mức công nợ", "/customers"),
     ORDER("Đơn hàng", null),
     ORDER_APPROVAL("Duyệt đơn & giá đặc biệt", null),
     INVENTORY("Tồn kho & nhập kho", "/suppliers"),
