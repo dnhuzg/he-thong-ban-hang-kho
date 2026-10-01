@@ -47,7 +47,10 @@ public class AuditEntry {
             Map.entry("USER_IMPORT", "Nhập người dùng từ Excel"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
             Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
-            Map.entry("CUSTOMER_DELETE", "Xoá đại lý"));
+            Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),
+            Map.entry("DELIVERY_POINT_SAVE", "Lưu điểm giao hàng"),
+            Map.entry("DELIVERY_POINT_DEFAULT", "Đặt điểm giao mặc định"),
+            Map.entry("DELIVERY_POINT_DELETE", "Xoá điểm giao hàng"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
