@@ -25,6 +25,15 @@ document.addEventListener("DOMContentLoaded", () => {
     select.addEventListener("change", () => select.form.requestSubmit());
   });
 
+  // Nhãn trạng thái bên cạnh ô chọn đổi theo lựa chọn hiện tại
+  document.querySelectorAll("select[data-badge-target]").forEach((select) => {
+    const badge = document.getElementById(select.dataset.badgeTarget);
+    select.addEventListener("change", () => {
+      badge.textContent = select.options[select.selectedIndex].text;
+      badge.classList.toggle("badge--success", select.value === "ACTIVE");
+    });
+  });
+
   // Hiện / ẩn mật khẩu
   document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);

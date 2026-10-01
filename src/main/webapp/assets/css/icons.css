@@ -36,3 +36,8 @@
 .icon--ellipsis { --icon: url("../img/icons/ellipsis.svg"); }
 .icon--boxes { --icon: url("../img/icons/boxes.svg"); }
 .icon--menu { --icon: url("../img/icons/menu.svg"); }
+.icon--arrow-left { --icon: url("../img/icons/arrow-left.svg"); }
+.icon--wallet { --icon: url("../img/icons/wallet.svg"); }
+.icon--circle-check { --icon: url("../img/icons/circle-check.svg"); }
+.icon--check { --icon: url("../img/icons/check.svg"); }
+.icon--info { --icon: url("../img/icons/info.svg"); }
