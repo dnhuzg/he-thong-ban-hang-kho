@@ -88,6 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
     refresh();
   });
 
+  // Ô tick đầu cột bật / tắt mọi ô cùng tên (chọn tất cả đại lý khi chuyển giao)
+  document.querySelectorAll("input[data-check-all]").forEach((all) => {
+    const boxes = document.querySelectorAll('input[name="' + all.dataset.checkAll + '"]');
+    all.addEventListener("change", () => boxes.forEach((box) => { box.checked = all.checked; }));
+  });
+
   // Hiện / ẩn mật khẩu
   document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);

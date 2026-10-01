@@ -11,6 +11,7 @@
           </div>
           <c:if test="${canManage}">
             <div class="page-header__actions">
+              <c:if test="${canAssign}"><a class="btn btn--secondary" href="${ctx}/customers/transfer">Chuyển giao đại lý</a></c:if>
               <a class="btn btn--primary" href="${ctx}/customers/new"><span class="icon icon--sm icon--plus" aria-hidden="true"></span>Thêm đại lý</a>
             </div>
           </c:if>

@@ -1645,3 +1645,13 @@ a.pl-row:hover .pl-row__title {
   margin: 0;
   font-size: var(--font-size-sm);
 }
+
+/* ---------- Chuyển giao đại lý ---------- */
+
+.transfer-form {
+  margin: var(--space-4) 0;
+}
+
+.toolbar .toolbar__wide {
+  flex: 0 1 340px;
+}

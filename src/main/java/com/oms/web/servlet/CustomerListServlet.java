@@ -22,6 +22,7 @@ public class CustomerListServlet extends BaseServlet {
         try {
             req.setAttribute("result", customerService.search(null, null, null, null, null,
                     intParam(req, "page", 1), currentUser(req)));
+            req.setAttribute("canAssign", PermissionPolicy.canAssignCustomers(currentUser(req).getRoles()));
             req.setAttribute("canManage", PermissionPolicy.canManageCustomers(currentUser(req).getRoles()));
             render(req, resp, "customers/list");
         } catch (ForbiddenException e) {

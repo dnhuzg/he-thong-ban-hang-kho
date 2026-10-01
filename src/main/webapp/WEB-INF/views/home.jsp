@@ -27,7 +27,7 @@
             </section>
 
             <c:if test="${not empty handover}">
-              <%-- Đại lý của nhân viên đã bị khoá (S1-10); việc bàn giao làm ở S3-06 --%>
+              <%-- Đại lý của nhân viên đã bị khoá (S1-10); chuyển giao ở trang Chuyển giao đại lý (S3-06) --%>
               <section class="card mt-4" aria-labelledby="handover-title">
                 <div class="card__header">
                   <h2 id="handover-title">Đại lý cần bàn giao (${handover.size()})</h2>
@@ -51,6 +51,7 @@
                           <td>
                             <div class="table__cell-main"><c:out value="${h.repFullName}"/></div>
                             <div class="table__cell-sub"><c:out value="${h.repUsername}"/></div>
+                            <c:if test="${canAssign}"><a class="table__cell-sub" href="${ctx}/customers/transfer?from=${h.repId}">Chuyển giao</a></c:if>
                           </td>
                         </tr>
                       </c:forEach>

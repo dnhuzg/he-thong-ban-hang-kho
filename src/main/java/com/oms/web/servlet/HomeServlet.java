@@ -34,6 +34,7 @@ public class HomeServlet extends BaseServlet {
                 userService.countByStatus().forEach((status, count) -> stats.put(status.name(), count));
                 req.setAttribute("userStats", stats);
                 req.setAttribute("handover", userService.customersNeedingHandover());
+                req.setAttribute("canAssign", com.oms.security.PermissionPolicy.canAssignCustomers(user.getRoles()));
                 req.setAttribute("canManageUsers", permissionService.policy().canWrite(user.getRoles(), Module.USER_AUDIT));
             }
         } catch (SQLException e) {
