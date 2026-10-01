@@ -115,6 +115,22 @@ CREATE TABLE customers (
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S3-04: điểm giao hàng của đại lý; mỗi đại lý tối đa một điểm mặc định (ứng dụng giữ)
+CREATE TABLE customer_delivery_points (
+  id              BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id     BIGINT        NOT NULL,
+  address         VARCHAR(255)  NOT NULL,
+  receiver_name   VARCHAR(150)  NOT NULL,
+  receiver_phone  VARCHAR(20)   NOT NULL,
+  route_note      VARCHAR(500)  NULL,
+  is_default      BOOLEAN       NOT NULL DEFAULT FALSE,
+  created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_delivery_points_customer (customer_id),
+  CONSTRAINT fk_delivery_points_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
 CREATE TABLE product_categories (
   id          BIGINT       NOT NULL AUTO_INCREMENT,
