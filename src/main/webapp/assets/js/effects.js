@@ -5,9 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Nút chuyển giao diện sáng / tối (trang trước đăng nhập); giao diện ban đầu do script ở đầu trang đặt
   const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) {
-    themeToggle.checked = document.documentElement.dataset.theme === "dark";
+    themeToggle.checked = document.documentElement.dataset.theme === "light";
     themeToggle.addEventListener("change", () => {
-      const theme = themeToggle.checked ? "dark" : "light";
+      const theme = themeToggle.checked ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", theme);
       try {
         localStorage.setItem("oms-theme", theme);

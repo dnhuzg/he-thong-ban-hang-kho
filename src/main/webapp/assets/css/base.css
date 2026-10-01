@@ -41,16 +41,13 @@
   --color-auth-glow-2: #e6f4ff;
 
   /* Nút chuyển sáng / tối ở các trang trước đăng nhập */
-  --toggle-day-1: #bfdbfe;
-  --toggle-day-2: #dbeafe;
-  --toggle-night-1: #1a1a2e;
-  --toggle-night-2: #16213e;
-  --toggle-sun-1: #fbbf24;
-  --toggle-sun-2: #f59e0b;
-  --toggle-moon-1: #4ecdc4;
-  --toggle-moon-2: #45b7af;
+  --toggle-night: #2a2a2a;
+  --toggle-day: #00a6ff;
+  --toggle-moon: #ffffff;
+  --toggle-sun: #ffcf48;
   --toggle-star: #ffffff;
-  --toggle-glow: rgba(78, 205, 196, 0.5);
+  --toggle-cloud: #ffffff;
+  --toggle-cloud-back: #cfe9fb;
 
   --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   --font-size-sm: 0.8125rem;
