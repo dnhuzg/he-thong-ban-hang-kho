@@ -23,7 +23,7 @@
               <span class="icon icon--search" aria-hidden="true"></span>
               <input id="q" name="q" type="search" placeholder="Tìm theo mã đơn hoặc đại lý" value="<c:out value='${q}'/>">
             </div>
-            <button class="btn btn--secondary toolbar__submit" type="submit">Tìm</button>
+            <button class="btn btn--secondary toolbar__submit toolbar__submit--show" type="submit">Tìm</button>
           </form>
 
           <div class="list-summary">

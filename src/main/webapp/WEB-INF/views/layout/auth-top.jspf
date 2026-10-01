@@ -6,14 +6,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
+  <%@ include file="/WEB-INF/views/effects/theme-init.jspf" %>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
   <link rel="stylesheet" href="${ctx}/assets/css/base.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/auth.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/effects.css?v=${assetVersion}">
 </head>
 <body>
+  <c:set var="themeSwitchFloating" value="${true}"/>
+  <%@ include file="/WEB-INF/views/effects/theme-switch.jspf" %>
   <c:choose>
     <%-- Trang đăng nhập dùng bố cục hai cột (authSplit = true): giới thiệu bên trái, biểu mẫu bên phải --%>
     <c:when test="${authSplit}">

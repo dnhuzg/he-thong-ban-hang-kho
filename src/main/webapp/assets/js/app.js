@@ -166,6 +166,47 @@ document.addEventListener("DOMContentLoaded", () => {
     apply();
   });
 
+  // Gợi ý khi gõ: ô có data-live-search="id-vùng-kết-quả" tải danh sách từ data-url của vùng đó sau khi ngừng gõ một chút.
+  // Không có JavaScript thì vẫn dùng nút Tìm / Enter như thường.
+  document.querySelectorAll("[data-live-search]").forEach((input) => {
+    const box = document.getElementById(input.dataset.liveSearch);
+    if (!box) {
+      return;
+    }
+    let timer = null;
+    let controller = null;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const q = input.value.trim();
+        if (controller) {
+          controller.abort();
+        }
+        if (q === "") {
+          box.innerHTML = "";
+          return;
+        }
+        controller = new AbortController();
+        try {
+          const res = await fetch(box.dataset.url + "&q=" + encodeURIComponent(q), {
+            credentials: "same-origin",
+            signal: controller.signal,
+          });
+          if (res.redirected || !res.ok) {
+            // hết phiên: tải lại để chuyển về trang đăng nhập; lỗi khác thì giữ nguyên kết quả cũ
+            if (res.redirected) {
+              location.reload();
+            }
+            return;
+          }
+          box.innerHTML = await res.text();
+        } catch (e) {
+          // bị huỷ vì đã gõ tiếp, hoặc mất mạng: bỏ qua
+        }
+      }, 250);
+    });
+  });
+
   // Mở / đóng <dialog>
   document.querySelectorAll("[data-dialog-open]").forEach((btn) => {
     btn.addEventListener("click", () => {
