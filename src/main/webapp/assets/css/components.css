@@ -1873,3 +1873,20 @@ a.pl-row:hover .pl-row__title {
     flex-basis: 100%;
   }
 }
+
+.order-line__form {
+  flex-wrap: wrap;
+}
+
+.order-line__form .select {
+  flex: 1 1 110px;
+}
+
+.order-line__money p {
+  flex-wrap: wrap;
+}
+
+.order-line__money .order-line__meta {
+  flex-basis: 100%;
+  margin-top: 0;
+}

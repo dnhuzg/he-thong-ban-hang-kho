@@ -44,9 +44,18 @@ public class OrderService {
     private static final int PRODUCT_RESULTS = 8;
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    /** Sản phẩm tìm được khi thêm dòng hàng: giá theo đơn vị cơ sở (null nếu chưa có giá) và các đơn vị chọn được. */
+    /**
+     * Sản phẩm tìm được khi thêm dòng hàng: giá theo đơn vị cơ sở (null nếu chưa có giá) và các đơn vị chọn được.
+     * Có thêm getX() vì EL trong JSP không đọc được accessor của record.
+     */
     public record ProductChoice(long productId, String sku, String name, String baseUnitName, BigDecimal basePrice,
                                 List<NamedItem> units) {
+        public long getProductId() { return productId; }
+        public String getSku() { return sku; }
+        public String getName() { return name; }
+        public String getBaseUnitName() { return baseUnitName; }
+        public BigDecimal getBasePrice() { return basePrice; }
+        public List<NamedItem> getUnits() { return units; }
     }
 
     private final OrderDao orderDao = new OrderDao();

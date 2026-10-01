@@ -148,7 +148,8 @@
                   <button class="btn btn--secondary" type="submit">Cập nhật</button>
                 </form>
                 <c:if test="${ln.converted}">
-                  <p class="order-line__meta">= <fmt:formatNumber value="${ln.baseQuantity}" maxFractionDigits="2"/> <c:out value="${ln.baseUnitName}"/></p>
+                  <fmt:formatNumber var="baseQtyText" value="${ln.baseQuantity}" maxFractionDigits="2"/>
+                  <p class="order-line__meta"><c:out value="= ${baseQtyText} ${ln.baseUnitName}"/></p>
                 </c:if>
                 <div class="order-line__money">
                   <c:choose>
