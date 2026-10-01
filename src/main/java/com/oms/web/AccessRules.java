@@ -63,7 +63,10 @@ public final class AccessRules {
             Map.entry("/customers/view", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/new", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/edit", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
-            Map.entry("/customers/delete", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)));
+            Map.entry("/customers/delete", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
+            Map.entry("/customers/delivery-points/save", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
+            Map.entry("/customers/delivery-points/default", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
+            Map.entry("/customers/delivery-points/delete", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)));
 
     // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ
     private static final Rule FILES = new Rule(Kind.AUTHENTICATED, null);

@@ -1497,3 +1497,83 @@ a.pl-row:hover .pl-row__title {
 .table .col-count {
   width: 180px;
 }
+
+/* ---------- Điểm giao hàng của đại lý ---------- */
+
+.dp-card {
+  margin-top: var(--space-5);
+}
+
+.dp-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dp-card__header h2,
+.dp-card__header p {
+  margin: 0;
+}
+
+.dp-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dp-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dp-item:last-child {
+  border-bottom: 0;
+}
+
+.dp-item p {
+  margin: 0;
+}
+
+.dp-item__address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+}
+
+.dp-item__receiver {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.dp-item__note {
+  margin-top: var(--space-1);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.dp-empty {
+  padding: var(--space-5);
+}
+
+.dp-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.row-menu__panel form {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .dp-item {
+    padding: var(--space-4);
+  }
+}

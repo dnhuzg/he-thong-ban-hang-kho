@@ -31,4 +31,142 @@
           </dl>
         </section>
 
+        <section class="card dp-card" id="diem-giao-hang">
+          <div class="card__header dp-card__header">
+            <div>
+              <h2>Điểm giao hàng</h2>
+              <p>Đơn hàng chọn điểm giao trong danh sách này; một điểm được đặt làm mặc định.</p>
+            </div>
+            <c:if test="${canEditPoints}">
+              <button class="btn btn--primary btn--sm" type="button" data-dialog-open="dp-new"><span class="icon icon--sm icon--plus" aria-hidden="true"></span>Thêm điểm giao</button>
+            </c:if>
+          </div>
+          <div class="dp-list">
+            <c:if test="${empty points}">
+              <p class="dp-empty text-muted">Đại lý chưa có điểm giao hàng nào.</p>
+            </c:if>
+            <c:forEach var="pt" items="${points}">
+              <article class="dp-item">
+                <div class="dp-item__main">
+                  <p class="dp-item__address">
+                    <c:out value="${pt.address}"/>
+                    <c:if test="${pt.defaultPoint}"><span class="badge badge--primary">Mặc định</span></c:if>
+                  </p>
+                  <p class="dp-item__receiver"><c:out value="${pt.receiverName} · ${pt.receiverPhone}"/></p>
+                  <c:if test="${not empty pt.routeNote}"><p class="dp-item__note"><c:out value="${pt.routeNote}"/></p></c:if>
+                </div>
+                <c:if test="${canEditPoints}">
+                  <details class="row-menu">
+                    <summary aria-label="Thao tác với điểm giao <c:out value='${pt.address}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
+                    <div class="row-menu__panel">
+                      <button type="button" data-dialog-open="dp-edit-${pt.id}">Sửa</button>
+                      <c:if test="${not pt.defaultPoint}">
+                        <form action="${ctx}/customers/delivery-points/default" method="post">
+                          <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                          <input type="hidden" name="customerId" value="${customer.id}">
+                          <input type="hidden" name="pointId" value="${pt.id}">
+                          <button type="submit">Đặt làm mặc định</button>
+                        </form>
+                      </c:if>
+                      <button type="button" class="is-danger" data-dialog-open="dp-delete-${pt.id}">Xoá</button>
+                    </div>
+                  </details>
+                </c:if>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+
+        <c:if test="${canEditPoints}">
+          <%-- Một hộp thoại cho thêm mới; mỗi điểm có hộp thoại sửa và xoá riêng --%>
+          <dialog class="dialog" id="dp-new" aria-labelledby="dp-new-title">
+            <form action="${ctx}/customers/delivery-points/save" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="customerId" value="${customer.id}">
+              <input type="hidden" name="pointId" value="0">
+              <div class="dialog__header"><h2 id="dp-new-title">Thêm điểm giao hàng</h2></div>
+              <div class="dialog__body dp-form">
+                <div class="form-field">
+                  <label class="form-label" for="dp-new-address">Địa chỉ giao hàng <span class="required">*</span></label>
+                  <input class="input" id="dp-new-address" name="address" maxlength="255" required>
+                </div>
+                <div class="form-card__row">
+                  <div class="form-field">
+                    <label class="form-label" for="dp-new-receiver">Người nhận <span class="required">*</span></label>
+                    <input class="input" id="dp-new-receiver" name="receiverName" maxlength="150" required>
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="dp-new-phone">Số điện thoại <span class="required">*</span></label>
+                    <input class="input" id="dp-new-phone" name="receiverPhone" type="tel" maxlength="20" required>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="dp-new-note">Ghi chú đường đi</label>
+                  <textarea class="textarea" id="dp-new-note" name="routeNote" maxlength="500"></textarea>
+                </div>
+                <label class="choice"><input type="checkbox" name="makeDefault"> <span class="choice__title">Đặt làm điểm giao mặc định</span></label>
+              </div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--primary" type="submit">Thêm điểm giao</button>
+              </div>
+            </form>
+          </dialog>
+
+          <c:forEach var="pt" items="${points}">
+            <dialog class="dialog" id="dp-edit-${pt.id}" aria-labelledby="dp-edit-title-${pt.id}">
+              <form action="${ctx}/customers/delivery-points/save" method="post">
+                <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                <input type="hidden" name="customerId" value="${customer.id}">
+                <input type="hidden" name="pointId" value="${pt.id}">
+                <div class="dialog__header"><h2 id="dp-edit-title-${pt.id}">Sửa điểm giao hàng</h2></div>
+                <div class="dialog__body dp-form">
+                  <div class="form-field">
+                    <label class="form-label" for="dp-address-${pt.id}">Địa chỉ giao hàng <span class="required">*</span></label>
+                    <input class="input" id="dp-address-${pt.id}" name="address" maxlength="255" required value="<c:out value='${pt.address}'/>">
+                  </div>
+                  <div class="form-card__row">
+                    <div class="form-field">
+                      <label class="form-label" for="dp-receiver-${pt.id}">Người nhận <span class="required">*</span></label>
+                      <input class="input" id="dp-receiver-${pt.id}" name="receiverName" maxlength="150" required value="<c:out value='${pt.receiverName}'/>">
+                    </div>
+                    <div class="form-field">
+                      <label class="form-label" for="dp-phone-${pt.id}">Số điện thoại <span class="required">*</span></label>
+                      <input class="input" id="dp-phone-${pt.id}" name="receiverPhone" type="tel" maxlength="20" required value="<c:out value='${pt.receiverPhone}'/>">
+                    </div>
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="dp-note-${pt.id}">Ghi chú đường đi</label>
+                    <textarea class="textarea" id="dp-note-${pt.id}" name="routeNote" maxlength="500"><c:out value="${pt.routeNote}"/></textarea>
+                  </div>
+                  <c:if test="${not pt.defaultPoint}">
+                    <label class="choice"><input type="checkbox" name="makeDefault"> <span class="choice__title">Đặt làm điểm giao mặc định</span></label>
+                  </c:if>
+                </div>
+                <div class="dialog__footer">
+                  <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                  <button class="btn btn--primary" type="submit">Lưu thay đổi</button>
+                </div>
+              </form>
+            </dialog>
+
+            <dialog class="dialog" id="dp-delete-${pt.id}" aria-labelledby="dp-delete-title-${pt.id}">
+              <form action="${ctx}/customers/delivery-points/delete" method="post">
+                <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                <input type="hidden" name="customerId" value="${customer.id}">
+                <input type="hidden" name="pointId" value="${pt.id}">
+                <div class="dialog__header"><h2 id="dp-delete-title-${pt.id}">Xoá điểm giao hàng?</h2></div>
+                <div class="dialog__body">
+                  <p><c:out value="${pt.address}"/></p>
+                  <c:if test="${pt.defaultPoint}"><p class="form-hint mt-4">Đây là điểm mặc định; điểm cũ nhất còn lại sẽ thành mặc định.</p></c:if>
+                </div>
+                <div class="dialog__footer">
+                  <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                  <button class="btn btn--danger" type="submit">Xoá</button>
+                </div>
+              </form>
+            </dialog>
+          </c:forEach>
+        </c:if>
+
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

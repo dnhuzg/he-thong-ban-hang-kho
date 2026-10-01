@@ -54,6 +54,13 @@ public abstract class DatabaseTest {
                         status VARCHAR(20) DEFAULT 'ACTIVE', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                     """);
+            statement.execute("""
+                    CREATE TABLE customer_delivery_points (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, address VARCHAR(255),
+                        receiver_name VARCHAR(150), receiver_phone VARCHAR(20), route_note VARCHAR(500),
+                        is_default BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             // Danh mục sản phẩm (S2-05, S2-06); dữ liệu mẫu: cây 3 cấp 1 → 2 → 3 và nhóm gốc 4
             statement.execute("CREATE TABLE product_categories (id BIGINT AUTO_INCREMENT PRIMARY KEY, parent_id BIGINT REFERENCES product_categories(id), name VARCHAR(150), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("CREATE TABLE units (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(50))");
