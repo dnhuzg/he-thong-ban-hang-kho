@@ -98,7 +98,7 @@
                 <c:forEach var="it" items="${priceList.items}">
                   <tr>
                     <td>
-                      <div class="table__cell-main"><c:out value="${it.productName}"/></div>
+                      <a class="table__cell-main" href="${ctx}/products/price-history?id=${it.productId}"><c:out value="${it.productName}"/></a>
                       <div class="table__cell-sub"><c:out value="${it.sku} · /${it.baseUnitName}"/></div>
                     </td>
                     <c:choose>
@@ -152,7 +152,7 @@
             <div class="pl-items-cards">
               <c:forEach var="it" items="${priceList.items}">
                 <article class="pl-item">
-                  <p class="pl-item__name"><c:out value="${it.productName}"/></p>
+                  <p class="pl-item__name"><a href="${ctx}/products/price-history?id=${it.productId}"><c:out value="${it.productName}"/></a></p>
                   <p class="pl-item__sub"><c:out value="${it.sku} · ${it.baseUnitName}"/></p>
                   <div class="pl-item__foot">
                     <div>
