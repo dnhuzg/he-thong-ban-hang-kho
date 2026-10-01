@@ -11,55 +11,65 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
   <link rel="stylesheet" href="${ctx}/assets/css/base.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/layout.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/icons.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
 </head>
 <body data-ctx="${ctx}">
-  <%@ include file="/WEB-INF/views/layout/icons.jspf" %>
   <div class="app">
     <%-- Menu chỉ gồm mục thuộc quyền, dựng ở server (Menu.build) --%>
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar__brand">
-        <span class="logo-mark">OMS</span>
-        <span>Bán hàng &amp; Kho</span>
-      </div>
+      <a class="sidebar__brand" href="${ctx}/home">
+        <span class="logo-mark"><span class="icon icon--md icon--boxes" aria-hidden="true"></span></span>
+        <span class="sidebar__brand-text">
+          <span class="sidebar__brand-name">Bán hàng &amp; Kho</span>
+          <span class="sidebar__brand-tag">Hệ thống quản trị</span>
+        </span>
+      </a>
       <nav class="sidebar__nav" aria-label="Menu chính">
         <c:forEach var="group" items="${menu}">
-          <p class="sidebar__group"><c:out value="${group.title}"/></p>
-          <c:forEach var="item" items="${group.items}">
-            <c:choose>
-              <c:when test="${item.comingSoon}">
-                <a class="sidebar__link is-disabled" aria-disabled="true"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span><span class="badge">Sắp có</span></a>
-              </c:when>
-              <c:when test="${item.active}">
-                <a class="sidebar__link is-active" href="${ctx}${item.url}" aria-current="page"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span></a>
-              </c:when>
-              <c:otherwise>
-                <a class="sidebar__link" href="${ctx}${item.url}"><span class="sidebar__link-main"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg><span><c:out value="${item.label}"/></span></span></a>
-              </c:otherwise>
-            </c:choose>
-          </c:forEach>
+          <div class="sidebar__section">
+            <c:if test="${not empty group.title}"><p class="sidebar__group"><c:out value="${group.title}"/></p></c:if>
+            <c:forEach var="item" items="${group.items}">
+              <c:choose>
+                <c:when test="${item.comingSoon}">
+                  <span class="sidebar__link is-disabled" aria-disabled="true"><span class="sidebar__link-main"><c:out value="${item.label}"/></span><span class="badge">Sắp có</span></span>
+                </c:when>
+                <c:otherwise>
+                  <a class="sidebar__link${item.active ? ' is-active' : ''}" href="${ctx}${item.url}"${item.active ? ' aria-current="page"' : ''}><span class="icon icon--${item.icon}" aria-hidden="true"></span><span class="sidebar__link-main"><c:out value="${item.label}"/></span></a>
+                </c:otherwise>
+              </c:choose>
+            </c:forEach>
+          </div>
         </c:forEach>
       </nav>
+      <div class="sidebar__scope">
+        <p class="sidebar__scope-label">Phạm vi làm việc</p>
+        <p class="sidebar__scope-value"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span><c:out value="${currentUser.scopeLabel}"/></p>
+      </div>
     </aside>
     <div class="sidebar-backdrop" data-sidebar-close></div>
 
     <div class="app__main">
       <header class="topbar">
-        <button class="topbar__menu-btn" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu">☰</button>
-        <p class="topbar__context">Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
+        <button class="topbar__menu-btn" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Mở menu"><span class="icon icon--md icon--menu" aria-hidden="true"></span></button>
+        <a class="topbar__brand" href="${ctx}/home">
+          <span class="logo-mark"><span class="icon icon--md icon--boxes" aria-hidden="true"></span></span>
+          <span>Bán hàng &amp; Kho</span>
+        </a>
+        <p class="topbar__context"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span>Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
         <details class="user-menu">
           <summary>
             <c:choose>
               <c:when test="${not empty currentUser.avatarThumbPath}">
-                <img class="user-menu__avatar" src="${ctx}/files/<c:out value='${currentUser.avatarThumbPath}'/>" alt="" width="34" height="34">
+                <img class="user-menu__avatar" src="${ctx}/files/<c:out value='${currentUser.avatarThumbPath}'/>" alt="" width="32" height="32">
               </c:when>
               <c:otherwise>
                 <span class="user-menu__avatar" aria-hidden="true"><c:out value="${currentUser.initials}"/></span>
               </c:otherwise>
             </c:choose>
-            <span>
+            <span class="user-menu__text">
               <span class="user-menu__name"><c:out value="${currentUser.fullName}"/></span>
-              <span class="user-menu__role"><c:out value="${currentUser.roleLabels}"/></span>
+              <span class="user-menu__role"><c:out value="${currentUser.username}"/></span>
             </span>
           </summary>
           <div class="user-menu__panel">
