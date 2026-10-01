@@ -50,6 +50,11 @@ public final class Menu {
             groups.add(new Group("Sản phẩm & bảng giá", items));
         }
 
+        boolean takesOrders = PermissionPolicy.canTakeOrders(user.getRoles()) && policy.canWrite(user.getRoles(), Module.ORDER);
+        if (takesOrders) {
+            groups.add(new Group("Bán hàng", List.of(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders"), true))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.CUSTOMER_CREDIT) && PermissionPolicy.canBrowseCustomers(user.getRoles())) {
             groups.add(new Group("Đại lý & hạn mức công nợ",
                     List.of(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true))));
@@ -77,7 +82,7 @@ public final class Menu {
         // Các module chưa làm: chưa có thiết kế nên giữ dạng "Sắp có" như trước
         List<Item> upcoming = new ArrayList<>();
         for (Module m : Module.values()) {
-            if (m.getUrl() == null && policy.canRead(user.getRoles(), m)) {
+            if (m.getUrl() == null && policy.canRead(user.getRoles(), m) && !(m == Module.ORDER && takesOrders)) {
                 upcoming.add(new Item(m.getLabel(), null, "", false, true, false));
             }
         }

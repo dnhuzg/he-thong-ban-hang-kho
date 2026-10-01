@@ -131,6 +131,19 @@ public abstract class DatabaseTest {
                     CREATE TABLE discount_tiers (policy_id BIGINT REFERENCES discount_policies(id) ON DELETE CASCADE,
                         min_qty INT, discount_value DECIMAL(15,2), PRIMARY KEY (policy_id, min_qty))
                     """);
+            statement.execute("""
+                    CREATE TABLE orders (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        customer_id BIGINT REFERENCES customers(id), delivery_point_id BIGINT REFERENCES customer_delivery_points(id),
+                        delivery_date DATE, note VARCHAR(500), status VARCHAR(10) DEFAULT 'DRAFT',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE order_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE, product_id BIGINT REFERENCES products(id),
+                        unit_id BIGINT REFERENCES units(id), quantity INT, factor DECIMAL(12,4), base_quantity DECIMAL(14,4),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (order_id, product_id, unit_id))
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");

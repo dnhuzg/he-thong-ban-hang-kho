@@ -89,6 +89,16 @@ public class PermissionPolicy {
         return roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
     }
 
+    /** Lập đơn hàng cho đại lý: Nhân viên kinh doanh, Quản lý kinh doanh (và Admin). Kho, kế toán chưa có việc với đơn nháp. */
+    public static boolean canTakeOrders(Set<Role> roles) {
+        return roles.contains(Role.SALES_REP) || canSeeAllOrders(roles);
+    }
+
+    /** Nhân viên kinh doanh chỉ thấy đơn của đại lý mình phụ trách; Quản lý kinh doanh (và Admin) thấy tất cả. */
+    public static boolean canSeeAllOrders(Set<Role> roles) {
+        return roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
+    }
+
     /** Đại lý (tài khoản khách) chưa có cổng riêng nên không xem được danh sách đại lý; kho cũng không có quyền xem. */
     public static boolean canBrowseCustomers(Set<Role> roles) {
         return canManageCustomers(roles) || roles.contains(Role.SALES_REP);

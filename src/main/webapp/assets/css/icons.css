@@ -23,6 +23,7 @@
 .icon--house { --icon: url("../img/icons/house.svg"); }
 .icon--package { --icon: url("../img/icons/package.svg"); }
 .icon--layers { --icon: url("../img/icons/layers.svg"); }
+.icon--clipboard-list { --icon: url("../img/icons/clipboard-list.svg"); }
 .icon--percent { --icon: url("../img/icons/percent.svg"); }
 .icon--tags { --icon: url("../img/icons/tags.svg"); }
 .icon--truck { --icon: url("../img/icons/truck.svg"); }
