@@ -5,7 +5,7 @@
 <c:when test="${not empty currentUser}">
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
         <section class="card error-state">
-<%@ include file="/WEB-INF/views/effects/tv-404.jspf" %>
+          <p class="error-state__code">404</p>
           <h1>Không tìm thấy trang</h1>
           <p>Đường dẫn có thể đã sai hoặc trang đã bị chuyển đi. Hãy quay lại trang chủ hoặc dùng menu.</p>
           <div class="form-actions">
@@ -16,7 +16,7 @@
 </c:when>
 <c:otherwise>
 <%@ include file="/WEB-INF/views/layout/auth-top.jspf" %>
-<%@ include file="/WEB-INF/views/effects/tv-404.jspf" %>
+      <p class="error-state__code">404</p>
       <h1 class="auth-card__title">Không tìm thấy trang</h1>
       <p class="auth-card__desc">Đường dẫn có thể đã sai hoặc trang đã bị chuyển đi. Hãy quay lại trang chủ hoặc dùng menu.</p>
       <a class="btn btn--primary btn--block" href="${ctx}/login">Đến trang đăng nhập</a>
