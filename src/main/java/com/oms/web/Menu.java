@@ -46,6 +46,11 @@ public final class Menu {
             groups.add(new Group("Sản phẩm & bảng giá", items));
         }
 
+        if (policy.canRead(user.getRoles(), Module.CUSTOMER_CREDIT) && PermissionPolicy.canBrowseCustomers(user.getRoles())) {
+            groups.add(new Group("Đại lý & hạn mức công nợ",
+                    List.of(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
             groups.add(new Group("Tồn kho & nhập kho",
                     List.of(item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false))));

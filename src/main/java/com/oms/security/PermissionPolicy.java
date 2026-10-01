@@ -66,6 +66,19 @@ public class PermissionPolicy {
         return roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ADMIN);
     }
 
+    /**
+     * Ràng buộc cố định: hồ sơ đại lý do Admin, Quản lý kinh doanh và Kế toán công nợ sửa. Nhân viên kinh doanh chỉ
+     * xem đại lý mình phụ trách (ma trận cho W_OWN nên không dùng canWrite để chặn việc sửa hồ sơ).
+     */
+    public static boolean canManageCustomers(Set<Role> roles) {
+        return roles.contains(Role.ADMIN) || roles.contains(Role.SALES_MANAGER) || roles.contains(Role.ACCOUNTANT);
+    }
+
+    /** Đại lý (tài khoản khách) chưa có cổng riêng nên không xem được danh sách đại lý; kho cũng không có quyền xem. */
+    public static boolean canBrowseCustomers(Set<Role> roles) {
+        return canManageCustomers(roles) || roles.contains(Role.SALES_REP);
+    }
+
     /** Trang cấu hình phân quyền chỉ dành cho Quản trị hệ thống. */
     public static boolean canManagePermissions(Set<Role> roles) {
         return roles.contains(Role.ADMIN);
