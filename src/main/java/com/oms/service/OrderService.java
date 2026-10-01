@@ -196,36 +196,37 @@ public class OrderService {
         });
     }
 
-    /** Thêm dòng; sản phẩm và đơn vị đã có trong đơn thì cộng dồn số lượng vào dòng đó. */
+    /** Thêm dòng; dùng cùng transaction khi thêm nhanh cả nhóm hoặc sao chép đơn. */
     public void addLine(long orderId, long productId, long unitId, String quantityText, User actor) throws SQLException {
         requireOrders(actor);
         int quantity = parseQuantity(quantityText);
         Db.inTransaction(conn -> {
             Order order = lockVisible(conn, orderId, actor);
-            Product product = productDao.findById(conn, productId, false);
-            if (product == null) {
-                throw new ServiceException("Vui lòng chọn sản phẩm.");
-            }
-            if (product.getStatus() != Product.Status.ACTIVE) {
-                throw new ServiceException("Sản phẩm " + product.getSku() + " đã ngừng kinh doanh, không thêm vào đơn được.");
-            }
-            if (priceListService.effectivePrice(conn, order.getCustomerGroupId(), productId, LocalDate.now()) == null) {
-                throw new ServiceException("Sản phẩm " + product.getSku() + " chưa có giá trong bảng giá đang hiệu lực của nhóm "
-                        + order.getCustomerGroupName() + " nên chưa thêm vào đơn được.");
-            }
-            OrderLine existing = orderDao.findLine(conn, orderId, productId, unitId);
-            if (existing != null) {
-                setQuantity(conn, existing, unitId, existing.getQuantity() + (long) quantity);
-            } else {
-                if (orderDao.lines(conn, orderId).size() >= MAX_LINES) {
-                    throw new ServiceException("Một đơn có tối đa " + MAX_LINES + " dòng hàng.");
-                }
-                UnitConversionService.Converted c = unitService.toBase(conn, productId, unitId, BigDecimal.valueOf(quantity));
-                orderDao.insertLine(conn, orderId, productId, unitId, quantity, c.factor(), c.baseQuantity());
-            }
+            addLine(conn, order, productId, unitId, quantity);
             orderDao.touch(conn, orderId);
             return null;
         });
+    }
+
+    void addLine(Connection conn, Order order, long productId, long unitId, int quantity) throws SQLException {
+        if (quantity < 1 || quantity > MAX_QUANTITY) throw new ServiceException("Số lượng không hợp lệ.");
+        Product product = productDao.findById(conn, productId, false);
+        if (product == null || product.getStatus() != Product.Status.ACTIVE) {
+            throw new ServiceException("Sản phẩm không tồn tại hoặc đã ngừng kinh doanh.");
+        }
+        if (priceListService.effectivePrice(conn, order.getCustomerGroupId(), productId, LocalDate.now()) == null) {
+            throw new ServiceException("Sản phẩm " + product.getSku() + " chưa có giá trong bảng giá đang hiệu lực.");
+        }
+        OrderLine existing = orderDao.findLine(conn, order.getId(), productId, unitId);
+        if (existing != null) {
+            setQuantity(conn, existing, unitId, existing.getQuantity() + (long)quantity);
+        } else {
+            if (orderDao.lines(conn, order.getId()).size() >= MAX_LINES) {
+                throw new ServiceException("Một đơn có tối đa " + MAX_LINES + " dòng hàng.");
+            }
+            UnitConversionService.Converted converted = unitService.toBase(conn, productId, unitId, BigDecimal.valueOf(quantity));
+            orderDao.insertLine(conn, order.getId(), productId, unitId, quantity, converted.factor(), converted.baseQuantity());
+        }
     }
 
     /** Đổi đơn vị và / hoặc số lượng của một dòng. */
@@ -282,13 +283,13 @@ public class OrderService {
         return line;
     }
 
-    private Order lockVisible(Connection conn, long orderId, User viewer) throws SQLException {
+    Order lockVisible(Connection conn, long orderId, User viewer) throws SQLException {
         Order order = orderDao.findByIdForUpdate(conn, orderId);
         requireVisible(order, viewer);
         return order;
     }
 
-    private static void requireVisible(Order order, User viewer) {
+    static void requireVisible(Order order, User viewer) {
         boolean visible = order != null && (PermissionPolicy.canSeeAllOrders(viewer.getRoles())
                 || (order.getCustomerSalesRepId() != null && order.getCustomerSalesRepId() == viewer.getId()));
         if (!visible) {
@@ -296,12 +297,12 @@ public class OrderService {
         }
     }
 
-    private static boolean canSeeCustomer(User viewer, Customer c) {
+    static boolean canSeeCustomer(User viewer, Customer c) {
         return PermissionPolicy.canSeeAllOrders(viewer.getRoles())
                 || (c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId());
     }
 
-    private static void requireOrders(User user) {
+    static void requireOrders(User user) {
         if (!PermissionPolicy.canTakeOrders(user.getRoles())) {
             throw new ForbiddenException("Chỉ Nhân viên kinh doanh và Quản lý kinh doanh được lập đơn hàng.");
         }
@@ -325,7 +326,7 @@ public class OrderService {
      * giảm trên mỗi đơn vị của chính sách có lợi nhất, xét trên tổng số lượng cơ sở của sản phẩm đó trong đơn.
      * Dòng của sản phẩm chưa (hoặc không còn) có giá thì để trống tiền và không vào tổng.
      */
-    private void price(Connection conn, Order order) throws SQLException {
+    void price(Connection conn, Order order) throws SQLException {
         LocalDate today = LocalDate.now();
         Map<Long, BigDecimal> totalBase = new HashMap<>();
         for (OrderLine l : order.getLines()) {
