@@ -39,6 +39,9 @@ public class Customer {
     private Status status = Status.ACTIVE;
     private BigDecimal creditLimit = BigDecimal.ZERO;
     private int creditDays;
+    private String lockReason;
+    private LocalDateTime lockedAt;
+    private String lockedByName;
     private LocalDateTime createdAt;
 
     public boolean isLocked() {
@@ -75,6 +78,14 @@ public class Customer {
     /** Số ngày nợ tối đa; 0 là phải thanh toán ngay. */
     public int getCreditDays() { return creditDays; }
     public void setCreditDays(int creditDays) { this.creditDays = creditDays; }
+    /** Lý do, thời điểm và người khoá khi đại lý đang bị khoá giao dịch; null khi đang giao dịch bình thường. */
+    public String getLockReason() { return lockReason; }
+    public void setLockReason(String lockReason) { this.lockReason = lockReason; }
+    public LocalDateTime getLockedAt() { return lockedAt; }
+    public void setLockedAt(LocalDateTime lockedAt) { this.lockedAt = lockedAt; }
+    public String getLockedByName() { return lockedByName; }
+    public void setLockedByName(String lockedByName) { this.lockedByName = lockedByName; }
+    public String getLockedAtText() { return lockedAt == null ? "" : lockedAt.toString().replace('T', ' ').substring(0, 16); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
