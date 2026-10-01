@@ -369,6 +369,12 @@
   justify-content: flex-end;
 }
 
+/* Ba ô thao tác cố định rộng bằng nhau để các nút thẳng cột giữa các dòng, dù dòng nào đó thiếu nút thứ ba */
+.table__actions--slots {
+  display: grid;
+  grid-template-columns: repeat(3, 6.5rem);
+}
+
 .table__cell-main {
   font-weight: 600;
   color: var(--color-text);
