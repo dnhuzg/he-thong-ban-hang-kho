@@ -332,12 +332,13 @@ public class OrderService {
     void price(Connection conn, Order order) throws SQLException {
         if (order.getStatus() != Order.Status.DRAFT) {
             BigDecimal gross = BigDecimal.ZERO, discount = BigDecimal.ZERO;
+            int unpriced = 0;
             for (OrderLine line : order.getLines()) {
-                if (!line.isPriced()) throw new ServiceException("Đơn đã chốt thiếu ảnh chụp giá.");
+                if (!line.isPriced()) { unpriced++; continue; }
                 gross = gross.add(line.getGrossAmount());
                 discount = discount.add(line.getDiscountAmount());
             }
-            order.setGrossTotal(gross); order.setDiscountTotal(discount);
+            order.setGrossTotal(gross); order.setDiscountTotal(discount); order.setUnpricedLines(unpriced);
             return;
         }
         LocalDate today = LocalDate.now();
