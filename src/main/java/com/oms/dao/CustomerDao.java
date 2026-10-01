@@ -22,9 +22,9 @@ import java.util.Map;
 public class CustomerDao {
 
     private static final String SELECT = "SELECT c.id, c.code, c.name, c.phone, c.tax_code, c.group_id, g.name AS group_name, "
-            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.credit_limit, c.credit_days, c.created_at "
+            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.credit_limit, c.credit_days, c.lock_reason, c.locked_at, lb.full_name AS locked_by_name, c.created_at "
             + "FROM customers c LEFT JOIN customer_groups g ON g.id = c.group_id LEFT JOIN areas a ON a.id = c.area_id "
-            + "LEFT JOIN users u ON u.id = c.sales_rep_id";
+            + "LEFT JOIN users u ON u.id = c.sales_rep_id LEFT JOIN users lb ON lb.id = c.locked_by";
 
     /** Đại lý thuộc một nhân viên đã bị khoá: cần bàn giao cho người khác. */
     public record HandoverItem(String customerCode, String customerName, long repId, String repFullName, String repUsername) {
@@ -177,6 +177,22 @@ public class CustomerDao {
         }
     }
 
+    public void lock(Connection conn, long id, String reason, long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE customers SET status = 'LOCKED', lock_reason = ?, locked_at = CURRENT_TIMESTAMP, locked_by = ? WHERE id = ?")) {
+            ps.setString(1, reason);
+            ps.setLong(2, userId);
+            ps.setLong(3, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public void unlock(Connection conn, long id) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE customers SET status = 'ACTIVE', lock_reason = NULL, locked_at = NULL, locked_by = NULL WHERE id = ?")) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        }
+    }
+
     public void delete(Connection conn, long id) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("DELETE FROM customers WHERE id = ?")) {
             ps.setLong(1, id);
@@ -278,6 +294,10 @@ public class CustomerDao {
         c.setStatus(Customer.Status.valueOf(rs.getString("status")));
         c.setCreditLimit(rs.getBigDecimal("credit_limit"));
         c.setCreditDays(rs.getInt("credit_days"));
+        c.setLockReason(rs.getString("lock_reason"));
+        Timestamp locked = rs.getTimestamp("locked_at");
+        c.setLockedAt(locked == null ? null : locked.toLocalDateTime());
+        c.setLockedByName(rs.getString("locked_by_name"));
         Timestamp created = rs.getTimestamp("created_at");
         c.setCreatedAt(created == null ? null : created.toLocalDateTime());
         return c;

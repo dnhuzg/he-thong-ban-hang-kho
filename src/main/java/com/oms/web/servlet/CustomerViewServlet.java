@@ -4,6 +4,7 @@ import com.oms.model.Customer;
 import com.oms.security.PermissionPolicy;
 import com.oms.service.AssignmentService;
 import com.oms.service.CreditService;
+import com.oms.service.CustomerLockService;
 import com.oms.service.CustomerService;
 import com.oms.service.DeliveryPointService;
 import com.oms.service.ForbiddenException;
@@ -23,6 +24,7 @@ public class CustomerViewServlet extends BaseServlet {
     private final DeliveryPointService pointService = new DeliveryPointService();
     private final CreditService creditService = new CreditService();
     private final AssignmentService assignmentService = new AssignmentService();
+    private final CustomerLockService lockService = new CustomerLockService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -32,6 +34,7 @@ public class CustomerViewServlet extends BaseServlet {
             req.setAttribute("canManage", PermissionPolicy.canManageCustomers(currentUser(req).getRoles()));
             req.setAttribute("canManageCredit", PermissionPolicy.canManageCredit(currentUser(req).getRoles()));
             req.setAttribute("creditHistory", creditService.history(customer.getId()));
+            req.setAttribute("lockHistory", lockService.history(customer.getId()));
             req.setAttribute("assignments", assignmentService.historyOf(customer.getId()));
             req.setAttribute("points", pointService.list(customer.getId(), currentUser(req)));
             req.setAttribute("canEditPoints", DeliveryPointService.canEdit(currentUser(req), customer));
