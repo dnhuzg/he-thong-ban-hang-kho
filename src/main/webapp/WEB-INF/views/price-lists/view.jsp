@@ -8,22 +8,27 @@
 
         <div class="page-header">
           <div>
-            <p class="breadcrumb"><a href="${ctx}/products/price-lists">Bảng giá</a> / <c:out value="${priceList.code}"/></p>
+            <p class="breadcrumb"><a href="${ctx}/products/price-lists">Sản phẩm &amp; bảng giá</a> / Bảng giá</p>
             <h1><c:out value="${priceList.name}"/></h1>
+            <p class="page-header__desc"><c:out value="${priceList.code} · phiên bản ${priceList.version} · ${priceList.customerGroupName}"/></p>
           </div>
-          <div class="badge-list">
+          <div class="page-header__actions">
             <span class="badge ${priceList.validityLabel == 'Đang áp dụng' ? 'badge--success' : ''}"><c:out value="${priceList.validityLabel}"/></span>
-            <c:if test="${priceList.locked}"><span class="badge badge--warning">Đã phát sinh đơn</span></c:if>
+            <c:if test="${priceList.locked}"><span class="badge badge--warning"><span class="icon icon--xs icon--lock-keyhole" aria-hidden="true"></span>Đã khoá</span></c:if>
+            <a class="btn btn--secondary" href="${ctx}/products/price-lists"><span class="icon icon--sm icon--arrow-left" aria-hidden="true"></span>Quay lại danh sách</a>
           </div>
         </div>
 
         <c:if test="${canWrite and not priceList.editable}">
-          <div class="alert alert--warning" role="status">
-            <c:choose>
-              <c:when test="${priceList.locked}">Bảng giá đã phát sinh đơn hàng nên không sửa được.</c:when>
-              <c:otherwise>Bảng giá đã có phiên bản mới hơn nên không sửa được bản này.</c:otherwise>
-            </c:choose>
-            <c:if test="${not priceList.hasNewerVersion}">Muốn đổi giá, hãy tạo phiên bản mới ở cuối trang.</c:if>
+          <div class="alert alert--warning alert--icon" role="status">
+            <span class="icon icon--sm icon--lock-keyhole" aria-hidden="true"></span>
+            <span>
+              <c:choose>
+                <c:when test="${priceList.locked}">Đã khoá — bảng giá đã phát sinh đơn hàng nên không sửa được.</c:when>
+                <c:otherwise>Bảng giá đã có phiên bản mới hơn nên không sửa được bản này.</c:otherwise>
+              </c:choose>
+              <c:if test="${not priceList.hasNewerVersion}"><c:out value=" Muốn đổi giá, hãy tạo phiên bản mới ở cuối trang."/></c:if>
+            </span>
           </div>
         </c:if>
 
@@ -71,10 +76,10 @@
 
         <section class="card">
           <div class="card__header">
-            <h2>Dòng giá (${priceList.items.size()})</h2>
+            <h2>Chi tiết dòng giá (${priceList.items.size()})</h2>
             <p>Giá theo đơn vị cơ sở. Bán dưới giá sàn sẽ phải qua duyệt của Quản lý kinh doanh.</p>
           </div>
-          <div class="table-wrap">
+          <div class="table-wrap${canEdit ? '' : ' pl-items-table'}">
             <table class="table">
               <thead>
                 <tr>
@@ -83,6 +88,7 @@
                   <th scope="col" class="num">Giá sàn</th>
                   <c:if test="${canViewCostPrice}"><th scope="col" class="num">Biên lợi nhuận</th></c:if>
                   <c:if test="${canEdit}"><th scope="col"><span class="visually-hidden">Thao tác</span></th></c:if>
+                  <c:if test="${not canEdit}"><th scope="col">Chỉnh sửa</th></c:if>
                 </tr>
               </thead>
               <tbody>
@@ -123,6 +129,9 @@
                         </c:choose>
                       </td>
                     </c:if>
+                    <c:if test="${not canEdit}">
+                      <td class="nowrap"><span class="readonly-tag"><span class="icon icon--xs icon--lock-keyhole" aria-hidden="true"></span>Chỉ xem</span></td>
+                    </c:if>
                     <c:if test="${canEdit}">
                       <td>
                         <form action="${ctx}/products/price-lists/items/delete" method="post">
@@ -138,6 +147,24 @@
               </tbody>
             </table>
           </div>
+          <%-- Điện thoại, chỉ xem: mỗi dòng giá một thẻ --%>
+          <c:if test="${not canEdit}">
+            <div class="pl-items-cards">
+              <c:forEach var="it" items="${priceList.items}">
+                <article class="pl-item">
+                  <p class="pl-item__name"><c:out value="${it.productName}"/></p>
+                  <p class="pl-item__sub"><c:out value="${it.sku} · ${it.baseUnitName}"/></p>
+                  <div class="pl-item__foot">
+                    <div>
+                      <p class="pl-item__price"><fmt:formatNumber value="${it.salePrice}" maxFractionDigits="2"/> ₫</p>
+                      <p class="pl-item__floor">Giá sàn <fmt:formatNumber value="${it.floorPrice}" maxFractionDigits="2"/> ₫</p>
+                    </div>
+                    <span class="readonly-tag"><span class="icon icon--xs icon--lock-keyhole" aria-hidden="true"></span>Chỉ xem</span>
+                  </div>
+                </article>
+              </c:forEach>
+            </div>
+          </c:if>
           <c:if test="${canEdit}">
             <div class="card__body">
               <form class="inline-form" action="${ctx}/products/price-lists/items/save" method="post">
