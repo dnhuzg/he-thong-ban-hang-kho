@@ -1,4 +1,4 @@
-// Sinh database/demo/demo_catalog.sql và demo_catalog_remove.sql từ data.js. Cần Node.js, chỉ khi sửa dữ liệu nguồn:
+// Sinh database/demo/demo_catalog.sql và demo_catalog_remove.sql (xoá cả giá demo của demo_prices.sql) từ data.js. Cần Node.js, chỉ khi sửa dữ liệu nguồn:
 //   node database/demo/source/gen.js
 const fs = require("fs");
 const path = require("path");
@@ -133,6 +133,10 @@ rm.push(`-- Gỡ dữ liệu DEMO do demo_catalog.sql thêm vào: xoá sản ph�
 -- Đơn vị tính mới thêm (Tuýp, Túi, Bịch...) được giữ lại.
 USE oms;
 `);
+rm.push("-- giá bán demo (demo_prices.sql) và lịch sử của chúng phải xoá trước vì khoá ngoại giữ sản phẩm");
+rm.push("DELETE FROM price_history WHERE product_id IN (SELECT id FROM products WHERE sku IN (" + products.map((p) => q(p.sku)).join(", ") + "));");
+rm.push("DELETE FROM price_list_items WHERE product_id IN (SELECT id FROM products WHERE sku IN (" + products.map((p) => q(p.sku)).join(", ") + "));");
+rm.push("");
 rm.push("DELETE IGNORE FROM products WHERE sku IN (" + products.map((p) => q(p.sku)).join(", ") + ");");
 rm.push("");
 const demoOnly = cats.filter((p) => !EXISTING_CATS.has(p.join("/")));
