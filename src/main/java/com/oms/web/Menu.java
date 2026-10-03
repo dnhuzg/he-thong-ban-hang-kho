@@ -65,7 +65,8 @@ public final class Menu {
                     List.of(
                             item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
                             item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
-                            item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false))));
+                            item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false),
+                            item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false))));
         }
 
         List<Item> admin = new ArrayList<>();
