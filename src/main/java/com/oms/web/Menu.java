@@ -2,6 +2,7 @@ package com.oms.web;
 
 import com.oms.model.Module;
 import com.oms.model.User;
+import com.oms.model.Role;
 import com.oms.security.PermissionPolicy;
 
 import java.util.ArrayList;
@@ -32,6 +33,10 @@ public final class Menu {
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
+
+        if (user.getRoles().contains(Role.CUSTOMER)) {
+            groups.add(new Group("Cổng đại lý", List.of(item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
+        }
 
         if (policy.canRead(user.getRoles(), Module.PRODUCT)) {
             boolean categories = path.startsWith("/products/categories");
@@ -71,8 +76,12 @@ public final class Menu {
         }
 
         if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
-            groups.add(new Group("Hoá đơn & công nợ",
-                    List.of(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false))));
+            List<Item> financeItems = new ArrayList<>();
+            financeItems.add(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false));
+            if (user.getRoles().contains(Role.ACCOUNTANT) || user.getRoles().contains(Role.ADMIN)) {
+                financeItems.add(item("Biên bản đối chiếu", "/finance/reconciliations", "clipboard-list", path.equals("/finance/reconciliations"), false));
+            }
+            groups.add(new Group("Hoá đơn & công nợ", financeItems));
         }
 
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
