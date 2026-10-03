@@ -56,8 +56,13 @@ public final class Menu {
         }
 
         if (policy.canRead(user.getRoles(), Module.CUSTOMER_CREDIT) && PermissionPolicy.canBrowseCustomers(user.getRoles())) {
+            List<Item> customerItems = new ArrayList<>();
+            customerItems.add(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true));
+            if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
+                customerItems.add(item("Cảnh báo hạn mức", "/finance/credit-alerts", "shield-check", path.equals("/finance/credit-alerts"), false));
+            }
             groups.add(new Group("Đại lý & hạn mức công nợ",
-                    List.of(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true))));
+                    customerItems));
         }
 
         if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
