@@ -40,6 +40,18 @@
   --color-auth-glow-1: #e3ecff;
   --color-auth-glow-2: #e6f4ff;
 
+  /* Nút chuyển sáng / tối ở các trang trước đăng nhập */
+  --toggle-day-1: #bfdbfe;
+  --toggle-day-2: #dbeafe;
+  --toggle-night-1: #1a1a2e;
+  --toggle-night-2: #16213e;
+  --toggle-sun-1: #fbbf24;
+  --toggle-sun-2: #f59e0b;
+  --toggle-moon-1: #4ecdc4;
+  --toggle-moon-2: #45b7af;
+  --toggle-star: #ffffff;
+  --toggle-glow: rgba(78, 205, 196, 0.5);
+
   --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   --font-size-sm: 0.8125rem;
   --font-size-base: 0.9375rem;
@@ -62,6 +74,46 @@
 
   --sidebar-width: 248px;
   --topbar-height: 60px;
+}
+
+/* Giao diện tối: chỉ ghi đè biến màu; trang đặt data-theme="dark" trên <html> */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-soft: #16294f;
+  --color-primary-border: #2b4a8a;
+
+  --color-bg: #0f172a;
+  --color-surface: #162033;
+  --color-surface-muted: #1b263b;
+  --color-border: #2a3650;
+  --color-border-strong: #3b4a68;
+
+  --color-text: #e5e9f2;
+  --color-text-muted: #9aa8c0;
+  --color-text-disabled: #6b7a96;
+
+  --color-success: #4ade80;
+  --color-success-soft: #0f2a1c;
+  --color-success-border: #1f5a38;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #2b2210;
+  --color-warning-border: #6b4e12;
+  --color-danger: #f87171;
+  --color-danger-soft: #2d1417;
+  --color-danger-border: #7a2a2a;
+  --color-info: #7dd3fc;
+  --color-info-soft: #0e2433;
+  --color-info-border: #1f5578;
+
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-auth-glow-1: #14234a;
+  --color-auth-glow-2: #0f2a3d;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 *,

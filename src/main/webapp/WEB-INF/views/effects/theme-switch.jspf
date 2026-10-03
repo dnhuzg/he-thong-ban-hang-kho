@@ -1,0 +1,12 @@
+<%-- Nút chuyển sáng / tối; trang đặt themeSwitchFloating = true để nút nổi ở góc (trang trước đăng nhập) --%>
+<label class="theme-switch${themeSwitchFloating ? ' theme-switch--floating' : ''}" title="Chuyển giao diện sáng / tối">
+  <input class="theme-switch__input" id="theme-toggle" type="checkbox" role="switch" aria-label="Giao diện tối">
+  <span class="theme-switch__track" aria-hidden="true">
+    <span class="theme-switch__cosmos"></span>
+    <span class="theme-switch__line"></span>
+    <span class="theme-switch__line"></span>
+    <span class="theme-switch__line"></span>
+    <span class="theme-switch__particles"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="theme-switch__orb"><span class="theme-switch__core"></span><span class="theme-switch__ring"></span></span>
+  </span>
+</label>
