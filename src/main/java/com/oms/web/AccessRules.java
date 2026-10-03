@@ -39,6 +39,7 @@ public final class AccessRules {
             Map.entry("/finance/route-collections", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/portal/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/finance/customer-ledger", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/edit", new Rule(Kind.WRITE, Module.PRODUCT)),
