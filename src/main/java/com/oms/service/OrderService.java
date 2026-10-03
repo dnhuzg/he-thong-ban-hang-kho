@@ -228,7 +228,7 @@ public class OrderService {
     }
 
     /** Đổi đơn vị và / hoặc số lượng của một dòng. */
-    public void updateLine(long orderId, long lineId, long unitId, String quantityText, User actor) throws SQLException {
+     public void updateLine(long orderId, long lineId, long unitId, String quantityText, User actor) throws SQLException {
         requireOrders(actor);
         int quantity = parseQuantity(quantityText);
         Db.inTransaction(conn -> {
@@ -238,6 +238,31 @@ public class OrderService {
                 throw new ServiceException("Đơn đã có dòng " + line.getSku() + " với đơn vị này. Hãy sửa số lượng ở dòng đó.");
             }
             setQuantity(conn, line, unitId, quantity);
+            orderDao.touch(conn, orderId);
+            return null;
+        });
+    }
+
+    /**
+     * GHTK-39: cập nhật số lượng, đơn vị và giá chỉnh thủ công.
+     * Giá chỉnh thủ công được nhập theo đơn vị cơ sở; bỏ trống để dùng lại giá tự động.
+     */
+    public void updateLine(long orderId, long lineId, long unitId, String quantityText,
+                           String manualPriceText, User actor) throws SQLException {
+        requireOrders(actor);
+        int quantity = parseQuantity(quantityText);
+        BigDecimal manualBasePrice = Money.parse(manualPriceText, "Giá chỉnh thủ công");
+
+        Db.inTransaction(conn -> {
+            lockVisible(conn, orderId, actor);
+            OrderLine line = requireLine(conn, orderId, lineId);
+            if (unitId != line.getUnitId() && orderDao.findLine(conn, orderId, line.getProductId(), unitId) != null) {
+                throw new ServiceException("Đơn đã có dòng " + line.getSku() + " với đơn vị này. Hãy sửa số lượng ở dòng đó.");
+            }
+
+            UnitConversionService.Converted c =
+                    unitService.toBase(conn, line.getProductId(), unitId, BigDecimal.valueOf(quantity));
+            orderDao.updateLine(conn, line.getId(), unitId, quantity, c.factor(), c.baseQuantity(), manualBasePrice);
             orderDao.touch(conn, orderId);
             return null;
         });
@@ -270,7 +295,7 @@ public class OrderService {
             throw new ServiceException("Số lượng tối đa " + MAX_QUANTITY + " cho mỗi dòng.");
         }
         UnitConversionService.Converted c = unitService.toBase(conn, line.getProductId(), unitId, BigDecimal.valueOf(quantity));
-        orderDao.updateLine(conn, line.getId(), unitId, (int) quantity, c.factor(), c.baseQuantity());
+        orderDao.updateLine(conn, line.getId(), unitId, (int) quantity, c.factor(), c.baseQuantity(), line.getManualBasePrice());
     }
 
     private OrderLine requireLine(Connection conn, long orderId, long lineId) throws SQLException {
@@ -324,50 +349,71 @@ public class OrderService {
      * giảm trên mỗi đơn vị của chính sách có lợi nhất, xét trên tổng số lượng cơ sở của sản phẩm đó trong đơn.
      * Dòng của sản phẩm chưa (hoặc không còn) có giá thì để trống tiền và không vào tổng.
      */
-    private void price(Connection conn, Order order) throws SQLException {
+         private void price(Connection conn, Order order) throws SQLException {
         LocalDate today = LocalDate.now();
         Map<Long, BigDecimal> totalBase = new HashMap<>();
         for (OrderLine l : order.getLines()) {
             totalBase.merge(l.getProductId(), l.getBaseQuantity(), BigDecimal::add);
         }
+
         Map<Long, PriceListItem> prices = new HashMap<>();
         Map<Long, DiscountService.Applied> discounts = new HashMap<>();
         for (Map.Entry<Long, BigDecimal> e : totalBase.entrySet()) {
             PriceListItem price = priceListService.effectivePrice(conn, order.getCustomerGroupId(), e.getKey(), today);
             if (price != null) {
                 prices.put(e.getKey(), price);
-                DiscountService.Applied applied = discountService.best(conn, e.getKey(), e.getValue(), price.getSalePrice(), today);
+                DiscountService.Applied applied =
+                        discountService.best(conn, e.getKey(), e.getValue(), price.getSalePrice(), today);
                 if (applied != null) {
                     discounts.put(e.getKey(), applied);
                 }
             }
         }
+
         BigDecimal gross = BigDecimal.ZERO;
         BigDecimal discount = BigDecimal.ZERO;
         int unpriced = 0;
+        boolean requiresApproval = false;
+
         for (OrderLine l : order.getLines()) {
             PriceListItem price = prices.get(l.getProductId());
             if (price == null) {
                 unpriced++;
                 continue;
             }
-            l.setUnitPrice(price.getSalePrice().multiply(l.getFactor()).setScale(2, RoundingMode.HALF_UP));
-            l.setGrossAmount(l.getBaseQuantity().multiply(price.getSalePrice()).setScale(2, RoundingMode.HALF_UP));
+
+            BigDecimal effectiveBasePrice =
+                    l.isManualPrice() ? l.getManualBasePrice() : price.getSalePrice();
+
+            l.setUnitPrice(effectiveBasePrice.multiply(l.getFactor()).setScale(2, RoundingMode.HALF_UP));
+            l.setGrossAmount(l.getBaseQuantity().multiply(effectiveBasePrice).setScale(2, RoundingMode.HALF_UP));
+
             DiscountService.Applied applied = discounts.get(l.getProductId());
             if (applied == null) {
                 l.setDiscountAmount(BigDecimal.ZERO);
+                l.setDiscountNote(null);
             } else {
                 l.setDiscountAmount(l.getBaseQuantity().multiply(applied.perUnit()).setScale(2, RoundingMode.HALF_UP));
                 l.setDiscountNote(applied.policyName() + ": " + DiscountPolicy.valueText(applied.type(), applied.value())
                         + " (mua từ " + applied.tierMinQty() + ")");
             }
+
+            BigDecimal floorTotal =
+                    l.getBaseQuantity().multiply(price.getFloorPrice()).setScale(2, RoundingMode.HALF_UP);
+            if (l.getNetAmount().compareTo(floorTotal) < 0) {
+                requiresApproval = true;
+            }
+
             gross = gross.add(l.getGrossAmount());
             discount = discount.add(l.getDiscountAmount());
         }
+
         order.setGrossTotal(gross);
         order.setDiscountTotal(discount);
         order.setUnpricedLines(unpriced);
+        order.setRequiresApproval(requiresApproval);
     }
+
 
     private static String describeHeader(Order o) {
         return "Điểm giao: " + (o.getDeliveryPointText() == null ? "chưa chọn" : o.getDeliveryPointText())

@@ -273,7 +273,7 @@ class OrderServiceTest extends DatabaseTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(o.getPayable()));
     }
 
-    @Test
+        @Test
     void productSearchShowsPriceAndUnitsOnlyForActiveProducts() throws Exception {
         long id = service.create(900, rep);
         Order order = service.get(id, rep);
@@ -291,5 +291,84 @@ class OrderServiceTest extends DatabaseTest {
         assertNull(service.searchProducts(order, "SNACK").get(0).basePrice());
         assertEquals(0, service.searchProducts(order, "OLD").size());
         assertEquals(0, service.searchProducts(order, " ").size());
+    }
+
+    @Test
+    void manualBasePriceOverridesAutomaticPriceAndCanBeCleared() throws Exception {
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, THUNG, "1", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+
+        service.updateLine(id, line.getId(), THUNG, "1", "9500", rep);
+
+        Order manual = service.get(id, rep);
+        OrderLine manualLine = manual.getLines().get(0);
+
+        assertTrue(manualLine.isManualPrice());
+        assertEquals(0, new BigDecimal("9500.00").compareTo(manualLine.getManualBasePrice()));
+        assertEquals(0, new BigDecimal("228000.00").compareTo(manualLine.getUnitPrice()));
+        assertEquals(0, new BigDecimal("228000.00").compareTo(manualLine.getGrossAmount()));
+
+        service.updateLine(id, line.getId(), THUNG, "1", "", rep);
+
+        Order automatic = service.get(id, rep);
+        OrderLine automaticLine = automatic.getLines().get(0);
+
+        assertFalse(automaticLine.isManualPrice());
+        assertNull(automaticLine.getManualBasePrice());
+        assertEquals(0, new BigDecimal("240000.00").compareTo(automaticLine.getUnitPrice()));
+        assertEquals(0, new BigDecimal("240000.00").compareTo(automaticLine.getGrossAmount()));
+    }
+
+        @Test
+    void quantityChangeRecalculatesDiscountAutomatically() throws Exception {
+        DiscountPolicy policy = new DiscountPolicy();
+        policy.setName("Coca 5%");
+        policy.setProductId(COCA);
+        policy.setType(DiscountPolicy.Type.PERCENT);
+        new DiscountService().save(0, policy, List.<String[]>of(new String[]{"100", "5"}), manager);
+
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "10", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+        assertEquals(0, BigDecimal.ZERO.compareTo(line.getDiscountAmount()));
+
+        service.updateLine(id, line.getId(), LON, "100", "", rep);
+
+        Order updated = service.get(id, rep);
+        OrderLine updatedLine = updated.getLines().get(0);
+
+        assertEquals(100, updatedLine.getQuantity());
+        assertEquals(0, new BigDecimal("1000000.00").compareTo(updatedLine.getGrossAmount()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(updatedLine.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("950000.00").compareTo(updatedLine.getNetAmount()));
+        assertTrue(updatedLine.getDiscountNote().contains("5%"));
+    }
+
+    @Test
+    void manualPriceBelowFloorAfterDiscountRequiresApproval() throws Exception {
+       DiscountPolicy policy = new DiscountPolicy();
+        policy.setName("Coca 5%");
+        policy.setProductId(COCA);
+        policy.setType(DiscountPolicy.Type.PERCENT);
+        new DiscountService().save(0, policy, List.<String[]>of(new String[]{"100", "5"}), manager);
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "100", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+
+        service.updateLine(id, line.getId(), LON, "100", "9200", rep);
+
+        Order order = service.get(id, rep);
+        OrderLine updatedLine = order.getLines().get(0);
+
+        assertTrue(updatedLine.isManualPrice());
+        assertEquals(0, new BigDecimal("9200.00").compareTo(updatedLine.getManualBasePrice()));
+        assertEquals(0, new BigDecimal("920000.00").compareTo(updatedLine.getGrossAmount()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(updatedLine.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("870000.00").compareTo(updatedLine.getNetAmount()));
+        assertTrue(order.isRequiresApproval());
     }
 }

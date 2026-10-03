@@ -149,15 +149,16 @@ public class OrderDao {
         }
     }
 
-    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor, BigDecimal baseQuantity)
-            throws SQLException {
+    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor,
+                           BigDecimal baseQuantity, BigDecimal manualBasePrice) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ? WHERE id = ?")) {
+                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ?, manual_base_price = ? WHERE id = ?")) {
             ps.setLong(1, unitId);
             ps.setInt(2, quantity);
             ps.setBigDecimal(3, factor);
             ps.setBigDecimal(4, baseQuantity);
-            ps.setLong(5, lineId);
+            ps.setBigDecimal(5, manualBasePrice);
+            ps.setLong(6, lineId);
             ps.executeUpdate();
         }
     }
@@ -170,7 +171,7 @@ public class OrderDao {
     }
 
     private static final String LINES = "SELECT l.id, l.order_id, l.product_id, p.sku, p.name, l.unit_id, u.name, bu.name, "
-            + "l.quantity, l.factor, l.base_quantity FROM order_lines l JOIN products p ON p.id = l.product_id "
+            + "l.quantity, l.factor, l.base_quantity, l.manual_base_price FROM order_lines l JOIN products p ON p.id = l.product_id "
             + "JOIN units u ON u.id = l.unit_id JOIN units bu ON bu.id = p.base_unit_id";
 
     private List<OrderLine> queryLines(Connection conn, String sql, long... params) throws SQLException {
@@ -193,6 +194,7 @@ public class OrderDao {
                     l.setQuantity(rs.getInt(9));
                     l.setFactor(rs.getBigDecimal(10));
                     l.setBaseQuantity(rs.getBigDecimal(11));
+                    l.setManualBasePrice(rs.getBigDecimal(12));
                     lines.add(l);
                 }
             }

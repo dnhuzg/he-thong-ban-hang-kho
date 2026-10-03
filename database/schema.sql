@@ -370,6 +370,7 @@ CREATE TABLE order_lines (
   quantity       INT           NOT NULL,
   factor         DECIMAL(12,4) NOT NULL,
   base_quantity  DECIMAL(14,4) NOT NULL,
+  manual_base_price DECIMAL(15,2) NULL,
   created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_order_lines_product_unit (order_id, product_id, unit_id),

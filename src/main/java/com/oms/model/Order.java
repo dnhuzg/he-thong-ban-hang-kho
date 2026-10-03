@@ -35,6 +35,7 @@ public class Order {
     private BigDecimal grossTotal = BigDecimal.ZERO;
     private BigDecimal discountTotal = BigDecimal.ZERO;
     private int unpricedLines;
+    private boolean requiresApproval;
 
     public BigDecimal getPayable() {
         return grossTotal.subtract(discountTotal);
@@ -92,4 +93,6 @@ public class Order {
     public void setDiscountTotal(BigDecimal discountTotal) { this.discountTotal = discountTotal; }
     public int getUnpricedLines() { return unpricedLines; }
     public void setUnpricedLines(int unpricedLines) { this.unpricedLines = unpricedLines; }
+    public boolean isRequiresApproval() { return requiresApproval; }
+    public void setRequiresApproval(boolean requiresApproval) { this.requiresApproval = requiresApproval; }
 }
