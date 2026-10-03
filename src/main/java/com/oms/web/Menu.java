@@ -55,6 +55,11 @@ public final class Menu {
             groups.add(new Group("Bán hàng", List.of(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders"), true))));
         }
 
+        if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
+            groups.add(new Group("Thu tiền theo tuyến", List.of(
+                    item("Thu tiền & nộp công ty", "/finance/route-collections", "wallet", path.equals("/finance/route-collections"), false))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.CUSTOMER_CREDIT) && PermissionPolicy.canBrowseCustomers(user.getRoles())) {
             List<Item> customerItems = new ArrayList<>();
             customerItems.add(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true));
