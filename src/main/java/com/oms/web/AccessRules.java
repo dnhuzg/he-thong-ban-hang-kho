@@ -79,6 +79,7 @@ public final class AccessRules {
             Map.entry("/products/import/apply", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/import/template", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/customers", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
+            Map.entry("/finance/debt-aging", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/customers/view", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/new", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/edit", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
