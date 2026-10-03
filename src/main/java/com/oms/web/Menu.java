@@ -60,6 +60,11 @@ public final class Menu {
                     List.of(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true))));
         }
 
+        if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
+            groups.add(new Group("Hoá đơn & công nợ",
+                    List.of(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
             groups.add(new Group("Tồn kho & nhập kho",
                     List.of(
