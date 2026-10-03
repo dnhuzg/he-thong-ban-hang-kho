@@ -36,6 +36,7 @@ public final class AccessRules {
             Map.entry("/admin/users/unlock", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/finance/credit-alerts", new Rule(Kind.READ, Module.INVOICE)),
+            Map.entry("/finance/route-collections", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/edit", new Rule(Kind.WRITE, Module.PRODUCT)),
