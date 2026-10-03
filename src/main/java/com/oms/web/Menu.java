@@ -80,6 +80,7 @@ public final class Menu {
             financeItems.add(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false));
             if (user.getRoles().contains(Role.ACCOUNTANT) || user.getRoles().contains(Role.ADMIN)) {
                 financeItems.add(item("Biên bản đối chiếu", "/finance/reconciliations", "clipboard-list", path.equals("/finance/reconciliations"), false));
+                financeItems.add(item("Sổ chi tiết công nợ", "/finance/customer-ledger", "history", path.equals("/finance/customer-ledger"), false));
             }
             groups.add(new Group("Hoá đơn & công nợ", financeItems));
         }
