@@ -18,7 +18,6 @@ public final class AccessRules {
     }
 
     private static final Map<String, Rule> RULES = Map.ofEntries(
-            Map.entry("/", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/session/ping", new Rule(Kind.AUTHENTICATED, null)),
@@ -123,7 +122,7 @@ public final class AccessRules {
 
     /** Các trang không cần đăng nhập. */
     public static boolean isPublic(String path) {
-        return path.equals("/login") || path.equals("/forgot-password") || path.equals("/reset-password")
+        return path.equals("/") || path.equals("/login") || path.equals("/forgot-password") || path.equals("/reset-password")
                 || path.startsWith("/assets/") || path.equals("/favicon.ico");
     }
 }

@@ -8,6 +8,7 @@
           <div>
             <p class="breadcrumb">Sản phẩm &amp; bảng giá</p>
             <h1>Nhóm hàng</h1>
+            <p class="page-header__desc">Cây nhóm hàng nhiều cấp để phân loại sản phẩm; số lượng tính cả sản phẩm ở các nhóm con.</p>
           </div>
           <c:if test="${canWrite}">
             <button class="btn btn--primary" type="button" data-dialog-open="add-root">+ Thêm nhóm gốc</button>
@@ -18,6 +19,9 @@
 
         <section class="card">
           <div class="table-wrap">
+            <%-- Chạy trước khi trình duyệt vẽ các dòng: có nhóm đang thu gọn thì tạm che thân bảng cho tới khi app.js áp trạng thái,
+                 tránh cảnh nhóm con hiện ra rồi co lại sau mỗi lần gửi form --%>
+            <script>try{if(JSON.parse(localStorage.getItem("oms.categoryTree.collapsed")||"[]").length){document.documentElement.classList.add("tree-pending");}}catch(e){}</script>
             <table class="table" data-tree>
               <thead>
                 <tr>

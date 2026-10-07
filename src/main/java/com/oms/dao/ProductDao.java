@@ -1,11 +1,13 @@
 package com.oms.dao;
 
+import com.oms.model.CatalogStats;
 import com.oms.model.NamedItem;
 import com.oms.model.PageResult;
 import com.oms.model.Product;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDate;
 import java.util.Map;
 
 public class ProductDao {
@@ -119,6 +122,28 @@ public class ProductDao {
             }
         }
         return items;
+    }
+
+    /** Đếm sản phẩm cho trang Sản phẩm; "chưa có giá" là đang kinh doanh mà không nằm trong bảng giá nào hiệu lực ngày today. */
+    public void fillStats(Connection conn, CatalogStats stats, LocalDate today) throws SQLException {
+        String sql = "SELECT COUNT(*), "
+                + "COALESCE(SUM(CASE WHEN p.status = 'ACTIVE' THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN p.created_at >= ? THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN p.status = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM price_list_items i "
+                + "JOIN price_lists pl ON pl.id = i.price_list_id WHERE i.product_id = p.id AND pl.valid_from <= ? "
+                + "AND (pl.valid_to IS NULL OR pl.valid_to >= ?)) THEN 1 ELSE 0 END), 0) FROM products p";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(today.withDayOfMonth(1)));
+            ps.setDate(2, Date.valueOf(today));
+            ps.setDate(3, Date.valueOf(today));
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                stats.setTotalProducts(rs.getLong(1));
+                stats.setActiveProducts(rs.getLong(2));
+                stats.setNewThisMonth(rs.getLong(3));
+                stats.setActiveWithoutPrice(rs.getLong(4));
+            }
+        }
     }
 
     public boolean existsSku(Connection conn, String sku) throws SQLException {
