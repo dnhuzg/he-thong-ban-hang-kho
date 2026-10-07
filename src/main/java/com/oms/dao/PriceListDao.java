@@ -244,6 +244,18 @@ public class PriceListDao {
         }
     }
 
+    public long countEffective(Connection conn, LocalDate date) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM price_lists WHERE valid_from <= ? AND (valid_to IS NULL OR valid_to >= ?)")) {
+            ps.setDate(1, Date.valueOf(date));
+            ps.setDate(2, Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
     /** Dòng giá áp dụng cho nhóm khách vào một ngày (đơn hàng EP-04 dùng); null nếu sản phẩm chưa có giá. */
     public PriceListItem effectiveItem(Connection conn, long groupId, long productId, LocalDate date) throws SQLException {
         String sql = "SELECT i.price_list_id, i.sale_price, i.floor_price FROM price_list_items i "

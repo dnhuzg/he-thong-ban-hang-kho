@@ -72,6 +72,22 @@ public class Customer {
     public void setSalesRepName(String salesRepName) { this.salesRepName = salesRepName; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    /** Hai chữ cái đầu của hai từ cuối trong tên, dùng làm ô chữ ở danh sách. */
+    public String getInitials() {
+        return initialsOf(name);
+    }
+
+    /** Dùng chung cho mọi nơi hiện ô chữ của đại lý (danh sách đại lý, danh sách đơn). */
+    public static String initialsOf(String name) {
+        if (name == null || name.isBlank()) {
+            return "?";
+        }
+        String[] parts = name.trim().split("\\s+");
+        String last = parts[parts.length - 1].substring(0, 1);
+        String before = parts.length > 1 ? parts[parts.length - 2].substring(0, 1) : "";
+        return (before + last).toUpperCase();
+    }
+
     /** Hạn mức nợ tối đa (₫); 0 là không cho nợ. */
     public BigDecimal getCreditLimit() { return creditLimit; }
     public void setCreditLimit(BigDecimal creditLimit) { this.creditLimit = creditLimit; }

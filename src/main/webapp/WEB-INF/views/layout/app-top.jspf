@@ -29,19 +29,33 @@
       </a>
       <nav class="sidebar__nav" aria-label="Menu chính">
         <c:forEach var="group" items="${menu}">
-          <div class="sidebar__section">
-            <c:if test="${not empty group.title}"><p class="sidebar__group"><c:out value="${group.title}"/></p></c:if>
-            <c:forEach var="item" items="${group.items}">
-              <c:choose>
-                <c:when test="${item.comingSoon}">
-                  <span class="sidebar__link is-disabled" aria-disabled="true"><span class="sidebar__link-main"><c:out value="${item.label}"/></span><span class="badge">Sắp có</span></span>
-                </c:when>
-                <c:otherwise>
-                  <a class="sidebar__link${item.active ? ' is-active' : ''}" href="${ctx}${item.url}"${item.active ? ' aria-current="page"' : ''}><span class="icon icon--${item.icon}" aria-hidden="true"></span><span class="sidebar__link-main"><c:out value="${item.label}"/></span></a>
-                </c:otherwise>
-              </c:choose>
-            </c:forEach>
-          </div>
+          <%-- Nhóm có từ hai mục trở lên thành mục cha gập / mở được; nhóm chứa trang đang mở tự mở sẵn --%>
+          <c:set var="groupOpen" value="${false}"/>
+          <c:forEach var="item" items="${group.items}"><c:if test="${item.active}"><c:set var="groupOpen" value="${true}"/></c:if></c:forEach>
+          <c:choose>
+            <c:when test="${empty group.title or group.items.size() == 1}">
+              <c:set var="childClass" value=""/>
+              <c:forEach var="item" items="${group.items}">
+                <%@ include file="/WEB-INF/views/layout/sidebar-link.jspf" %>
+              </c:forEach>
+            </c:when>
+            <c:otherwise>
+              <c:set var="parentIcon" value="${empty group.items[0].icon ? 'ellipsis' : group.items[0].icon}"/>
+              <details class="sidebar__parent"${groupOpen ? ' open' : ''}>
+                <summary class="sidebar__link sidebar__parent-toggle${groupOpen ? ' has-active' : ''}">
+                  <span class="icon icon--${parentIcon}" aria-hidden="true"></span>
+                  <span class="sidebar__link-main"><c:out value="${group.title}"/></span>
+                  <span class="icon icon--sm icon--chevron-down sidebar__chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="sidebar__children">
+                  <c:set var="childClass" value=" sidebar__link--child"/>
+                  <c:forEach var="item" items="${group.items}">
+                    <%@ include file="/WEB-INF/views/layout/sidebar-link.jspf" %>
+                  </c:forEach>
+                </div>
+              </details>
+            </c:otherwise>
+          </c:choose>
         </c:forEach>
       </nav>
       <div class="sidebar__scope">
@@ -58,7 +72,18 @@
           <span class="logo-mark"><span class="icon icon--md icon--boxes" aria-hidden="true"></span></span>
           <span>Bán hàng &amp; Kho</span>
         </a>
-        <p class="topbar__context"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span>Phạm vi: <c:out value="${currentUser.scopeLabel}"/></p>
+        <%-- Tên mục cha (nhóm menu) của trang đang mở; phạm vi làm việc nằm ở góc dưới menu trái --%>
+        <c:set var="sectionTitle" value=""/>
+        <c:set var="sectionIcon" value="house"/>
+        <c:forEach var="group" items="${menu}">
+          <c:forEach var="item" items="${group.items}">
+            <c:if test="${item.active}">
+              <c:set var="sectionTitle" value="${empty group.title or group.items.size() == 1 ? item.label : group.title}"/>
+              <c:set var="sectionIcon" value="${group.items[0].icon}"/>
+            </c:if>
+          </c:forEach>
+        </c:forEach>
+        <p class="topbar__context"><span class="icon icon--sm icon--${sectionIcon}" aria-hidden="true"></span><strong><c:out value="${empty sectionTitle ? pageTitle : sectionTitle}"/></strong></p>
         <c:set var="themeSwitchFloating" value="${false}"/>
         <%@ include file="/WEB-INF/views/effects/theme-switch.jspf" %>
         <details class="user-menu">
@@ -73,7 +98,7 @@
             </c:choose>
             <span class="user-menu__text">
               <span class="user-menu__name"><c:out value="${currentUser.fullName}"/></span>
-              <span class="user-menu__role"><c:out value="${currentUser.username}"/></span>
+              <span class="user-menu__role"><c:out value="${currentUser.roleLabels}"/></span>
             </span>
           </summary>
           <div class="user-menu__panel">
