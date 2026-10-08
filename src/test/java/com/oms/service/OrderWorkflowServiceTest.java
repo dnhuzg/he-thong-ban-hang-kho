@@ -30,6 +30,19 @@ class OrderWorkflowServiceTest extends DatabaseTest {
         assertThrows(ServiceException.class,()->orders.delete(id,rep));
         assertThrows(ServiceException.class,()->workflow.submit(id,rep));
     }
+    @Test void screenShowsWhoDecidesAndReadableHistory() throws Exception {
+        sql("UPDATE customers SET credit_limit=1 WHERE id=900");
+        workflow.submit(id,rep);
+        Order order=orders.get(id,manager);
+        assertTrue(OrderWorkflowService.canDecide(order,manager));
+        assertFalse(OrderWorkflowService.canDecide(order,rep));
+        assertTrue(order.isCancellable());
+        workflow.decide(id,"REJECT","Vượt hạn mức quá nhiều",manager);
+        var last=workflow.history(id,manager).get(1);
+        assertEquals("Từ chối",last.getActionLabel());
+        assertEquals("Bị từ chối",last.getToLabel());
+        assertEquals("manager",last.getActorName());
+    }
     @Test void violationWaitsForManagerAndHistoryIsAppendOnly() throws Exception {
         sql("UPDATE customers SET credit_limit=1 WHERE id=900");
         assertEquals(Order.Status.PENDING_APPROVAL,workflow.submit(id,rep));

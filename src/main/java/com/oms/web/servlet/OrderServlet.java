@@ -3,7 +3,9 @@ package com.oms.web.servlet;
 import com.oms.model.Order;
 import com.oms.service.CustomerService;
 import com.oms.service.ForbiddenException;
+import com.oms.service.OrderLifecycleService;
 import com.oms.service.OrderService;
+import com.oms.service.OrderWorkflowService;
 import com.oms.service.ServiceException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,13 +17,18 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
-/** Đơn hàng nháp (S3-09): danh sách, chọn đại lý, màn hình gõ đơn (giao hàng, thêm / sửa / xoá dòng hàng), xoá nháp. */
+/**
+ * Đơn hàng: danh sách, chọn đại lý, màn hình gõ đơn nháp (S3-09); chốt đơn, duyệt và huỷ (S4-05, S4-06)
+ * gọi cùng service với API để quy tắc kiểm hạn mức, tồn kho, giá sàn chỉ nằm một chỗ.
+ */
 @WebServlet({"/orders", "/orders/new", "/orders/create", "/orders/edit", "/orders/save", "/orders/delete",
-        "/orders/lines/add", "/orders/lines/save", "/orders/lines/delete", "/orders/products"})
+        "/orders/lines/add", "/orders/lines/save", "/orders/lines/delete", "/orders/products",
+        "/orders/submit", "/orders/cancel", "/orders/decide", "/orders/approvals"})
 public class OrderServlet extends BaseServlet {
 
     private final OrderService orderService = new OrderService();
     private final CustomerService customerService = new CustomerService();
+    private final OrderWorkflowService workflowService = new OrderWorkflowService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -42,6 +49,10 @@ public class OrderServlet extends BaseServlet {
                     render(req, resp, "orders/new");
                 }
                 case "/orders/edit" -> showEdit(req, resp);
+                case "/orders/approvals" -> {
+                    req.setAttribute("pending", workflowService.pending(currentUser(req)));
+                    render(req, resp, "orders/approvals");
+                }
                 case "/orders/products" -> {
                     Order order = orderService.get(longParam(req, "id"), currentUser(req));
                     String q = param(req, "q");
@@ -98,6 +109,25 @@ public class OrderServlet extends BaseServlet {
                     flash(req, "Đã xoá dòng hàng.");
                     back += "#dong-hang";
                 }
+                case "/orders/submit" -> {
+                    Order.Status next = workflowService.submit(id, currentUser(req));
+                    flash(req, next == Order.Status.APPROVED
+                            ? "Đã chốt đơn. Đơn được duyệt ngay và đã giữ hàng trong kho."
+                            : "Đã chốt đơn. Đơn đang chờ duyệt, lý do ghi ở đầu trang.");
+                }
+                case "/orders/decide" -> {
+                    String action = param(req, "action");
+                    workflowService.decide(id, action, param(req, "opinion"), currentUser(req));
+                    flash(req, switch (action) {
+                        case "APPROVE" -> "Đã duyệt đơn. Hàng đã được giữ chỗ trong kho.";
+                        case "REJECT" -> "Đã từ chối đơn.";
+                        default -> "Đã trả đơn về Nháp để sửa.";
+                    });
+                }
+                case "/orders/cancel" -> {
+                    new OrderLifecycleService().cancel(id, param(req, "reason"), currentUser(req));
+                    flash(req, "Đã huỷ đơn. Hàng và hạn mức đang giữ cho đơn đã được nhả.");
+                }
                 case "/orders/delete" -> {
                     orderService.delete(id, currentUser(req));
                     flash(req, "Đã xoá đơn nháp.");
@@ -132,6 +162,10 @@ public class OrderServlet extends BaseServlet {
         req.setAttribute("q", q);
         req.setAttribute("choices", orderService.searchProducts(order, q));
         req.setAttribute("today", LocalDate.now());
+        req.setAttribute("history", workflowService.history(order.getId(), currentUser(req)));
+        req.setAttribute("statuses", Order.Status.values());
+        req.setAttribute("canDecide", order.getStatus() == Order.Status.PENDING_APPROVAL
+                && OrderWorkflowService.canDecide(order, currentUser(req)));
         render(req, resp, "orders/edit");
     }
 

@@ -5,7 +5,6 @@ import com.oms.model.Order;
 import com.oms.model.Role;
 import com.oms.model.User;
 import java.sql.SQLException;
-import java.util.List;
 
 /** Mỗi bước kiểm trạng thái dưới khoá đơn và ghi lịch sử cùng transaction với tồn kho. */
 public class OrderLifecycleService {
@@ -14,7 +13,7 @@ public class OrderLifecycleService {
         String opinion=OrderWorkflowService.opinion(reason,true);
         Db.inTransaction(conn->{
             var order=new OrderWorkflowService().locked(conn,id,actor);
-            if(!List.of(Order.Status.DRAFT,Order.Status.PENDING_APPROVAL,Order.Status.APPROVED,Order.Status.PICKING,Order.Status.REJECTED).contains(order.getStatus())) {
+            if(!order.isCancellable()) {
                 throw new ServiceException("Đơn đã xuất kho hoặc đã kết thúc không thể huỷ; hàng đã xuất phải đi qua trả hàng.");
             }
             new CustomerDao().findByIdForUpdate(conn,order.getCustomerId());
