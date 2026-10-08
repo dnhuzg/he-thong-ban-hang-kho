@@ -30,6 +30,7 @@ public class OrderServlet extends BaseServlet {
                 case "/orders" -> {
                     String q = param(req, "q");
                     req.setAttribute("result", orderService.search(q, intParam(req, "page", 1), currentUser(req)));
+                    req.setAttribute("stats", orderService.stats(currentUser(req), LocalDate.now()));
                     req.setAttribute("q", q);
                     render(req, resp, "orders/list");
                 }
@@ -37,8 +38,7 @@ public class OrderServlet extends BaseServlet {
                     String q = param(req, "q");
                     orderService.search(null, 1, currentUser(req));
                     req.setAttribute("q", q);
-                    req.setAttribute("customers", q.isEmpty() ? null
-                            : customerService.search(q, null, null, null, null, 1, currentUser(req)));
+                    req.setAttribute("customers", customerService.search(q, null, null, null, null, 1, currentUser(req)));
                     render(req, resp, "orders/new");
                 }
                 case "/orders/edit" -> showEdit(req, resp);

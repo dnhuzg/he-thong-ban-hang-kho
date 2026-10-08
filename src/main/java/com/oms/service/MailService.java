@@ -25,9 +25,14 @@ public class MailService {
     private static final Logger LOG = Logger.getLogger(MailService.class.getName());
 
     /** @return true nếu đã gửi thật qua SMTP; false nếu chỉ ghi log (chưa cấu hình) hoặc gửi lỗi. */
+    public static boolean isConfigured() {
+        return !AppConfig.get("mail.smtp.host").isEmpty() && !AppConfig.get("mail.username").isEmpty()
+                && !AppConfig.get("mail.password").isEmpty();
+    }
+
     public boolean send(String to, String subject, String body) {
         String host = AppConfig.get("mail.smtp.host");
-        if (host.isEmpty() || AppConfig.get("mail.username").isEmpty() || AppConfig.get("mail.password").isEmpty()) {
+        if (!isConfigured()) {
             LOG.info("[EMAIL] (chưa cấu hình SMTP, chỉ ghi log) To: " + to + "\nSubject: " + subject + "\n" + body);
             return false;
         }

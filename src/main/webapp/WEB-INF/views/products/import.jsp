@@ -8,7 +8,7 @@
             <p class="breadcrumb"><a href="${ctx}/products">Sản phẩm</a> / Nhập từ Excel</p>
             <h1>Nhập sản phẩm từ Excel</h1>
           </div>
-          <a class="btn btn--secondary" href="${ctx}/products/import/template">Tải tệp mẫu</a>
+          <a class="btn btn--secondary" href="${ctx}/products/import/template" data-no-loading>Tải tệp mẫu</a>
         </div>
 
         <section class="card">

@@ -58,6 +58,7 @@ public class Order {
     public String getCustomerCode() { return customerCode; }
     public void setCustomerCode(String customerCode) { this.customerCode = customerCode; }
     public String getCustomerName() { return customerName; }
+    public String getCustomerInitials() { return Customer.initialsOf(customerName); }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public long getCustomerGroupId() { return customerGroupId; }
     public void setCustomerGroupId(long customerGroupId) { this.customerGroupId = customerGroupId; }

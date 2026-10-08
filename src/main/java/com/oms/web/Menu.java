@@ -2,6 +2,7 @@ package com.oms.web;
 
 import com.oms.model.Module;
 import com.oms.model.User;
+import com.oms.model.Role;
 import com.oms.security.PermissionPolicy;
 
 import java.util.ArrayList;
@@ -33,6 +34,10 @@ public final class Menu {
         List<Group> groups = new ArrayList<>();
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
+        if (user.getRoles().contains(Role.CUSTOMER)) {
+            groups.add(new Group("Cổng đại lý", List.of(item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.PRODUCT)) {
             boolean categories = path.startsWith("/products/categories");
             boolean prices = path.startsWith("/products/price-lists");
@@ -55,14 +60,39 @@ public final class Menu {
             groups.add(new Group("Bán hàng", List.of(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders"), true))));
         }
 
+        if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
+            groups.add(new Group("Thu tiền theo tuyến", List.of(
+                    item("Thu tiền & nộp công ty", "/finance/route-collections", "wallet", path.equals("/finance/route-collections"), false))));
+        }
+
         if (policy.canRead(user.getRoles(), Module.CUSTOMER_CREDIT) && PermissionPolicy.canBrowseCustomers(user.getRoles())) {
+            List<Item> customerItems = new ArrayList<>();
+            customerItems.add(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true));
+            if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
+                customerItems.add(item("Cảnh báo hạn mức", "/finance/credit-alerts", "shield-check", path.equals("/finance/credit-alerts"), false));
+            }
             groups.add(new Group("Đại lý & hạn mức công nợ",
-                    List.of(item("Đại lý", "/customers", "building-2", path.startsWith("/customers"), true))));
+                    customerItems));
+        }
+
+        if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
+            List<Item> financeItems = new ArrayList<>();
+            financeItems.add(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false));
+            if (user.getRoles().contains(Role.ACCOUNTANT) || user.getRoles().contains(Role.ADMIN)) {
+                financeItems.add(item("Biên bản đối chiếu", "/finance/reconciliations", "clipboard-list", path.equals("/finance/reconciliations"), false));
+                financeItems.add(item("Sổ chi tiết công nợ", "/finance/customer-ledger", "history", path.equals("/finance/customer-ledger"), false));
+            }
+            groups.add(new Group("Hoá đơn & công nợ", financeItems));
         }
 
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
             groups.add(new Group("Tồn kho & nhập kho",
-                    List.of(item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false))));
+                    List.of(
+                            item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
+                            item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
+                            item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false),
+                            item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false),
+                            item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 
         List<Item> admin = new ArrayList<>();
