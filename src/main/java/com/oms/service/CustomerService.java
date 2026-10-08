@@ -6,6 +6,7 @@ import com.oms.dao.AuditLogDao;
 import com.oms.dao.CustomerDao;
 import com.oms.dao.LookupDao;
 import com.oms.model.Customer;
+import com.oms.model.CustomerStats;
 import com.oms.model.NamedItem;
 import com.oms.model.PageResult;
 import com.oms.model.User;
@@ -43,6 +44,14 @@ public class CustomerService {
         try (Connection conn = Db.getConnection()) {
             return customerDao.search(conn, new CustomerDao.Filter(keyword, groupId, areaId, salesRepId, status, own),
                     Math.max(1, page), PAGE_SIZE);
+        }
+    }
+
+    public CustomerStats stats(User viewer) throws SQLException {
+        requireBrowse(viewer);
+        Long own = PermissionPolicy.canManageCustomers(viewer.getRoles()) ? null : viewer.getId();
+        try (Connection conn = Db.getConnection()) {
+            return customerDao.stats(conn, own);
         }
     }
 

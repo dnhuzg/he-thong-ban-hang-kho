@@ -4,8 +4,10 @@ import com.oms.config.Db;
 import com.oms.dao.AuditLogDao;
 import com.oms.dao.CategoryDao;
 import com.oms.dao.LookupDao;
+import com.oms.dao.PriceListDao;
 import com.oms.dao.ProductDao;
 import com.oms.dao.ProductUnitDao;
+import com.oms.model.CatalogStats;
 import com.oms.model.NamedItem;
 import com.oms.model.PageResult;
 import com.oms.model.Product;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +33,7 @@ public class ProductService {
     private static final String IMAGE_FOLDER = "products";
 
     private final ProductDao productDao = new ProductDao();
+    private final PriceListDao priceListDao = new PriceListDao();
     private final ProductUnitDao productUnitDao = new ProductUnitDao();
     private final CategoryDao categoryDao = new CategoryDao();
     private final LookupDao lookupDao = new LookupDao();
@@ -68,6 +72,15 @@ public class ProductService {
             p.setCategoryPath(pathOf(new CategoryTree(categoryDao.listAll(conn)), p.getCategoryId()));
             return p;
         }
+    }
+
+    public CatalogStats catalogStats(LocalDate today) throws SQLException {
+        CatalogStats stats = new CatalogStats();
+        try (Connection conn = Db.getConnection()) {
+            productDao.fillStats(conn, stats, today);
+            stats.setEffectivePriceLists(priceListDao.countEffective(conn, today));
+        }
+        return stats;
     }
 
     public CategoryTree categories() throws SQLException {

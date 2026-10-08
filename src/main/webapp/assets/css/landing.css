@@ -1,0 +1,336 @@
+/* Trang chờ cho khách chưa đăng nhập (theo thiết kế Figma của nhóm); màu lấy từ biến --landing-* trong base.css */
+
+.landing {
+  background: var(--landing-bg);
+  color: var(--landing-heading);
+}
+
+.landing-container {
+  width: min(1200px, 100% - 2 * var(--space-5));
+  margin-inline: auto;
+}
+
+.landing-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Thanh trên cùng ---------- */
+
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--landing-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.landing-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  height: 72px;
+}
+
+.landing-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--landing-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.landing-brand .icon {
+  color: var(--landing-accent);
+}
+
+.landing-nav {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.landing-nav a,
+.landing-link {
+  color: var(--landing-heading);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.landing-nav a:hover,
+.landing-link:hover {
+  color: var(--landing-accent);
+}
+
+.landing-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-left: auto;
+}
+
+/* ---------- Nút ---------- */
+
+.landing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.landing-btn--lg {
+  padding: 14px 28px;
+  font-size: 1.0625rem;
+}
+
+.landing-btn--primary {
+  background: var(--landing-accent);
+  color: var(--landing-on-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.landing-btn--primary:hover {
+  background: var(--landing-accent-hover);
+}
+
+.landing-btn--ghost {
+  background: var(--landing-bg);
+  color: var(--landing-heading);
+  border-color: var(--color-border);
+}
+
+.landing-btn--ghost:hover {
+  border-color: var(--landing-accent);
+}
+
+.landing-btn:focus-visible,
+.landing-nav a:focus-visible,
+.landing-link:focus-visible,
+.landing-brand:focus-visible {
+  outline: 2px solid var(--landing-accent);
+  outline-offset: 3px;
+}
+
+/* ---------- Phần mở đầu: chữ bên trái, ảnh bên phải mờ dần sang nền ---------- */
+
+.landing-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.landing-hero__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  min-height: 600px;
+}
+
+.landing-hero__copy {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  padding-block: var(--space-6);
+}
+
+.landing-chip {
+  display: inline-block;
+  margin: 0 0 var(--space-5);
+  padding: 6px 16px;
+  border: 1px solid var(--landing-accent-border);
+  border-radius: 999px;
+  background: var(--landing-accent-soft);
+  color: var(--landing-accent);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.landing-hero__title {
+  margin: 0;
+  font-size: clamp(2.25rem, 3.6vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.landing-hero__text {
+  max-width: 34rem;
+  margin: var(--space-5) 0 var(--space-6);
+  color: var(--landing-text);
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+
+.landing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+/* Ảnh tràn sát mép phải, phía trái mờ dần vào nền để chữ luôn dễ đọc */
+.landing-hero__image {
+  position: absolute;
+  top: 0;
+  right: calc((100vw - 100%) / -2);
+  width: 52vw;
+  max-width: 900px;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28%);
+}
+
+/* ---------- Bốn tính năng ---------- */
+
+.landing-features {
+  padding-block: 72px;
+  background: var(--landing-band);
+}
+
+.landing-features__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.landing-feature__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--landing-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--landing-accent-soft);
+  color: var(--landing-accent);
+}
+
+.landing-feature__title {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: 1.1875rem;
+  font-weight: 700;
+}
+
+.landing-feature__text {
+  margin: 0;
+  color: var(--landing-text);
+  line-height: 1.6;
+}
+
+.landing-footer {
+  padding-block: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  color: var(--landing-text);
+  font-size: var(--font-size-sm);
+}
+
+/* Nút "Đăng ký làm đại lý" trên thanh đầu trang trông như liên kết */
+.landing-link--button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ---------- Dải kêu gọi đăng ký đại lý ---------- */
+
+.landing-cta {
+  padding-block: 56px;
+  border-top: 1px solid var(--color-border);
+}
+
+.landing-cta__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.landing-cta__title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.landing-cta__text {
+  margin: 0;
+  color: var(--landing-text);
+}
+
+.landing-btn {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Màn hình nhỏ ---------- */
+
+@media (max-width: 960px) {
+  .landing-hero__inner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .landing-hero__image {
+    position: static;
+    width: 100%;
+    height: auto;
+    margin-bottom: var(--space-6);
+    border-radius: var(--radius-lg);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .landing-features__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-nav,
+  .landing-link {
+    display: none;
+  }
+
+  .landing-header__inner {
+    gap: var(--space-4);
+    height: 64px;
+  }
+
+  .landing-header__actions {
+    gap: var(--space-3);
+  }
+
+  .landing-brand {
+    font-size: 1.0625rem;
+  }
+
+  .landing-header .landing-btn {
+    padding: 8px 14px;
+  }
+
+  .landing-features__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-hero__actions .landing-btn,
+  .landing-cta .landing-btn {
+    flex: 1 1 100%;
+  }
+}

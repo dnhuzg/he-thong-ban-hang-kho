@@ -16,6 +16,41 @@
           </div>
         </div>
 
+        <section class="card-grid mb-4" aria-label="Tổng quan đơn hàng">
+          <div class="card card__body home-stat">
+            <div class="home-stat__head">
+              <p class="stat__label">Tổng đơn nháp</p>
+              <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--clipboard-list" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.total}"/></span> đơn</p>
+            <p class="home-stat__note home-stat__note--up">+<fmt:formatNumber value="${stats.thisMonth}"/> đơn tạo trong tháng này</p>
+          </div>
+          <div class="card card__body home-stat">
+            <div class="home-stat__head">
+              <p class="stat__label">Đại lý có đơn</p>
+              <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.customers}"/></span> đại lý</p>
+            <p class="home-stat__note">Đang có ít nhất một đơn nháp</p>
+          </div>
+          <div class="card card__body home-stat">
+            <div class="home-stat__head">
+              <p class="stat__label">Giao trong 7 ngày tới</p>
+              <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--truck" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.dueSoon}"/></span> đơn</p>
+            <p class="home-stat__note">Cần chốt sớm để kịp soạn và giao hàng</p>
+          </div>
+          <div class="card card__body home-stat${stats.withoutLines > 0 ? ' home-stat--warning' : ''}">
+            <div class="home-stat__head">
+              <p class="stat__label">Đơn chưa có hàng</p>
+              <span class="home-stat__icon home-stat__icon--warning"><span class="icon icon--sm icon--info" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.withoutLines}"/></span> đơn</p>
+            <p class="home-stat__note">Tạo ra nhưng chưa thêm dòng hàng nào: gõ tiếp hoặc xoá</p>
+          </div>
+        </section>
+
         <section class="card list-card">
           <form class="toolbar" action="${ctx}/orders" method="get" role="search">
             <label class="visually-hidden" for="q">Tìm đơn</label>
@@ -25,6 +60,13 @@
             </div>
             <button class="btn btn--secondary toolbar__submit toolbar__submit--show" type="submit">Tìm</button>
           </form>
+
+          <c:if test="${not empty q}">
+            <div class="filter-chips">
+              <span class="filter-chips__label">Bộ lọc đang áp dụng:</span>
+              <a class="filter-chip" href="${ctx}/orders" title="Bỏ bộ lọc này">Từ khoá: <c:out value="${q}"/> <span aria-hidden="true">×</span></a>
+            </div>
+          </c:if>
 
           <div class="list-summary">
             <span class="list-summary__title">Tất cả đơn</span>
@@ -53,8 +95,13 @@
                   <tr>
                     <td class="nowrap table__cell-code"><a href="${ctx}/orders/edit?id=${o.id}"><c:out value="${o.code}"/></a></td>
                     <td>
-                      <div class="table__cell-main"><c:out value="${o.customerName}"/></div>
-                      <div class="table__cell-sub"><c:out value="${o.customerCode}"/><c:if test="${o.customerLocked}"> · Đang bị khoá giao dịch</c:if></div>
+                      <div class="product-cell">
+                        <span class="initials-tile" aria-hidden="true"><c:out value="${o.customerInitials}"/></span>
+                        <div>
+                          <div class="table__cell-main"><c:out value="${o.customerName}"/></div>
+                          <div class="table__cell-sub"><c:out value="${o.customerCode}"/><c:if test="${o.customerLocked}"> · Đang bị khoá giao dịch</c:if></div>
+                        </div>
+                      </div>
                     </td>
                     <td class="nowrap"><c:out value="${empty o.deliveryDateText ? '—' : o.deliveryDateText}"/></td>
                     <td class="num"><c:out value="${o.lineCount}"/></td>

@@ -1,0 +1,33 @@
+<%-- Hộp thoại "Đăng ký làm đại lý": khách liên hệ công ty để được cấp tài khoản (tài khoản đại lý do quản trị tạo).
+     Mở bằng nút có data-dialog-open="dealer-contact"; cần components.css và app.js. --%>
+<dialog class="dialog contact-dialog" id="dealer-contact" aria-labelledby="dealer-contact-title">
+  <div class="dialog__header">
+    <h2 class="contact-dialog__title" id="dealer-contact-title">Đăng ký làm đại lý</h2>
+  </div>
+  <div class="dialog__body">
+    <p class="contact-dialog__text">Tài khoản đại lý do công ty cấp. Hãy liên hệ để được tư vấn và mở tài khoản đặt hàng.</p>
+    <ul class="contact-dialog__list">
+      <li>
+        <a class="contact-dialog__item" href="https://zalo.me/0365058575" target="_blank" rel="noopener">
+          <span class="contact-dialog__label">Zalo</span>
+          <span class="contact-dialog__value">0365 058 575</span>
+        </a>
+      </li>
+      <li>
+        <a class="contact-dialog__item" href="tel:0365058575" data-no-loading>
+          <span class="contact-dialog__label">Điện thoại</span>
+          <span class="contact-dialog__value">0365 058 575</span>
+        </a>
+      </li>
+      <li>
+        <a class="contact-dialog__item" href="mailto:dnhunq@gmail.com?subject=%C4%90%C4%83ng%20k%C3%BD%20l%C3%A0m%20%C4%91%E1%BA%A1i%20l%C3%BD" data-no-loading>
+          <span class="contact-dialog__label">Email</span>
+          <span class="contact-dialog__value">dnhunq@gmail.com</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <div class="dialog__footer">
+    <button class="btn btn--secondary" type="button" data-dialog-close>Đóng</button>
+  </div>
+</dialog>

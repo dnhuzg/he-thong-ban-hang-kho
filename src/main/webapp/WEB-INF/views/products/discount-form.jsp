@@ -10,7 +10,9 @@
           <div>
             <p class="breadcrumb"><a href="${ctx}/products/discounts">Chiết khấu</a> / <c:out value="${isEdit ? 'Sửa' : 'Tạo mới'}"/></p>
             <h1><c:out value="${pageTitle}"/></h1>
+            <p class="page-header__desc">Đại lý mua càng nhiều càng được giảm; khi nhiều chính sách cùng khớp, hệ thống tự chọn mức có lợi nhất cho khách.</p>
           </div>
+          <a class="btn btn--secondary" href="${ctx}/products/discounts"><span class="icon icon--sm icon--arrow-left" aria-hidden="true"></span>Quay lại danh sách</a>
         </div>
 
         <c:if test="${not empty error}">
@@ -21,12 +23,15 @@
           <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
           <c:if test="${isEdit}"><input type="hidden" name="id" value="${form.id}"></c:if>
 
-          <section class="card">
-            <div class="card__header">
-              <h2>Thông tin chính sách</h2>
-              <p>Chọn áp dụng cho một sản phẩm hoặc cho cả một nhóm hàng (gồm các nhóm con).</p>
+          <section class="card form-card">
+            <div class="form-card__head">
+              <span class="form-card__icon"><span class="icon icon--percent" aria-hidden="true"></span></span>
+              <div>
+                <h2>Thông tin chính sách</h2>
+                <p>Chọn áp dụng cho một sản phẩm hoặc cho cả một nhóm hàng (gồm các nhóm con).</p>
+              </div>
             </div>
-            <div class="card__body form-grid">
+            <div class="form-grid">
               <div class="form-field">
                 <label class="form-label" for="name">Tên chính sách <span class="required">*</span></label>
                 <input class="input" id="name" name="name" maxlength="150" required placeholder="Ví dụ: Chiết khấu nước ngọt mùa hè" value="<c:out value='${form.name}'/>">
@@ -58,11 +63,12 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="type">Cách tính chiết khấu <span class="required">*</span></label>
-                <select class="select" id="type" name="type">
+                <select class="select" id="type" name="type" aria-describedby="type-hint">
                   <c:forEach var="t" items="${types}">
                     <option value="${t.name()}" ${t == form.type ? 'selected' : ''}><c:out value="${t.label}"/></option>
                   </c:forEach>
                 </select>
+                <p class="form-hint" id="type-hint">Phần trăm: giảm % trên giá bán. Số tiền: giảm số đồng trên mỗi đơn vị cơ sở.</p>
               </div>
               <div class="form-field">
                 <label class="form-label" for="status">Trạng thái</label>
@@ -74,7 +80,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="from">Hiệu lực từ ngày</label>
-                <input class="input" id="from" name="validFrom" type="date" value="${form.validFrom}">
+                <input class="input" id="from" name="validFrom" type="date" value="${form.validFrom}" aria-describedby="from-hint">
+                <p class="form-hint" id="from-hint">Để trống thì áp dụng ngay khi lưu.</p>
               </div>
               <div class="form-field">
                 <label class="form-label" for="to">Đến ngày</label>
@@ -84,12 +91,15 @@
             </div>
           </section>
 
-          <section class="card">
-            <div class="card__header">
-              <h2>Các bậc chiết khấu</h2>
-              <p>Số lượng tính theo đơn vị cơ sở của sản phẩm. Mức chiết khấu là % hoặc số tiền giảm trên mỗi đơn vị, tuỳ cách tính đã chọn. Bậc cao hơn phải giảm nhiều hơn bậc thấp. Để trống các hàng không dùng.</p>
+          <section class="card form-card">
+            <div class="form-card__head">
+              <span class="form-card__icon"><span class="icon icon--layers" aria-hidden="true"></span></span>
+              <div>
+                <h2>Các bậc chiết khấu</h2>
+                <p>Số lượng tính theo đơn vị cơ sở của sản phẩm. Mức chiết khấu là % hoặc số tiền giảm trên mỗi đơn vị, tuỳ cách tính đã chọn. Bậc cao hơn phải giảm nhiều hơn bậc thấp. Để trống các hàng không dùng.</p>
+              </div>
             </div>
-            <div class="card__body tier-grid">
+            <div class="tier-grid">
               <span class="form-label tier-grid__head">Mua từ (đơn vị cơ sở)</span>
               <span class="form-label tier-grid__head">Mức chiết khấu</span>
               <c:forEach var="row" items="${tierRows}" varStatus="st">
@@ -105,9 +115,12 @@
             </div>
           </section>
 
-          <div class="form-actions">
-            <a class="btn btn--secondary" href="${ctx}/products/discounts">Huỷ</a>
-            <button class="btn btn--primary" type="submit"><c:out value="${isEdit ? 'Lưu thay đổi' : 'Tạo chính sách'}"/></button>
+          <div class="card form-footer">
+            <p class="form-footer__note">* Trường bắt buộc</p>
+            <div class="form-footer__actions">
+              <a class="btn btn--secondary" href="${ctx}/products/discounts">Huỷ</a>
+              <button class="btn btn--primary" type="submit"><span class="icon icon--sm icon--check" aria-hidden="true"></span><c:out value="${isEdit ? 'Lưu thay đổi' : 'Tạo chính sách'}"/></button>
+            </div>
           </div>
         </form>
 

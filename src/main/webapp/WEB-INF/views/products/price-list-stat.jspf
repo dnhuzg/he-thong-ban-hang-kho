@@ -1,0 +1,7 @@
+<%-- Nội dung thẻ "Bảng giá đang áp dụng" ở trang Sản phẩm (bấm được khi người xem có quyền xem bảng giá) --%>
+<div class="home-stat__head">
+  <p class="stat__label">Bảng giá đang áp dụng</p>
+  <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--tags" aria-hidden="true"></span></span>
+</div>
+<p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.effectivePriceLists}"/></span> bảng giá</p>
+<p class="home-stat__note">Mỗi nhóm khách hàng một bảng giá</p>

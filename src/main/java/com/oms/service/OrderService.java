@@ -13,6 +13,7 @@ import com.oms.model.DiscountPolicy;
 import com.oms.model.NamedItem;
 import com.oms.model.Order;
 import com.oms.model.OrderLine;
+import com.oms.model.OrderStats;
 import com.oms.model.PageResult;
 import com.oms.model.PriceListItem;
 import com.oms.model.Product;
@@ -67,6 +68,14 @@ public class OrderService {
     private final PriceListService priceListService = new PriceListService();
     private final DiscountService discountService = new DiscountService();
     private final AuditLogDao auditDao = new AuditLogDao();
+
+    public OrderStats stats(User viewer, LocalDate today) throws SQLException {
+        requireOrders(viewer);
+        Long own = PermissionPolicy.canSeeAllOrders(viewer.getRoles()) ? null : viewer.getId();
+        try (Connection conn = Db.getConnection()) {
+            return orderDao.stats(conn, own, today);
+        }
+    }
 
     public PageResult<Order> search(String keyword, int page, User viewer) throws SQLException {
         requireOrders(viewer);

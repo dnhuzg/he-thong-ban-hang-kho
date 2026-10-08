@@ -1,6 +1,9 @@
     </section>
   <c:if test="${authSplit}">
-      <p class="auth-split__note"><img src="${ctx}/assets/img/icon-shield-check.svg" alt="" width="14" height="14"> Truy cập an toàn vào hệ thống quản trị</p>
+      <aside class="auth-notice">
+        <span class="icon icon--sm icon--shield-check" aria-hidden="true"></span>
+        <p><strong>Thông báo bảo mật:</strong> Trang đăng nhập chỉ dành cho nhân sự công ty và đại lý được cấp tài khoản. Mọi thao tác trên giá, tồn kho và công nợ đều được ghi nhật ký.</p>
+      </aside>
     </div>
   </c:if>
   </main>
