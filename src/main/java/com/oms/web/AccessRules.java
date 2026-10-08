@@ -19,6 +19,39 @@ public final class AccessRules {
 
     private static final Map<String, Rule> RULES = Map.ofEntries(
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/catalog", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/portal/cart", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/portal/create", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/add", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/update", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/remove", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/header", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/submit", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/copy", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/pdf", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/search", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/cancel", new Rule(Kind.WRITE, Module.ORDER)),
+            // Ngoại lệ vòng đời: kho/kế toán chỉ có ORDER mức R nhưng được soạn/xuất/đóng đơn.
+            // Không dùng ORDER WRITE hay SHIPMENT WRITE vì sẽ chặn kế toán đóng đơn và NVKD xác nhận giao.
+            // OrderLifecycleService vẫn kiểm vai trò, kho phục vụ và từng bước chuyển trạng thái.
+            Map.entry("/api/orders/advance", new Rule(Kind.AUTHENTICATED, null)),
+
+            Map.entry("/api/orders/submit", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/orders/pending", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/orders/decide", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/orders/history", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/purchase-history", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/orders/add-last-purchase", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/stock", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/credit", new Rule(Kind.READ, Module.ORDER)),
+
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/session/ping", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/account/change-password", new Rule(Kind.AUTHENTICATED, null)),
