@@ -50,7 +50,7 @@ public abstract class DatabaseTest {
             statement.execute("""
                     CREATE TABLE customers (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(200),
                         phone VARCHAR(20), tax_code VARCHAR(14) UNIQUE, area_id BIGINT REFERENCES areas(id),
-                        group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id),
+                        group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id), user_id BIGINT UNIQUE REFERENCES users(id),
                         status VARCHAR(20) DEFAULT 'ACTIVE', credit_limit DECIMAL(15,2) DEFAULT 0 NOT NULL,
                         credit_days INT DEFAULT 0 NOT NULL, lock_reason VARCHAR(500), locked_at TIMESTAMP,
                         locked_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -140,8 +140,7 @@ public abstract class DatabaseTest {
                     """);
             statement.execute("""
                     CREATE TABLE order_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                        order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE, product_id BIGINT REFERENCES products(id),
-                        unit_id BIGINT REFERENCES units(id), quantity INT, factor DECIMAL(12,4), base_quantity DECIMAL(14,4),
+                        order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE, product_id BIGINT REFERENCES products(id), unit_id BIGINT REFERENCES units(id), quantity INT, delivered_quantity INT, factor DECIMAL(12,4), base_quantity DECIMAL(14,4),
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (order_id, product_id, unit_id))
                     """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");

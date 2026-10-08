@@ -102,6 +102,7 @@ CREATE TABLE customers (
   area_id       BIGINT       NULL,
   group_id      BIGINT       NULL,
   sales_rep_id  BIGINT       NULL,
+  user_id       BIGINT       NULL,
   status        ENUM('ACTIVE','LOCKED') NOT NULL DEFAULT 'ACTIVE',
   credit_limit  DECIMAL(15,2) NOT NULL DEFAULT 0,
   credit_days   INT          NOT NULL DEFAULT 0,
@@ -113,12 +114,14 @@ CREATE TABLE customers (
   PRIMARY KEY (id),
   UNIQUE KEY uk_customers_code (code),
   UNIQUE KEY uk_customers_tax_code (tax_code),
+  UNIQUE KEY uk_customers_user_id (user_id),
   KEY idx_customers_name (name),
   KEY idx_customers_sales_rep (sales_rep_id),
   CONSTRAINT chk_customers_credit CHECK (credit_limit >= 0 AND credit_days >= 0),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
   CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
   CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id),
+  CONSTRAINT fk_customers_user FOREIGN KEY (user_id) REFERENCES users (id),
   CONSTRAINT fk_customers_locked_by FOREIGN KEY (locked_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -157,13 +160,13 @@ CREATE TABLE customer_credit_history (
 
 -- S3-06: lịch sử phân công người phụ trách đại lý (chỉ thêm, không sửa / xoá); null là chưa có người phụ trách
 CREATE TABLE customer_assignments (
-  id            BIGINT        NOT NULL AUTO_INCREMENT,
-  customer_id   BIGINT        NOT NULL,
-  from_user_id  BIGINT        NULL,
-  to_user_id    BIGINT        NULL,
+  id            BIGINT       NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT       NOT NULL,
+  from_user_id  BIGINT       NULL,
+  to_user_id    BIGINT       NULL,
   reason        VARCHAR(500)  NULL,
-  changed_by    BIGINT        NOT NULL,
-  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  changed_by    BIGINT       NOT NULL,
+  changed_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_assignments_customer (customer_id, changed_at),
   KEY idx_assignments_changed_at (changed_at),
@@ -175,12 +178,12 @@ CREATE TABLE customer_assignments (
 
 -- S3-07: lịch sử khoá / mở giao dịch với đại lý (chỉ thêm, không sửa / xoá)
 CREATE TABLE customer_lock_history (
-  id            BIGINT        NOT NULL AUTO_INCREMENT,
-  customer_id   BIGINT        NOT NULL,
+  id            BIGINT       NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT       NOT NULL,
   action        ENUM('LOCK','UNLOCK') NOT NULL,
-  reason        VARCHAR(500)  NULL,
-  changed_by    BIGINT        NOT NULL,
-  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reason        VARCHAR(500) NULL,
+  changed_by    BIGINT       NOT NULL,
+  changed_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_lock_history_customer (customer_id, changed_at),
   CONSTRAINT fk_lock_history_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
@@ -363,21 +366,29 @@ CREATE TABLE orders (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE order_lines (
-  id             BIGINT        NOT NULL AUTO_INCREMENT,
-  order_id       BIGINT        NOT NULL,
-  product_id     BIGINT        NOT NULL,
-  unit_id        BIGINT        NOT NULL,
-  quantity       INT           NOT NULL,
-  factor         DECIMAL(12,4) NOT NULL,
-  base_quantity  DECIMAL(14,4) NOT NULL,
-  created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id                  BIGINT        NOT NULL AUTO_INCREMENT,
+  order_id            BIGINT        NOT NULL,
+  product_id          BIGINT        NOT NULL,
+  unit_id             BIGINT        NOT NULL,
+  quantity            INT           NOT NULL,
+  delivered_quantity  INT           NULL,
+  factor              DECIMAL(12,4) NOT NULL,
+  base_quantity       DECIMAL(14,4) NOT NULL,
+  created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_order_lines_product_unit (order_id, product_id, unit_id),
   KEY idx_order_lines_product (product_id),
   CONSTRAINT fk_order_lines_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
   CONSTRAINT fk_order_lines_product FOREIGN KEY (product_id) REFERENCES products (id),
   CONSTRAINT fk_order_lines_unit FOREIGN KEY (unit_id) REFERENCES units (id),
-  CONSTRAINT chk_order_lines_qty CHECK (quantity > 0 AND factor > 0 AND base_quantity > 0)
+  CONSTRAINT chk_order_lines_qty CHECK (quantity > 0 AND factor > 0 AND base_quantity > 0),
+  CONSTRAINT chk_order_lines_delivered_qty CHECK (
+    delivered_quantity IS NULL
+    OR (
+      delivered_quantity >= 0
+      AND delivered_quantity <= quantity
+    )
+  )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE user_warehouses (

@@ -2,18 +2,18 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <fmt:setLocale value="vi_VN"/>
-<c:set var="pageTitle" value="Đơn nháp ${order.code}"/>
+<c:set var="pageTitle" value="Đơn hàng ${order.code}"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 
         <div class="page-header">
           <div>
             <p class="breadcrumb"><a href="${ctx}/orders">Đơn hàng</a> / <c:out value="${order.code}"/></p>
-            <h1>Đơn nháp <c:out value="${order.code}"/></h1>
+            <h1>Đơn hàng <c:out value="${order.code}"/></h1>
             <p class="page-header__desc"><a href="${ctx}/customers/view?id=${order.customerId}"><c:out value="${order.customerName}"/></a> · <c:out value="${order.customerCode} · ${order.customerGroupName}"/></p>
           </div>
           <div class="page-header__actions">
-            <span class="badge">Nháp</span>
-            <button class="btn btn--secondary" type="button" data-dialog-open="delete-order">Xoá nháp</button>
+            <span class="badge"><c:out value="${order.statusLabel}"/></span>
+            <button class="btn btn--secondary" type="button" data-dialog-open="delete-order">Xoá đơn</button>
           </div>
         </div>
 
@@ -103,12 +103,14 @@
             <c:if test="${empty order.lines}">
               <p class="text-muted">Chưa có dòng hàng nào. Tìm sản phẩm ở phần "Thêm hàng" phía trên.</p>
             </c:if>
+
             <c:forEach var="ln" items="${order.lines}">
               <article class="order-line">
                 <div class="order-line__head">
                   <p class="order-line__name"><c:out value="${ln.productName}"/></p>
                   <p class="order-line__meta"><c:out value="${ln.sku}"/><c:if test="${ln.priced}"> · <fmt:formatNumber value="${ln.unitPrice}" maxFractionDigits="2"/> ₫/<c:out value="${ln.unitName}"/></c:if></p>
                 </div>
+
                 <form class="order-line__form" action="${ctx}/orders/lines/save" method="post">
                   <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                   <input type="hidden" name="id" value="${order.id}">
@@ -121,10 +123,29 @@
                   </select>
                   <button class="btn btn--secondary" type="submit">Cập nhật</button>
                 </form>
+
+                <p class="order-line__meta">
+                  <strong>Đặt:</strong>
+                  <c:out value="${ln.quantity}"/>
+                  <c:out value=" ${ln.unitName}"/>
+
+                  <c:if test="${ln.hasDeliveredQuantity()}">
+                    ·
+                    <strong>Thực giao:</strong>
+                    <c:out value="${ln.deliveredQuantity}"/>
+                    <c:out value=" ${ln.unitName}"/>
+
+                    <c:if test="${ln.shortDelivered}">
+                      <span class="badge badge--warning">Giao thiếu</span>
+                    </c:if>
+                  </c:if>
+                </p>
+
                 <c:if test="${ln.converted}">
                   <fmt:formatNumber var="baseQtyText" value="${ln.baseQuantity}" maxFractionDigits="2"/>
                   <p class="order-line__meta"><c:out value="= ${baseQtyText} ${ln.baseUnitName}"/></p>
                 </c:if>
+
                 <div class="order-line__money">
                   <c:choose>
                     <c:when test="${ln.priced}">
@@ -137,6 +158,7 @@
                     <c:otherwise><p><span class="badge badge--warning">Chưa có giá</span></p></c:otherwise>
                   </c:choose>
                 </div>
+
                 <form class="order-line__remove" action="${ctx}/orders/lines/delete" method="post">
                   <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                   <input type="hidden" name="id" value="${order.id}">

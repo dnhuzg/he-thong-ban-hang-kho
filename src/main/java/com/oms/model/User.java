@@ -29,6 +29,7 @@ public class User {
     }
 
     private long id;
+    private Long customerId;
     private String username;
     private String email;
     private String fullName;
@@ -63,7 +64,6 @@ public class User {
         return (first + last).toUpperCase();
     }
 
-    /** Chuỗi hiển thị vai trò trên topbar, ví dụ "Quản lý kho, Nhân viên kho". */
     public String getRoleLabels() {
         List<String> labels = new ArrayList<>();
         for (Role r : roles) {
@@ -72,7 +72,6 @@ public class User {
         return String.join(", ", labels);
     }
 
-    /** Kho hoặc địa bàn đang làm việc (S1-06). */
     public String getScopeLabel() {
         List<String> names = new ArrayList<>();
         for (NamedItem w : warehouses) {
@@ -89,39 +88,56 @@ public class User {
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
+
+    public Long getCustomerId() { return customerId; }
+    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+
     public boolean isMustChangePassword() { return mustChangePassword; }
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+
     public int getFailedLoginCount() { return failedLoginCount; }
     public void setFailedLoginCount(int failedLoginCount) { this.failedLoginCount = failedLoginCount; }
+
     public LocalDateTime getLoginLockedUntil() { return loginLockedUntil; }
     public void setLoginLockedUntil(LocalDateTime loginLockedUntil) { this.loginLockedUntil = loginLockedUntil; }
+
     public int getSessionVersion() { return sessionVersion; }
     public void setSessionVersion(int sessionVersion) { this.sessionVersion = sessionVersion; }
+
     public String getLockReason() { return lockReason; }
     public void setLockReason(String lockReason) { this.lockReason = lockReason; }
+
     public String getAvatarPath() { return avatarPath; }
     public void setAvatarPath(String avatarPath) { this.avatarPath = avatarPath; }
 
-    /** Bản thu nhỏ 64px nằm cạnh ảnh gốc, cùng tên thêm đuôi -64 (S2-03). */
     public String getAvatarThumbPath() {
         return avatarPath == null ? null : avatarPath.replaceFirst("\\.png$", "-64.png");
     }
+
     public Set<Role> getRoles() { return roles; }
     public void setRoles(Set<Role> roles) { this.roles = roles; }
+
     public List<NamedItem> getWarehouses() { return warehouses; }
     public void setWarehouses(List<NamedItem> warehouses) { this.warehouses = warehouses; }
+
     public List<NamedItem> getAreas() { return areas; }
     public void setAreas(List<NamedItem> areas) { this.areas = areas; }
 }

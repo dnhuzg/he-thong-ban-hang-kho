@@ -60,7 +60,7 @@
                     <td class="num"><c:out value="${o.lineCount}"/></td>
                     <td class="num nowrap table__cell-main"><fmt:formatNumber value="${o.payable}" maxFractionDigits="2"/> ₫</td>
                     <td class="nowrap text-muted"><c:out value="${o.updatedAtText}"/></td>
-                    <td><span class="badge">Nháp</span></td>
+                    <td><span class="badge"><c:out value="${o.statusLabel}"/></span></td>
                     <td>
                       <details class="row-menu">
                         <summary aria-label="Thao tác với <c:out value='${o.code}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
@@ -102,7 +102,7 @@
                   <c:if test="${o.customerLocked}"><p>Đại lý đang bị khoá giao dịch</p></c:if>
                 </div>
                 <div class="product-card__foot">
-                  <span class="badge">Nháp</span>
+                  <span class="badge"><c:out value="${o.statusLabel}"/></span>
                   <span class="text-muted order-card__time"><c:out value="${o.updatedAtText}"/></span>
                 </div>
               </article>
