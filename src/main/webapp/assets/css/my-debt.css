@@ -1,0 +1,290 @@
+.my-debt {
+  display: grid;
+  gap: 20px;
+}
+
+.my-debt__overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.debt-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  min-width: 0;
+}
+
+.debt-stat__label {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.debt-stat strong {
+  font-size: clamp(20px, 2vw, 27px);
+  letter-spacing: -.5px;
+  overflow-wrap: anywhere;
+}
+
+.debt-stat small {
+  color: #667085;
+  line-height: 1.5;
+}
+
+.debt-stat--available strong { color: #067647; }
+.debt-stat--overdue strong { color: #b42318; }
+
+.debt-limit-panel { padding: 22px; }
+
+.debt-limit-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.debt-limit-panel__head h2 {
+  margin: 0 0 6px;
+}
+
+.debt-limit-panel__head p,
+.debt-limit-panel__note {
+  color: #667085;
+  margin: 0;
+}
+
+.debt-limit-panel__head strong {
+  font-size: 25px;
+  color: #175cd3;
+}
+
+.debt-progress {
+  height: 13px;
+  border-radius: 999px;
+  background: #eaecf0;
+  overflow: hidden;
+  margin: 22px 0 12px;
+}
+
+.debt-progress__fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1570ef, #53b1fd);
+  transition: width .3s ease;
+}
+
+.debt-invoices { overflow: hidden; }
+
+.debt-invoices__header {
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.debt-invoices__header h2 {
+  margin: 0 0 6px;
+}
+
+.debt-invoices__header p {
+  color: #667085;
+  margin: 0;
+}
+
+.debt-toolbar {
+  padding: 20px 22px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 240px;
+  gap: 16px;
+}
+
+.debt-table-wrap {
+  padding: 0 22px 20px;
+}
+
+.debt-table td { vertical-align: middle; }
+
+.debt-code {
+  font-weight: 700;
+  color: #175cd3;
+}
+
+.debt-status {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.debt-status--paid {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.debt-status--unpaid {
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.debt-status--partial {
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.debt-status--overdue {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.debt-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.debt-action {
+  border: 1px solid #d0d5dd;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.debt-action:hover { background: #f2f4f7; }
+
+.debt-empty {
+  padding: 20px;
+  text-align: center;
+  color: #667085;
+}
+
+.debt-mobile { display: none; }
+
+.debt-card {
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.debt-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.debt-card__details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.debt-card__details span {
+  display: block;
+  color: #667085;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.debt-dialog {
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
+  width: min(680px, 94vw);
+  max-height: 90vh;
+  color: #101828;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(16,24,40,.25);
+}
+
+.debt-dialog::backdrop {
+  background: rgba(16,24,40,.65);
+}
+
+.debt-dialog__header,
+.debt-dialog__footer {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.debt-dialog__header {
+  border-bottom: 1px solid #eaecf0;
+}
+
+.debt-dialog__header h2 { margin: 0; }
+
+.debt-dialog__footer {
+  border-top: 1px solid #eaecf0;
+  flex-wrap: wrap;
+}
+
+.debt-preview { padding: 24px; }
+
+.debt-preview__watermark {
+  padding: 10px;
+  background: #fffaeb;
+  color: #b54708;
+  text-align: center;
+  font-weight: 800;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.debt-preview__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.debt-preview__grid span {
+  display: block;
+  color: #667085;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.debt-preview__total {
+  border-top: 1px solid #eaecf0;
+  padding-top: 16px;
+  margin-top: 20px;
+}
+
+.my-debt__footer {
+  color: #667085;
+  text-align: right;
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .my-debt__overview {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .my-debt__overview { grid-template-columns: 1fr; }
+  .debt-toolbar { grid-template-columns: 1fr; }
+  .debt-table-wrap { display: none; }
+  .debt-mobile { display: block; padding: 0 16px 16px; }
+  .debt-invoices__header { align-items: flex-start; }
+  .debt-preview__grid { grid-template-columns: 1fr; }
+  .debt-dialog__footer { justify-content: flex-start; }
+}
