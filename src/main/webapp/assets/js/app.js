@@ -224,6 +224,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Trang Nhóm hàng: một bộ hộp thoại dùng chung; nút của từng dòng mang id, tên, số sản phẩm của dòng đó
+  document.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-cat-dialog]");
+    if (!btn) {
+      return;
+    }
+    const dialog = document.getElementById(btn.dataset.catDialog);
+    const data = { id: btn.dataset.catId, name: btn.dataset.catName, count: btn.dataset.catCount };
+    dialog.querySelectorAll("[data-cat-field]").forEach((field) => {
+      field.value = data[field.dataset.catField];
+    });
+    dialog.querySelectorAll("[data-cat-fill]").forEach((el) => {
+      el.textContent = data[el.dataset.catFill];
+    });
+    // nhóm đích không được là chính nhóm đang chuyển
+    dialog.querySelectorAll("select option").forEach((option) => {
+      const self = option.value !== "" && option.value === data.id;
+      option.hidden = self;
+      option.disabled = self;
+    });
+    dialog.querySelectorAll("select").forEach((select) => {
+      select.value = "";
+    });
+    dialog.showModal();
+  });
+
   // Mở / đóng <dialog>
   document.querySelectorAll("[data-dialog-open]").forEach((btn) => {
     btn.addEventListener("click", () => {

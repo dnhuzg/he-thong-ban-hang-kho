@@ -53,93 +53,16 @@
                     <c:if test="${canWrite}">
                       <td>
                         <div class="table__actions table__actions--slots">
-                          <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="add-${cat.id}">+ Nhóm con</button>
-                          <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="rename-${cat.id}">Đổi tên</button>
+                          <button class="btn btn--ghost btn--sm" type="button" data-cat-dialog="cat-add" data-cat-id="${cat.id}" data-cat-name="<c:out value='${cat.name}'/>">+ Nhóm con</button>
+                          <button class="btn btn--ghost btn--sm" type="button" data-cat-dialog="cat-rename" data-cat-id="${cat.id}" data-cat-name="<c:out value='${cat.name}'/>">Đổi tên</button>
                           <c:if test="${cat.productCount > 0}">
-                            <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="move-${cat.id}">Chuyển SP</button>
+                            <button class="btn btn--ghost btn--sm" type="button" data-cat-dialog="cat-move" data-cat-id="${cat.id}" data-cat-name="<c:out value='${cat.name}'/>" data-cat-count="${cat.productCount}">Chuyển SP</button>
                           </c:if>
                           <c:if test="${cat.productCount == 0 and not cat.hasChildren}">
-                            <button class="btn btn--ghost btn--sm" type="button" data-dialog-open="delete-${cat.id}">Xoá</button>
+                            <button class="btn btn--ghost btn--sm" type="button" data-cat-dialog="cat-delete" data-cat-id="${cat.id}" data-cat-name="<c:out value='${cat.name}'/>">Xoá</button>
                           </c:if>
                           <c:if test="${cat.productCount == 0 and cat.hasChildren}"><span></span></c:if>
                         </div>
-
-                        <dialog class="dialog" id="add-${cat.id}" aria-labelledby="add-title-${cat.id}">
-                          <form action="${ctx}/products/categories/save" method="post">
-                            <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-                            <input type="hidden" name="parentId" value="${cat.id}">
-                            <div class="dialog__header"><h2 id="add-title-${cat.id}">Thêm nhóm con của "<c:out value="${cat.name}"/>"</h2></div>
-                            <div class="dialog__body">
-                              <div class="form-field">
-                                <label class="form-label" for="add-name-${cat.id}">Tên nhóm <span class="required">*</span></label>
-                                <input class="input" id="add-name-${cat.id}" name="name" maxlength="150" required>
-                              </div>
-                            </div>
-                            <div class="dialog__footer">
-                              <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
-                              <button class="btn btn--primary" type="submit">Thêm</button>
-                            </div>
-                          </form>
-                        </dialog>
-
-                        <dialog class="dialog" id="rename-${cat.id}" aria-labelledby="rename-title-${cat.id}">
-                          <form action="${ctx}/products/categories/save" method="post">
-                            <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-                            <input type="hidden" name="id" value="${cat.id}">
-                            <div class="dialog__header"><h2 id="rename-title-${cat.id}">Đổi tên nhóm hàng</h2></div>
-                            <div class="dialog__body">
-                              <div class="form-field">
-                                <label class="form-label" for="rename-name-${cat.id}">Tên mới <span class="required">*</span></label>
-                                <input class="input" id="rename-name-${cat.id}" name="name" maxlength="150" required value="<c:out value='${cat.name}'/>">
-                              </div>
-                            </div>
-                            <div class="dialog__footer">
-                              <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
-                              <button class="btn btn--primary" type="submit">Lưu</button>
-                            </div>
-                          </form>
-                        </dialog>
-
-                        <c:if test="${cat.productCount > 0}">
-                          <dialog class="dialog" id="move-${cat.id}" aria-labelledby="move-title-${cat.id}">
-                            <form action="${ctx}/products/categories/move" method="post">
-                              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-                              <input type="hidden" name="id" value="${cat.id}">
-                              <div class="dialog__header"><h2 id="move-title-${cat.id}">Chuyển ${cat.productCount} sản phẩm của "<c:out value="${cat.name}"/>"</h2></div>
-                              <div class="dialog__body">
-                                <div class="form-field">
-                                  <label class="form-label" for="move-target-${cat.id}">Sang nhóm <span class="required">*</span></label>
-                                  <select class="select" id="move-target-${cat.id}" name="targetId" required>
-                                    <option value="">— Chọn nhóm đích —</option>
-                                    <c:forEach var="t" items="${categories}">
-                                      <c:if test="${t.id != cat.id}">
-                                        <option value="${t.id}"><c:forEach begin="2" end="${t.level}">— </c:forEach><c:out value="${t.name}"/></option>
-                                      </c:if>
-                                    </c:forEach>
-                                  </select>
-                                </div>
-                              </div>
-                              <div class="dialog__footer">
-                                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
-                                <button class="btn btn--primary" type="submit">Chuyển</button>
-                              </div>
-                            </form>
-                          </dialog>
-                        </c:if>
-
-                        <c:if test="${cat.productCount == 0 and not cat.hasChildren}">
-                          <dialog class="dialog" id="delete-${cat.id}" aria-labelledby="delete-title-${cat.id}">
-                            <form action="${ctx}/products/categories/delete" method="post">
-                              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
-                              <input type="hidden" name="id" value="${cat.id}">
-                              <div class="dialog__header"><h2 id="delete-title-${cat.id}">Xoá nhóm "<c:out value="${cat.name}"/>"?</h2></div>
-                              <div class="dialog__footer">
-                                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
-                                <button class="btn btn--danger" type="submit">Xoá</button>
-                              </div>
-                            </form>
-                          </dialog>
-                        </c:if>
                       </td>
                     </c:if>
                   </tr>
@@ -150,6 +73,78 @@
         </section>
 
         <c:if test="${canWrite}">
+          <%-- Hộp thoại dùng chung cho mọi dòng: nút data-cat-dialog điền id / tên / số sản phẩm rồi mở (app.js) --%>
+          <dialog class="dialog" id="cat-add" aria-labelledby="cat-add-title">
+            <form action="${ctx}/products/categories/save" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="parentId" data-cat-field="id">
+              <div class="dialog__header"><h2 id="cat-add-title">Thêm nhóm con của "<span data-cat-fill="name"></span>"</h2></div>
+              <div class="dialog__body">
+                <div class="form-field">
+                  <label class="form-label" for="cat-add-name">Tên nhóm <span class="required">*</span></label>
+                  <input class="input" id="cat-add-name" name="name" maxlength="150" required>
+                </div>
+              </div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--primary" type="submit">Thêm</button>
+              </div>
+            </form>
+          </dialog>
+
+          <dialog class="dialog" id="cat-rename" aria-labelledby="cat-rename-title">
+            <form action="${ctx}/products/categories/save" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="id" data-cat-field="id">
+              <div class="dialog__header"><h2 id="cat-rename-title">Đổi tên nhóm hàng</h2></div>
+              <div class="dialog__body">
+                <div class="form-field">
+                  <label class="form-label" for="cat-rename-name">Tên mới <span class="required">*</span></label>
+                  <input class="input" id="cat-rename-name" name="name" maxlength="150" required data-cat-field="name">
+                </div>
+              </div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--primary" type="submit">Lưu</button>
+              </div>
+            </form>
+          </dialog>
+
+          <dialog class="dialog" id="cat-move" aria-labelledby="cat-move-title">
+            <form action="${ctx}/products/categories/move" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="id" data-cat-field="id">
+              <div class="dialog__header"><h2 id="cat-move-title">Chuyển <span data-cat-fill="count"></span> sản phẩm của "<span data-cat-fill="name"></span>"</h2></div>
+              <div class="dialog__body">
+                <div class="form-field">
+                  <label class="form-label" for="cat-move-target">Sang nhóm <span class="required">*</span></label>
+                  <select class="select" id="cat-move-target" name="targetId" required>
+                    <option value="">— Chọn nhóm đích —</option>
+                    <c:forEach var="t" items="${categories}">
+                      <option value="${t.id}"><c:forEach begin="2" end="${t.level}">— </c:forEach><c:out value="${t.name}"/></option>
+                    </c:forEach>
+                  </select>
+                </div>
+              </div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--primary" type="submit">Chuyển</button>
+              </div>
+            </form>
+          </dialog>
+
+          <dialog class="dialog" id="cat-delete" aria-labelledby="cat-delete-title">
+            <form action="${ctx}/products/categories/delete" method="post">
+              <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+              <input type="hidden" name="id" data-cat-field="id">
+              <div class="dialog__header"><h2 id="cat-delete-title">Xoá nhóm "<span data-cat-fill="name"></span>"?</h2></div>
+              <div class="dialog__footer">
+                <button class="btn btn--secondary" type="button" data-dialog-close>Huỷ</button>
+                <button class="btn btn--danger" type="submit">Xoá</button>
+              </div>
+            </form>
+          </dialog>
+
           <dialog class="dialog" id="add-root" aria-labelledby="add-root-title">
             <form action="${ctx}/products/categories/save" method="post">
               <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
