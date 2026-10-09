@@ -18,7 +18,7 @@
 }
 
 .debt-stat__label {
-  color: #667085;
+  color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 600;
 }
@@ -30,12 +30,12 @@
 }
 
 .debt-stat small {
-  color: #667085;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
-.debt-stat--available strong { color: #067647; }
-.debt-stat--overdue strong { color: #b42318; }
+.debt-stat--available strong { color: var(--color-success); }
+.debt-stat--overdue strong { color: var(--color-danger); }
 
 .debt-limit-panel { padding: 22px; }
 
@@ -52,19 +52,19 @@
 
 .debt-limit-panel__head p,
 .debt-limit-panel__note {
-  color: #667085;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
 .debt-limit-panel__head strong {
   font-size: 25px;
-  color: #175cd3;
+  color: var(--color-primary);
 }
 
 .debt-progress {
   height: 13px;
   border-radius: 999px;
-  background: #eaecf0;
+  background: var(--color-border);
   overflow: hidden;
   margin: 22px 0 12px;
 }
@@ -73,7 +73,7 @@
   height: 100%;
   width: 0;
   border-radius: inherit;
-  background: linear-gradient(90deg, #1570ef, #53b1fd);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-border));
   transition: width .3s ease;
 }
 
@@ -85,7 +85,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .debt-invoices__header h2 {
@@ -93,7 +93,7 @@
 }
 
 .debt-invoices__header p {
-  color: #667085;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -112,7 +112,7 @@
 
 .debt-code {
   font-weight: 700;
-  color: #175cd3;
+  color: var(--color-primary);
 }
 
 .debt-status {
@@ -125,23 +125,23 @@
 }
 
 .debt-status--paid {
-  background: #ecfdf3;
-  color: #067647;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .debt-status--unpaid {
-  background: #eff8ff;
-  color: #175cd3;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .debt-status--partial {
-  background: #fffaeb;
-  color: #b54708;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .debt-status--overdue {
-  background: #fef3f2;
-  color: #b42318;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .debt-actions {
@@ -151,7 +151,7 @@
 }
 
 .debt-action {
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--color-border-strong);
   background: transparent;
   color: inherit;
   border-radius: 8px;
@@ -162,18 +162,18 @@
   cursor: pointer;
 }
 
-.debt-action:hover { background: #f2f4f7; }
+.debt-action:hover { background: var(--color-surface-muted); }
 
 .debt-empty {
   padding: 20px;
   text-align: center;
-  color: #667085;
+  color: var(--color-text-muted);
 }
 
 .debt-mobile { display: none; }
 
 .debt-card {
-  border: 1px solid #eaecf0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -195,7 +195,7 @@
 
 .debt-card__details span {
   display: block;
-  color: #667085;
+  color: var(--color-text-muted);
   font-size: 12px;
   margin-bottom: 5px;
 }
@@ -206,13 +206,13 @@
   padding: 0;
   width: min(680px, 94vw);
   max-height: 90vh;
-  color: #101828;
-  background: #fff;
-  box-shadow: 0 24px 70px rgba(16,24,40,.25);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
 }
 
 .debt-dialog::backdrop {
-  background: rgba(16,24,40,.65);
+  background: var(--color-overlay);
 }
 
 .debt-dialog__header,
@@ -225,13 +225,13 @@
 }
 
 .debt-dialog__header {
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .debt-dialog__header h2 { margin: 0; }
 
 .debt-dialog__footer {
-  border-top: 1px solid #eaecf0;
+  border-top: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 
@@ -239,8 +239,8 @@
 
 .debt-preview__watermark {
   padding: 10px;
-  background: #fffaeb;
-  color: #b54708;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
   text-align: center;
   font-weight: 800;
   border-radius: 8px;
@@ -256,19 +256,19 @@
 
 .debt-preview__grid span {
   display: block;
-  color: #667085;
+  color: var(--color-text-muted);
   font-size: 12px;
   margin-bottom: 5px;
 }
 
 .debt-preview__total {
-  border-top: 1px solid #eaecf0;
+  border-top: 1px solid var(--color-border);
   padding-top: 16px;
   margin-top: 20px;
 }
 
 .my-debt__footer {
-  color: #667085;
+  color: var(--color-text-muted);
   text-align: right;
   font-size: 12px;
 }

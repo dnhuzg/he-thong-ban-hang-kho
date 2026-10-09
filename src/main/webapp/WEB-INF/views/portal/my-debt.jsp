@@ -5,7 +5,7 @@
 
 <link rel="stylesheet" href="${ctx}/assets/css/my-debt.css?v=${assetVersion}">
 
-<main class="my-debt" id="my-debt">
+<section class="my-debt" id="my-debt">
 
   <header class="page-header">
     <div>
@@ -159,7 +159,7 @@
     </div>
   </noscript>
 
-</main>
+</section>
 
 <script src="${ctx}/assets/js/my-debt.js?v=${assetVersion}" defer></script>
 
