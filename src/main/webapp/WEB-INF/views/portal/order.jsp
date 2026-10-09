@@ -1,24 +1,12 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%
-    String ctx = request.getContextPath();
-%>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cổng đặt hàng đại lý</title>
+<c:set var="pageTitle" value="Đặt hàng"/>
+<%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
+<link rel="stylesheet" href="${ctx}/assets/css/portal.css?v=${assetVersion}">
 
-    <link rel="stylesheet" href="<%= ctx %>/assets/css/base.css">
-    <link rel="stylesheet" href="<%= ctx %>/assets/css/components.css">
-    <link rel="stylesheet" href="<%= ctx %>/assets/css/portal.css">
-</head>
-
-<body>
-<main class="portal-page"
+<section class="portal-page"
       id="portalOrderApp"
-      data-context-path="<%= ctx %>"
+      data-context-path="${ctx}"
       data-csrf="<c:out value='${csrfToken}'/>">
 
     <header class="portal-header">
@@ -211,8 +199,7 @@
             </div>
         </aside>
     </div>
-</main>
+</section>
 
-<script src="<%= ctx %>/assets/js/portal.js"></script>
-</body>
-</html>
+<script src="${ctx}/assets/js/portal.js?v=${assetVersion}" defer></script>
+<%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>
