@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%
     String ctx = request.getContextPath();
 %>
@@ -17,7 +18,8 @@
 <body>
 <main class="portal-page"
       id="portalOrderApp"
-      data-context-path="<%= ctx %>">
+      data-context-path="<%= ctx %>"
+      data-csrf="<c:out value='${csrfToken}'/>">
 
     <header class="portal-header">
         <div>

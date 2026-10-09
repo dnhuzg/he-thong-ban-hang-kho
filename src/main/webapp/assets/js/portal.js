@@ -5,6 +5,8 @@
     if (!app) return;
 
     const contextPath = app.dataset.contextPath || '';
+    // CsrfFilter chặn mọi POST không kèm _csrf của phiên
+    const csrfToken = app.dataset.csrf || '';
 
     const elements = {
         message: document.getElementById('portalMessage'),
@@ -104,6 +106,7 @@
 
     function post(path, parameters = {}) {
         const body = new URLSearchParams();
+        body.set('_csrf', csrfToken);
 
         Object.entries(parameters).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
