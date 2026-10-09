@@ -28,6 +28,13 @@ public class AuditService {
         }
     }
 
+    /** Các thao tác mới nhất, hiện ở trang chủ của người được xem nhật ký. */
+    public List<AuditEntry> recent(int limit) throws SQLException {
+        try (Connection conn = Db.getConnection()) {
+            return auditDao.search(conn, new AuditLogDao.Filter(null, null, null, null), 1, limit).getItems();
+        }
+    }
+
     /** Danh sách người dùng cho bộ lọc "Người thực hiện". */
     public List<NamedItem> actors() throws SQLException {
         try (Connection conn = Db.getConnection()) {

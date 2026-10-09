@@ -18,7 +18,6 @@ public final class AccessRules {
     }
 
     private static final Map<String, Rule> RULES = Map.ofEntries(
-            Map.entry("/", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/session/ping", new Rule(Kind.AUTHENTICATED, null)),
@@ -35,6 +34,11 @@ public final class AccessRules {
             Map.entry("/admin/users/lock", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/users/unlock", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)),
+            Map.entry("/finance/credit-alerts", new Rule(Kind.READ, Module.INVOICE)),
+            Map.entry("/finance/route-collections", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/finance/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/portal/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/finance/customer-ledger", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/edit", new Rule(Kind.WRITE, Module.PRODUCT)),
@@ -79,6 +83,7 @@ public final class AccessRules {
             Map.entry("/products/import/apply", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/import/template", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/customers", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
+            Map.entry("/finance/debt-aging", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/customers/view", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/new", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/edit", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
@@ -117,7 +122,7 @@ public final class AccessRules {
 
     /** Các trang không cần đăng nhập. */
     public static boolean isPublic(String path) {
-        return path.equals("/login") || path.equals("/forgot-password") || path.equals("/reset-password")
+        return path.equals("/") || path.equals("/login") || path.equals("/forgot-password") || path.equals("/reset-password")
                 || path.startsWith("/assets/") || path.equals("/favicon.ico");
     }
 }

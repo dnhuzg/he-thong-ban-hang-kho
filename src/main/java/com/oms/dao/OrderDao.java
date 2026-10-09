@@ -2,6 +2,7 @@ package com.oms.dao;
 
 import com.oms.model.Order;
 import com.oms.model.OrderLine;
+import com.oms.model.OrderStats;
 import com.oms.model.PageResult;
 
 import java.math.BigDecimal;
@@ -54,6 +55,34 @@ public class OrderDao {
 
     public Order findByIdForUpdate(Connection conn, long id) throws SQLException {
         return findOne(conn, SELECT + " WHERE o.id = ? FOR UPDATE", id);
+    }
+
+    /** Đếm đơn cho trang danh sách; ownRepId khác null thì chỉ tính đơn của đại lý người đó phụ trách. */
+    public OrderStats stats(Connection conn, Long ownRepId, LocalDate today) throws SQLException {
+        String sql = "SELECT COUNT(*), "
+                + "COALESCE(SUM(CASE WHEN o.created_at >= ? THEN 1 ELSE 0 END), 0), "
+                + "COUNT(DISTINCT o.customer_id), "
+                + "COALESCE(SUM(CASE WHEN o.delivery_date BETWEEN ? AND ? THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_lines l WHERE l.order_id = o.id) THEN 1 ELSE 0 END), 0) "
+                + "FROM orders o JOIN customers c ON c.id = o.customer_id" + (ownRepId == null ? "" : " WHERE c.sales_rep_id = ?");
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(today.withDayOfMonth(1)));
+            ps.setDate(2, Date.valueOf(today));
+            ps.setDate(3, Date.valueOf(today.plusDays(7)));
+            if (ownRepId != null) {
+                ps.setLong(4, ownRepId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                OrderStats s = new OrderStats();
+                s.setTotal(rs.getLong(1));
+                s.setThisMonth(rs.getLong(2));
+                s.setCustomers(rs.getLong(3));
+                s.setDueSoon(rs.getLong(4));
+                s.setWithoutLines(rs.getLong(5));
+                return s;
+            }
+        }
     }
 
     /** Mới cập nhật trước; ownRepId chỉ dùng cho người chỉ thấy đơn của đại lý mình phụ trách. */

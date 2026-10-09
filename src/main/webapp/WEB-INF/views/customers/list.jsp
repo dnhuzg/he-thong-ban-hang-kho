@@ -1,5 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<fmt:setLocale value="vi_VN"/>
 <c:set var="pageTitle" value="Đại lý"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 
@@ -16,6 +18,43 @@
             </div>
           </c:if>
         </div>
+
+        <section class="card-grid mb-4" aria-label="Tổng quan đại lý">
+          <a class="card card__body home-stat home-stat--link" href="${ctx}/customers">
+            <div class="home-stat__head">
+              <p class="stat__label">Tổng số đại lý</p>
+              <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--building-2" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.total}"/></span> đối tác</p>
+            <p class="home-stat__note"><span class="dot dot--success" aria-hidden="true"></span><fmt:formatNumber value="${stats.active}"/> đang giao dịch · <span class="dot dot--danger" aria-hidden="true"></span><fmt:formatNumber value="${stats.locked}"/> tạm khoá</p>
+          </a>
+          <a class="card card__body home-stat home-stat--link" href="${ctx}/customers?status=LOCKED">
+            <div class="home-stat__head">
+              <p class="stat__label">Đang khoá giao dịch</p>
+              <span class="home-stat__icon${stats.locked > 0 ? ' home-stat__icon--danger' : ''}"><span class="icon icon--sm icon--lock-keyhole" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.locked}"/></span> đại lý</p>
+            <p class="home-stat__note">Không tạo được đơn mới cho tới khi mở khoá</p>
+          </a>
+          <div class="card card__body home-stat">
+            <div class="home-stat__head">
+              <p class="stat__label">Tổng hạn mức cấp phát</p>
+              <span class="home-stat__icon home-stat__icon--primary"><span class="icon icon--sm icon--wallet" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value stat__value--money"><fmt:formatNumber value="${stats.totalCreditLimit}" maxFractionDigits="0"/></span> ₫</p>
+            <p class="home-stat__note">Cho nợ: <fmt:formatNumber value="${stats.withCredit}"/> đại lý · Thanh toán ngay: <fmt:formatNumber value="${stats.payNow}"/></p>
+          </div>
+          <c:if test="${canManage}">
+          <div class="card card__body home-stat${stats.unassigned > 0 ? ' home-stat--warning' : ''}">
+            <div class="home-stat__head">
+              <p class="stat__label">Chưa phân công</p>
+              <span class="home-stat__icon home-stat__icon--warning"><span class="icon icon--sm icon--users" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value"><fmt:formatNumber value="${stats.unassigned}"/></span> đại lý</p>
+            <p class="home-stat__note">Chưa có nhân viên kinh doanh phụ trách</p>
+          </div>
+          </c:if>
+        </section>
 
         <section class="card list-card">
           <form class="toolbar" action="${ctx}/customers" method="get" role="search">
@@ -62,6 +101,37 @@
             <button class="btn btn--secondary toolbar__submit" type="submit">Lọc</button>
           </form>
 
+          <c:if test="${not empty q or not empty selectedGroup or not empty selectedArea or not empty selectedRep or not empty selectedStatus}">
+            <div class="filter-chips">
+              <span class="filter-chips__label">Bộ lọc đang áp dụng:</span>
+              <c:if test="${not empty q}">
+                <c:url var="u" value="/customers"><c:param name="group" value="${selectedGroup}"/><c:param name="area" value="${selectedArea}"/><c:param name="rep" value="${selectedRep}"/><c:param name="status" value="${selectedStatus}"/></c:url>
+                <a class="filter-chip" href="${u}" title="Bỏ bộ lọc này">Từ khoá: <c:out value="${q}"/> <span aria-hidden="true">×</span></a>
+              </c:if>
+              <c:if test="${not empty selectedGroup}">
+                <c:forEach var="g" items="${groups}"><c:if test="${g.id == selectedGroup}"><c:set var="chipLabel" value="${g.name}"/></c:if></c:forEach>
+                <c:url var="u" value="/customers"><c:param name="q" value="${q}"/><c:param name="area" value="${selectedArea}"/><c:param name="rep" value="${selectedRep}"/><c:param name="status" value="${selectedStatus}"/></c:url>
+                <a class="filter-chip" href="${u}" title="Bỏ bộ lọc này">Nhóm: <c:out value="${chipLabel}"/> <span aria-hidden="true">×</span></a>
+              </c:if>
+              <c:if test="${not empty selectedArea}">
+                <c:forEach var="a" items="${areas}"><c:if test="${a.id == selectedArea}"><c:set var="chipLabel" value="${a.name}"/></c:if></c:forEach>
+                <c:url var="u" value="/customers"><c:param name="q" value="${q}"/><c:param name="group" value="${selectedGroup}"/><c:param name="rep" value="${selectedRep}"/><c:param name="status" value="${selectedStatus}"/></c:url>
+                <a class="filter-chip" href="${u}" title="Bỏ bộ lọc này">Khu vực: <c:out value="${chipLabel}"/> <span aria-hidden="true">×</span></a>
+              </c:if>
+              <c:if test="${not empty selectedRep}">
+                <c:forEach var="r" items="${reps}"><c:if test="${r.id == selectedRep}"><c:set var="chipLabel" value="${r.name}"/></c:if></c:forEach>
+                <c:url var="u" value="/customers"><c:param name="q" value="${q}"/><c:param name="group" value="${selectedGroup}"/><c:param name="area" value="${selectedArea}"/><c:param name="status" value="${selectedStatus}"/></c:url>
+                <a class="filter-chip" href="${u}" title="Bỏ bộ lọc này">Phụ trách: <c:out value="${chipLabel}"/> <span aria-hidden="true">×</span></a>
+              </c:if>
+              <c:if test="${not empty selectedStatus}">
+                <c:forEach var="st" items="${statuses}"><c:if test="${st.name() == selectedStatus}"><c:set var="chipLabel" value="${st.label}"/></c:if></c:forEach>
+                <c:url var="u" value="/customers"><c:param name="q" value="${q}"/><c:param name="group" value="${selectedGroup}"/><c:param name="area" value="${selectedArea}"/><c:param name="rep" value="${selectedRep}"/></c:url>
+                <a class="filter-chip" href="${u}" title="Bỏ bộ lọc này">Trạng thái: <c:out value="${chipLabel}"/> <span aria-hidden="true">×</span></a>
+              </c:if>
+              <a class="filter-chips__clear" href="${ctx}/customers">Xoá tất cả</a>
+            </div>
+          </c:if>
+
           <div class="list-summary">
             <span class="list-summary__title">Tất cả đại lý</span>
             <span class="badge badge--primary"><c:out value="${result.total}"/></span>
@@ -76,24 +146,43 @@
                   <th scope="col">Nhóm khách hàng</th>
                   <th scope="col">Khu vực</th>
                   <th scope="col">Người phụ trách</th>
+                  <th scope="col" class="num">Hạn mức tín dụng</th>
+                  <th scope="col" class="num">Kỳ hạn nợ</th>
                   <th scope="col" class="col-status">Trạng thái</th>
                   <th scope="col" class="col-menu"><span class="visually-hidden">Thao tác</span></th>
                 </tr>
               </thead>
               <tbody>
                 <c:if test="${empty result.items}">
-                  <tr><td colspan="7" class="text-muted">Không có đại lý nào khớp.</td></tr>
+                  <tr><td colspan="9" class="text-muted">Không có đại lý nào khớp.</td></tr>
                 </c:if>
                 <c:forEach var="cu" items="${result.items}">
                   <tr>
                     <td class="nowrap table__cell-code"><c:out value="${cu.code}"/></td>
                     <td>
-                      <a class="table__cell-main" href="${ctx}/customers/view?id=${cu.id}"><c:out value="${cu.name}"/></a>
-                      <c:if test="${not empty cu.phone}"><div class="table__cell-sub"><c:out value="${cu.phone}"/></div></c:if>
+                      <div class="product-cell">
+                        <span class="initials-tile" aria-hidden="true"><c:out value="${cu.initials}"/></span>
+                        <div>
+                          <a class="table__cell-main" href="${ctx}/customers/view?id=${cu.id}"><c:out value="${cu.name}"/></a>
+                          <c:if test="${not empty cu.phone}"><div class="table__cell-sub"><c:out value="${cu.phone}"/></div></c:if>
+                        </div>
+                      </div>
                     </td>
                     <td><c:out value="${empty cu.groupName ? '—' : cu.groupName}"/></td>
                     <td class="text-muted"><c:out value="${empty cu.areaName ? '—' : cu.areaName}"/></td>
                     <td class="text-muted"><c:out value="${empty cu.salesRepName ? 'Chưa phân công' : cu.salesRepName}"/></td>
+                    <td class="num nowrap">
+                      <c:choose>
+                        <c:when test="${cu.creditLimit.signum() > 0}"><span class="table__cell-main"><fmt:formatNumber value="${cu.creditLimit}" maxFractionDigits="0"/> ₫</span></c:when>
+                        <c:otherwise><span class="text-muted">Không cho nợ</span></c:otherwise>
+                      </c:choose>
+                    </td>
+                    <td class="num nowrap">
+                      <c:choose>
+                        <c:when test="${cu.creditDays > 0}"><span class="badge">${cu.creditDays} ngày</span></c:when>
+                        <c:otherwise><span class="text-muted">Trả ngay</span></c:otherwise>
+                      </c:choose>
+                    </td>
                     <td><span class="badge ${cu.locked ? 'badge--danger' : 'badge--success'}"><c:out value="${cu.status.label}"/></span></td>
                     <td>
                       <details class="row-menu">
