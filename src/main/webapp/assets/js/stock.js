@@ -18,6 +18,9 @@
   const form = document.getElementById('stock-filters');
   const body = document.getElementById('stock-rows');
   const mobile = document.getElementById('stock-mobile');
+  const exportButton = document.getElementById('stock-export');
+  const exportFeedback = document.getElementById('stock-export-feedback');
+  let filteredStock = [];
   const format = value => new Intl.NumberFormat('vi-VN').format(value);
   const el = (tag, className, content) => {
     const node = document.createElement(tag);
@@ -75,6 +78,10 @@
       (!category || item.category === category) &&
       (!status || state(item) === status)
     );
+    filteredStock = matching;
+    exportButton.disabled = filteredStock.length === 0;
+    exportFeedback.hidden = true;
+    exportFeedback.textContent = '';
     body.replaceChildren(...matching.map(renderRow));
     mobile.replaceChildren(...matching.map(renderCard));
     document.getElementById('stock-empty').hidden = matching.length !== 0;
@@ -89,5 +96,51 @@
   form.addEventListener('change', render);
   form.addEventListener('reset', () => requestAnimationFrame(render));
   document.getElementById('stock-empty-reset').addEventListener('click', () => form.reset());
+  exportButton.addEventListener('click', () => {
+    if (filteredStock.length === 0) return;
+    if (!window.StockXlsx || typeof window.StockXlsx.build !== 'function') {
+      exportFeedback.hidden = false;
+      exportFeedback.textContent = 'Không thể tạo tệp Excel. Hãy tải lại trang và thử lại.';
+      return;
+    }
+
+    const warehouseSelect = document.getElementById('stock-warehouse');
+    const selectedWarehouse = warehouseSelect.value;
+    const warehouseCode = selectedWarehouse || 'TAT-CA-KHO';
+    const warehouseLabel = warehouseSelect.options[warehouseSelect.selectedIndex].textContent.trim();
+    const category = document.getElementById('stock-category').value;
+    const status = document.getElementById('stock-status').value;
+    const statusLabels = { available: 'Còn hàng', low: 'Sắp hết', out: 'Hết hàng' };
+    const search = document.getElementById('stock-search').value.trim();
+    const now = new Date();
+    const exportDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const rows = [
+      ['BÁO CÁO TỒN KHO'],
+      ['Mã kho', warehouseCode],
+      ['Kho', warehouseLabel],
+      ['Ngày xuất', exportDate],
+      ['Tìm sản phẩm', search || 'Tất cả'],
+      ['Nhóm hàng', category || 'Tất cả'],
+      ['Trạng thái tồn', statusLabels[status] || 'Tất cả trạng thái'],
+      [],
+      ['Sản phẩm', 'SKU', 'Mã kho', 'Kho', 'Nhóm hàng', 'Tồn thực tế', 'Đang giữ chỗ', 'Khả dụng', 'Đơn vị', 'Trạng thái'],
+      ...filteredStock.map(item => [
+        item.name, item.sku, item.warehouse, item.warehouseName, item.category,
+        item.actual, item.reserved, available(item), item.unit, labels[state(item)]
+      ])
+    ];
+    const bytes = window.StockXlsx.build(rows);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bao-cao-ton-kho-${warehouseCode}-${exportDate}.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    exportFeedback.hidden = false;
+    exportFeedback.textContent = `Đã xuất ${filteredStock.length} dòng tồn kho theo bộ lọc hiện tại.`;
+  });
   render();
 })();

@@ -19,7 +19,8 @@
   </div>
 
   <section class="card stock-panel" aria-labelledby="stock-table-title">
-    <div class="stock-panel__heading"><div><h2 id="stock-table-title">Danh sách tồn kho</h2><p>Đối chiếu số lượng của từng mã hàng ở từng kho.</p></div><span class="badge" id="stock-count">0 kết quả</span></div>
+    <div class="stock-panel__heading"><div><h2 id="stock-table-title">Danh sách tồn kho</h2><p>Đối chiếu số lượng của từng mã hàng ở từng kho.</p></div><div class="stock-panel__actions"><button class="btn btn--primary" type="button" id="stock-export" disabled>Xuất Excel</button><span class="badge" id="stock-count">0 kết quả</span></div></div>
+    <p class="stock-export-feedback" id="stock-export-feedback" role="status" aria-live="polite" hidden></p>
     <form class="stock-filters" id="stock-filters" role="search">
       <div class="form-field stock-filters__search"><label class="form-label" for="stock-search">Tìm sản phẩm</label><div class="stock-search-wrap"><span class="icon icon--search" aria-hidden="true"></span><input class="input" type="search" id="stock-search" placeholder="Nhập mã SKU hoặc tên sản phẩm" autocomplete="off"></div></div>
       <div class="form-field"><label class="form-label" for="stock-warehouse">Kho</label><select class="select" id="stock-warehouse"><option value="">Tất cả kho</option><option value="KHO-HN">Kho Hà Nội</option><option value="KHO-TN">Kho Thái Nguyên</option><option value="KHO-BN">Kho Bắc Ninh</option></select></div>
@@ -36,5 +37,6 @@
   <p class="stock-footnote">GHTK-53 · S5-05 · Xem số tồn kho theo từng SKU và từng kho</p>
   <noscript><div class="alert alert--danger">Bật JavaScript để xem bảng tồn kho mẫu.</div></noscript>
 </section>
+<script src="${ctx}/assets/js/stock-xlsx.js?v=${assetVersion}" defer></script>
 <script src="${ctx}/assets/js/stock.js?v=${assetVersion}" defer></script>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>
