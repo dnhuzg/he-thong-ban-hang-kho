@@ -24,7 +24,7 @@ Endpoint được bảo vệ bởi `Module.SHIPMENT` và CSRF của hệ thống
 
 ## Dữ liệu
 
-Migration: `database/migrations/008_shipment_delivery_confirmation.sql`
+Migration: `database/migrations/023_xac_nhan_giao_hang.sql`
 
 - `shipments`
 - `shipment_items`

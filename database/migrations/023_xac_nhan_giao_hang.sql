@@ -4,7 +4,7 @@
 
 USE oms;
 
-CREATE TABLE shipments (
+CREATE TABLE IF NOT EXISTS shipments (
   id                  BIGINT       NOT NULL AUTO_INCREMENT,
   code                VARCHAR(30)  NOT NULL,
   warehouse_id        BIGINT       NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE shipments (
   CONSTRAINT fk_shipments_customer FOREIGN KEY (customer_id) REFERENCES customers (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE shipment_items (
+CREATE TABLE IF NOT EXISTS shipment_items (
   id          BIGINT         NOT NULL AUTO_INCREMENT,
   shipment_id BIGINT         NOT NULL,
   product_id  BIGINT         NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE shipment_items (
 
 -- Nhật ký hàng quay về kho khi giao thất bại.
 -- Tồn kho thực tế có thể tổng hợp từ các movement của module INVENTORY.
-CREATE TABLE inventory_movements (
+CREATE TABLE IF NOT EXISTS inventory_movements (
   id             BIGINT        NOT NULL AUTO_INCREMENT,
   warehouse_id   BIGINT        NOT NULL,
   product_id     BIGINT        NOT NULL,
