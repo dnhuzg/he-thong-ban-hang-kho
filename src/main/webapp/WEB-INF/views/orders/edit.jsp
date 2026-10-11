@@ -30,6 +30,13 @@
           </div>
         </c:if>
 
+        <c:if test="${order.requiresApproval}">
+          <div class="alert alert--warning alert--icon" role="alert">
+            <span class="icon icon--sm icon--info" aria-hidden="true"></span>
+            <span>Đơn hiện có dòng hàng có thành tiền sau chiết khấu thấp hơn giá sàn. Khi chốt đơn, đơn sẽ cần Quản lý kinh doanh duyệt.</span>
+          </div>
+        </c:if>
+
         <section class="card">
           <div class="card__header">
             <h2>Giao hàng</h2>
@@ -107,20 +114,23 @@
               <article class="order-line">
                 <div class="order-line__head">
                   <p class="order-line__name"><c:out value="${ln.productName}"/></p>
-                  <p class="order-line__meta"><c:out value="${ln.sku}"/><c:if test="${ln.priced}"> · <fmt:formatNumber value="${ln.unitPrice}" maxFractionDigits="2"/> ₫/<c:out value="${ln.unitName}"/></c:if></p>
+                  <p class="order-line__meta"><c:out value="${ln.sku}"/><c:if test="${ln.priced}"> · <fmt:formatNumber value="${ln.unitPrice}" maxFractionDigits="2"/> ₫/<c:out value="${ln.unitName}"/></c:if><c:if test="${ln.manualPrice}"> · <span class="badge badge--warning">Giá chỉnh tay</span></c:if></p>
                 </div>
                 <form class="order-line__form" action="${ctx}/orders/lines/save" method="post">
                   <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                   <input type="hidden" name="id" value="${order.id}">
                   <input type="hidden" name="lineId" value="${ln.id}">
                   <label class="visually-hidden" for="lq-${ln.id}">Số lượng</label>
-                  <input class="input order-qty" id="lq-${ln.id}" name="quantity" type="number" min="1" step="1" inputmode="numeric" value="${ln.quantity}" required>
+                  <input class="input order-qty" id="lq-${ln.id}" name="quantity" type="number" min="1" step="1" inputmode="numeric" value="${ln.quantity}" data-order-qty-autosubmit required>
                   <label class="visually-hidden" for="lu-${ln.id}">Đơn vị tính</label>
                   <select class="select" id="lu-${ln.id}" name="unitId">
                     <c:forEach var="u" items="${unitOptions[ln.productId]}"><option value="${u.id}" ${u.id == ln.unitId ? 'selected' : ''}><c:out value="${u.name}"/></option></c:forEach>
                   </select>
+                  <label class="visually-hidden" for="lp-${ln.id}">Giá chỉnh thủ công theo <c:out value="${ln.baseUnitName}"/></label>
+                  <input class="input" id="lp-${ln.id}" name="manualPrice" type="number" min="0" step="0.01" inputmode="decimal" value="${ln.manualBasePrice}" placeholder="Giá tự động / ${ln.baseUnitName}">
                   <button class="btn btn--secondary" type="submit">Cập nhật</button>
                 </form>
+                <p class="order-line__meta">Giá chỉnh thủ công nhập theo <c:out value="${ln.baseUnitName}"/>. Để trống để dùng lại giá tự động.</p>
                 <c:if test="${ln.converted}">
                   <fmt:formatNumber var="baseQtyText" value="${ln.baseQuantity}" maxFractionDigits="2"/>
                   <p class="order-line__meta"><c:out value="= ${baseQtyText} ${ln.baseUnitName}"/></p>

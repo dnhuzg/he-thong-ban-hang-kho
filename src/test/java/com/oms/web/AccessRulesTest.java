@@ -33,4 +33,11 @@ class AccessRulesTest {
         assertNull(AccessRules.find("/filesx"));
         assertFalse(AccessRules.isPublic("/files/avatars/x.png"));
     }
+
+    @Test
+    void landingPageIsPublicButHomeStillNeedsLogin() {
+        assertTrue(AccessRules.isPublic("/"));
+        assertFalse(AccessRules.isPublic("/home"));
+        assertEquals(AccessRules.Kind.AUTHENTICATED, AccessRules.find("/home").kind());
+    }
 }

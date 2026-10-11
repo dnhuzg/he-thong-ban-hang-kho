@@ -1,6 +1,7 @@
 package com.oms.dao;
 
 import com.oms.model.Customer;
+import com.oms.model.CustomerStats;
 import com.oms.model.PageResult;
 
 import java.math.BigDecimal;
@@ -61,6 +62,30 @@ public class CustomerDao {
             setLong(ps, 1, repId);
             ps.setLong(2, id);
             ps.executeUpdate();
+        }
+    }
+
+    /** Đếm đại lý cho trang danh sách; ownRepId khác null thì chỉ tính đại lý người đó phụ trách. */
+    public CustomerStats stats(Connection conn, Long ownRepId) throws SQLException {
+        String sql = "SELECT COUNT(*), "
+                + "COALESCE(SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN sales_rep_id IS NULL THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN credit_limit > 0 THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(credit_limit), 0) FROM customers" + (ownRepId == null ? "" : " WHERE sales_rep_id = ?");
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (ownRepId != null) {
+                ps.setLong(1, ownRepId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                CustomerStats s = new CustomerStats();
+                s.setTotal(rs.getLong(1));
+                s.setActive(rs.getLong(2));
+                s.setUnassigned(rs.getLong(3));
+                s.setWithCredit(rs.getLong(4));
+                s.setTotalCreditLimit(rs.getBigDecimal(5));
+                return s;
+            }
         }
     }
 

@@ -13,6 +13,22 @@ public class Order {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+    public enum Status { DRAFT, PENDING_APPROVAL, APPROVED, PICKING, SHIPPED, DELIVERED, CLOSED, CANCELLED, REJECTED }
+    private Status status = Status.DRAFT;
+    private Long warehouseId;
+    private String approvalReason;
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public String getApprovalReason() { return approvalReason; }
+    public void setApprovalReason(String approvalReason) { this.approvalReason = approvalReason; }
+    private Long customerAccountUserId;
+    private boolean customerSubmitted;
+    public Long getCustomerAccountUserId() { return customerAccountUserId; }
+    public void setCustomerAccountUserId(Long id) { customerAccountUserId = id; }
+    public boolean isCustomerSubmitted() { return customerSubmitted; }
+    public void setCustomerSubmitted(boolean value) { customerSubmitted = value; }
     private long id;
     private String code;
     private long customerId;
@@ -35,6 +51,7 @@ public class Order {
     private BigDecimal grossTotal = BigDecimal.ZERO;
     private BigDecimal discountTotal = BigDecimal.ZERO;
     private int unpricedLines;
+    private boolean requiresApproval;
 
     public BigDecimal getPayable() {
         return grossTotal.subtract(discountTotal);
@@ -57,6 +74,7 @@ public class Order {
     public String getCustomerCode() { return customerCode; }
     public void setCustomerCode(String customerCode) { this.customerCode = customerCode; }
     public String getCustomerName() { return customerName; }
+    public String getCustomerInitials() { return Customer.initialsOf(customerName); }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public long getCustomerGroupId() { return customerGroupId; }
     public void setCustomerGroupId(long customerGroupId) { this.customerGroupId = customerGroupId; }
@@ -92,4 +110,6 @@ public class Order {
     public void setDiscountTotal(BigDecimal discountTotal) { this.discountTotal = discountTotal; }
     public int getUnpricedLines() { return unpricedLines; }
     public void setUnpricedLines(int unpricedLines) { this.unpricedLines = unpricedLines; }
+    public boolean isRequiresApproval() { return requiresApproval; }
+    public void setRequiresApproval(boolean requiresApproval) { this.requiresApproval = requiresApproval; }
 }

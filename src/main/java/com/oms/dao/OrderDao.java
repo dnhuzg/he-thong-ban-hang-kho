@@ -2,6 +2,7 @@ package com.oms.dao;
 
 import com.oms.model.Order;
 import com.oms.model.OrderLine;
+import com.oms.model.OrderStats;
 import com.oms.model.PageResult;
 
 import java.math.BigDecimal;
@@ -22,8 +23,8 @@ public class OrderDao {
     private static final String SELECT = "SELECT o.id, o.code, o.customer_id, c.code, c.name, c.group_id, g.name, c.status, "
             + "c.lock_reason, c.sales_rep_id, o.delivery_point_id, CONCAT(dp.receiver_name, ' – ', dp.address), "
             + "o.delivery_date, o.note, u.full_name, o.created_at, o.updated_at, "
-            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id) "
-            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_groups g ON g.id = c.group_id "
+            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id), o.status, o.warehouse_id, o.approval_reason, ca.user_id, o.customer_submitted "
+            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_accounts ca ON ca.customer_id = c.id LEFT JOIN customer_groups g ON g.id = c.group_id "
             + "LEFT JOIN customer_delivery_points dp ON dp.id = o.delivery_point_id JOIN users u ON u.id = o.created_by";
 
     public long insert(Connection conn, long customerId, Long deliveryPointId, long createdBy) throws SQLException {
@@ -54,6 +55,34 @@ public class OrderDao {
 
     public Order findByIdForUpdate(Connection conn, long id) throws SQLException {
         return findOne(conn, SELECT + " WHERE o.id = ? FOR UPDATE", id);
+    }
+
+    /** Đếm đơn cho trang danh sách; ownRepId khác null thì chỉ tính đơn của đại lý người đó phụ trách. */
+    public OrderStats stats(Connection conn, Long ownRepId, LocalDate today) throws SQLException {
+        String sql = "SELECT COUNT(*), "
+                + "COALESCE(SUM(CASE WHEN o.created_at >= ? THEN 1 ELSE 0 END), 0), "
+                + "COUNT(DISTINCT o.customer_id), "
+                + "COALESCE(SUM(CASE WHEN o.delivery_date BETWEEN ? AND ? THEN 1 ELSE 0 END), 0), "
+                + "COALESCE(SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_lines l WHERE l.order_id = o.id) THEN 1 ELSE 0 END), 0) "
+                + "FROM orders o JOIN customers c ON c.id = o.customer_id" + (ownRepId == null ? "" : " WHERE c.sales_rep_id = ?");
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(today.withDayOfMonth(1)));
+            ps.setDate(2, Date.valueOf(today));
+            ps.setDate(3, Date.valueOf(today.plusDays(7)));
+            if (ownRepId != null) {
+                ps.setLong(4, ownRepId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                OrderStats s = new OrderStats();
+                s.setTotal(rs.getLong(1));
+                s.setThisMonth(rs.getLong(2));
+                s.setCustomers(rs.getLong(3));
+                s.setDueSoon(rs.getLong(4));
+                s.setWithoutLines(rs.getLong(5));
+                return s;
+            }
+        }
     }
 
     /** Mới cập nhật trước; ownRepId chỉ dùng cho người chỉ thấy đơn của đại lý mình phụ trách. */
@@ -149,15 +178,16 @@ public class OrderDao {
         }
     }
 
-    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor, BigDecimal baseQuantity)
-            throws SQLException {
+    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor,
+                           BigDecimal baseQuantity, BigDecimal manualBasePrice) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ? WHERE id = ?")) {
+                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ?, manual_base_price = ? WHERE id = ?")) {
             ps.setLong(1, unitId);
             ps.setInt(2, quantity);
             ps.setBigDecimal(3, factor);
             ps.setBigDecimal(4, baseQuantity);
-            ps.setLong(5, lineId);
+            ps.setBigDecimal(5, manualBasePrice);
+            ps.setLong(6, lineId);
             ps.executeUpdate();
         }
     }
@@ -170,7 +200,7 @@ public class OrderDao {
     }
 
     private static final String LINES = "SELECT l.id, l.order_id, l.product_id, p.sku, p.name, l.unit_id, u.name, bu.name, "
-            + "l.quantity, l.factor, l.base_quantity FROM order_lines l JOIN products p ON p.id = l.product_id "
+            + "l.quantity, l.factor, l.base_quantity, l.unit_price, l.gross_amount, l.discount_amount, l.discount_note, l.manual_base_price FROM order_lines l JOIN products p ON p.id = l.product_id "
             + "JOIN units u ON u.id = l.unit_id JOIN units bu ON bu.id = p.base_unit_id";
 
     private List<OrderLine> queryLines(Connection conn, String sql, long... params) throws SQLException {
@@ -193,6 +223,11 @@ public class OrderDao {
                     l.setQuantity(rs.getInt(9));
                     l.setFactor(rs.getBigDecimal(10));
                     l.setBaseQuantity(rs.getBigDecimal(11));
+                    l.setUnitPrice(rs.getBigDecimal(12));
+                    l.setGrossAmount(rs.getBigDecimal(13));
+                    l.setDiscountAmount(rs.getBigDecimal(14));
+                    l.setDiscountNote(rs.getString(15));
+                    l.setManualBasePrice(rs.getBigDecimal(16));
                     lines.add(l);
                 }
             }
@@ -234,6 +269,13 @@ public class OrderDao {
         Timestamp updated = rs.getTimestamp(17);
         o.setUpdatedAt(updated == null ? null : updated.toLocalDateTime());
         o.setLineCount(rs.getLong(18));
+        o.setStatus(Order.Status.valueOf(rs.getString(19)));
+        long warehouse = rs.getLong(20);
+        o.setWarehouseId(rs.wasNull() ? null : warehouse);
+        o.setApprovalReason(rs.getString(21));
+        long account = rs.getLong(22);
+        o.setCustomerAccountUserId(rs.wasNull() ? null : account);
+        o.setCustomerSubmitted(rs.getBoolean(23));
         return o;
     }
 

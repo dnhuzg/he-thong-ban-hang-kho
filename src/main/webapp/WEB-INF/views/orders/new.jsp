@@ -9,7 +9,14 @@
             <h1>Tạo đơn hàng</h1>
             <p class="page-header__desc">Chọn đại lý để lập đơn. Bạn chỉ thấy các đại lý mình phụ trách.</p>
           </div>
+          <a class="btn btn--secondary" href="${ctx}/orders"><span class="icon icon--sm icon--arrow-left" aria-hidden="true"></span>Quay lại danh sách</a>
         </div>
+
+        <ol class="steps" aria-label="Các bước tạo đơn">
+          <li class="steps__item is-current" aria-current="step"><span class="steps__num">1</span><span><strong>Chọn đại lý</strong><small>Tìm theo mã, tên hoặc số điện thoại</small></span></li>
+          <li class="steps__item"><span class="steps__num">2</span><span><strong>Thêm dòng hàng</strong><small>Giá và chiết khấu tự áp theo nhóm đại lý</small></span></li>
+          <li class="steps__item"><span class="steps__num">3</span><span><strong>Điểm giao &amp; lưu nháp</strong><small>Chọn điểm giao, ngày giao rồi lưu</small></span></li>
+        </ol>
 
         <section class="card list-card">
           <form class="toolbar" action="${ctx}/orders/new" method="get" role="search">
@@ -22,13 +29,15 @@
           </form>
 
           <c:choose>
-            <c:when test="${customers == null}">
-              <p class="text-muted">Nhập mã, tên hoặc số điện thoại đại lý rồi bấm Tìm.</p>
-            </c:when>
             <c:when test="${empty customers.items}">
-              <p class="text-muted">Không có đại lý nào khớp.</p>
+              <div class="empty-state">
+                <span class="empty-state__icon"><span class="icon icon--md icon--building-2" aria-hidden="true"></span></span>
+                <p class="empty-state__title"><c:out value="${empty q ? 'Bạn chưa phụ trách đại lý nào' : 'Không có đại lý nào khớp'}"/></p>
+                <p class="empty-state__text"><c:out value="${empty q ? 'Liên hệ Quản lý kinh doanh để được phân công đại lý.' : 'Kiểm tra lại mã, tên hoặc số điện thoại rồi tìm lại.'}"/></p>
+              </div>
             </c:when>
             <c:otherwise>
+              <p class="list-caption"><c:out value="${empty q ? 'Đại lý bạn phụ trách' : 'Kết quả tìm kiếm'}"/> · bấm <strong>Tạo đơn</strong> ở đại lý cần lập đơn.</p>
               <div class="order-picks">
                 <c:forEach var="cu" items="${customers.items}">
                   <article class="order-pick">
@@ -45,7 +54,7 @@
                         <form action="${ctx}/orders/create" method="post">
                           <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                           <input type="hidden" name="customerId" value="${cu.id}">
-                          <button class="btn btn--primary" type="submit">Tạo đơn</button>
+                          <button class="btn btn--primary" type="submit"><span class="icon icon--sm icon--plus" aria-hidden="true"></span>Tạo đơn</button>
                         </form>
                       </c:otherwise>
                     </c:choose>
