@@ -55,7 +55,13 @@ public class OrderWorkflowService {
         });
     }
 
-    public record Pending(long id,String code,String customer,java.math.BigDecimal total,String reason) { }
+    public record Pending(long id,String code,String customer,java.math.BigDecimal total,String reason) {
+        public long getId() { return id; }
+        public String getCode() { return code; }
+        public String getCustomer() { return customer; }
+        public java.math.BigDecimal getTotal() { return total; }
+        public String getReason() { return reason; }
+    }
     public List<Pending> pending(User viewer) throws SQLException {
         if(!PermissionPolicy.canTakeOrders(viewer.getRoles())) throw new ForbiddenException("Bạn không được xem hàng đợi xác nhận đơn.");
         var result=new ArrayList<Pending>();
@@ -77,7 +83,7 @@ public class OrderWorkflowService {
         Db.inTransaction(conn->{
             Order order=locked(conn,id,actor);
             boolean manager=PermissionPolicy.canSeeAllOrders(actor.getRoles());
-            if(!manager && (!order.isCustomerSubmitted() || order.getCustomerSalesRepId()==null || order.getCustomerSalesRepId()!=actor.getId())) throw new ForbiddenException("Chỉ nhân viên phụ trách được xác nhận đơn đại lý.");
+            if(!canDecide(order,actor)) throw new ForbiddenException("Chỉ nhân viên phụ trách được xác nhận đơn đại lý.");
             if(!manager && order.getApprovalReason()!=null && (order.getApprovalReason().contains("Vượt hạn mức") || order.getApprovalReason().contains("giá sàn"))) throw new ForbiddenException("Đơn vi phạm phải do Quản lý kinh doanh duyệt.");
             if(order.getStatus()!=Order.Status.PENDING_APPROVAL) throw new ServiceException("Chỉ xử lý được đơn đang chờ duyệt.");
             Order.Status next=switch(action) { case "APPROVE" -> Order.Status.APPROVED; case "REJECT" -> Order.Status.REJECTED; default -> Order.Status.DRAFT; };
@@ -110,6 +116,12 @@ public class OrderWorkflowService {
         Order order=orderDao.findByIdForUpdate(conn,id);
         OrderService.requireVisible(order,actor); order.setLines(orderDao.lines(conn,id)); orders.price(conn,order);
         return order;
+    }
+    /** Quản lý kinh doanh duyệt mọi đơn; nhân viên kinh doanh chỉ xác nhận đơn đại lý tự gửi qua cổng, của đại lý mình phụ trách. */
+    public static boolean canDecide(Order order,User user) {
+        if(!PermissionPolicy.canTakeOrders(user.getRoles())) return false;
+        if(PermissionPolicy.canSeeAllOrders(user.getRoles())) return true;
+        return order.isCustomerSubmitted() && order.getCustomerSalesRepId()!=null && order.getCustomerSalesRepId()==user.getId();
     }
     static void requireManager(User user) {
         if(!PermissionPolicy.canSeeAllOrders(user.getRoles())) throw new ForbiddenException("Chỉ Quản lý kinh doanh được duyệt đơn.");

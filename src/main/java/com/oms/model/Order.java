@@ -13,12 +13,41 @@ public class Order {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    public enum Status { DRAFT, PENDING_APPROVAL, APPROVED, PICKING, SHIPPED, DELIVERED, CLOSED, CANCELLED, REJECTED }
+    /** tone là hậu tố class badge (badge--tone) để màu trạng thái thống nhất ở mọi màn hình. */
+    public enum Status {
+        DRAFT("Nháp", ""),
+        PENDING_APPROVAL("Chờ duyệt", "warning"),
+        APPROVED("Đã duyệt", "primary"),
+        PICKING("Đang soạn hàng", "primary"),
+        SHIPPED("Đã xuất kho", "primary"),
+        DELIVERED("Đã giao", "success"),
+        CLOSED("Đã đóng", "success"),
+        CANCELLED("Đã huỷ", "danger"),
+        REJECTED("Bị từ chối", "danger");
+
+        private final String label;
+        private final String tone;
+
+        Status(String label, String tone) {
+            this.label = label;
+            this.tone = tone;
+        }
+
+        public String getLabel() { return label; }
+        public String getTone() { return tone; }
+        public String getCode() { return name(); }
+    }
     private Status status = Status.DRAFT;
     private Long warehouseId;
     private String approvalReason;
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public boolean isDraft() { return status == Status.DRAFT; }
+    /** Hàng đã rời kho (Đã xuất trở đi) hoặc đơn đã kết thúc thì không huỷ được, phải đi đường trả hàng. */
+    public boolean isCancellable() {
+        return status == Status.DRAFT || status == Status.PENDING_APPROVAL || status == Status.APPROVED
+                || status == Status.PICKING || status == Status.REJECTED;
+    }
     public Long getWarehouseId() { return warehouseId; }
     public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
     public String getApprovalReason() { return approvalReason; }

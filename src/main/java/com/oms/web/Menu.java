@@ -57,7 +57,10 @@ public final class Menu {
 
         boolean takesOrders = PermissionPolicy.canTakeOrders(user.getRoles()) && policy.canWrite(user.getRoles(), Module.ORDER);
         if (takesOrders) {
-            groups.add(new Group("Bán hàng", List.of(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders"), true))));
+            boolean approvals = path.equals("/orders/approvals");
+            groups.add(new Group("Bán hàng", List.of(
+                    item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders") && !approvals, true),
+                    item("Duyệt đơn", "/orders/approvals", "circle-check", approvals, false))));
         }
 
         if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
