@@ -78,8 +78,12 @@
         <h2 id="stock-table-title">Sổ tồn theo SKU và kho</h2>
         <p>Khai báo mức tồn tối thiểu và theo dõi các mặt hàng cần bổ sung.</p>
       </div>
-      <span class="badge" id="stock-count">0 kết quả</span>
+      <div class="stock-panel__actions">
+        <button class="btn btn--primary" type="button" id="stock-export" disabled>Xuất Excel</button>
+        <span class="badge" id="stock-count">0 kết quả</span>
+      </div>
     </div>
+    <p class="stock-export-feedback" id="stock-export-feedback" role="status" aria-live="polite" hidden></p>
 
     <form class="stock-filters" id="stock-filters" role="search">
       <div class="form-field stock-filters__search">
@@ -235,5 +239,6 @@
   </noscript>
 </section>
 
+<script src="${ctx}/assets/js/stock-xlsx.js?v=${assetVersion}" defer></script>
 <script src="${ctx}/assets/js/stock.js?v=${assetVersion}" defer></script>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>
