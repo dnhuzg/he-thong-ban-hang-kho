@@ -5,6 +5,7 @@ import com.oms.dao.AuditLogDao;
 import com.oms.dao.CustomerDao;
 import com.oms.dao.DeliveryPointDao;
 import com.oms.dao.OrderDao;
+import com.oms.dao.OrderWorkflowDao;
 import com.oms.dao.ProductDao;
 import com.oms.dao.ProductUnitDao;
 import com.oms.model.Customer;
@@ -78,7 +79,7 @@ public class OrderService {
     }
 
     public PageResult<Order> search(String keyword, int page, User viewer) throws SQLException {
-        requireOrders(viewer);
+        if (!PermissionPolicy.canTakeOrders(viewer.getRoles())) throw new ForbiddenException("Danh sách này chỉ dành cho nhân viên kinh doanh.");
         Long own = PermissionPolicy.canSeeAllOrders(viewer.getRoles()) ? null : viewer.getId();
         try (Connection conn = Db.getConnection()) {
             PageResult<Order> result = orderDao.search(conn, keyword, own, Math.max(1, page), PAGE_SIZE);
@@ -156,24 +157,27 @@ public class OrderService {
     /** Tạo đơn nháp rỗng cho đại lý, chọn sẵn điểm giao mặc định. Đại lý bị khoá giao dịch thì không tạo được. */
     public long create(long customerId, User actor) throws SQLException {
         requireOrders(actor);
-        return Db.inTransaction(conn -> {
-            Customer customer = customerDao.findById(conn, customerId);
-            if (customer == null || !canSeeCustomer(actor, customer)) {
-                throw new NotFoundException();
+        return Db.inTransaction(conn -> create(conn, customerId, actor));
+    }
+
+    long create(Connection conn, long customerId, User actor) throws SQLException {
+        Customer customer = customerDao.findByIdForUpdate(conn, customerId);
+        if (customer == null || !canSeeCustomer(conn, actor, customer)) {
+            throw new NotFoundException();
+        }
+        CustomerLockService.requireTradable(customer);
+        new OrderCreditService().requireNotOverdue(conn, customer);
+        Long point = null;
+        for (DeliveryPoint p : pointDao.listByCustomer(conn, customerId)) {
+            if (point == null || p.isDefaultPoint()) {
+                point = p.getId();
             }
-            CustomerLockService.requireTradable(customer);
-            Long point = null;
-            for (DeliveryPoint p : pointDao.listByCustomer(conn, customerId)) {
-                if (point == null || p.isDefaultPoint()) {
-                    point = p.getId();
-                }
-            }
-            long id = orderDao.insert(conn, customerId, point, actor.getId());
-            String code = String.format("DH%06d", id);
-            orderDao.setCode(conn, id, code);
-            auditDao.log(conn, actor.getId(), "ORDER_CREATE", "ORDER", id, code, null, "Đại lý: " + customer.getCode() + " – " + customer.getName());
-            return id;
-        });
+        }
+        long id = orderDao.insert(conn, customerId, point, actor.getId());
+        String code = String.format("DH%06d", id);
+        orderDao.setCode(conn, id, code);
+        auditDao.log(conn, actor.getId(), "ORDER_CREATE", "ORDER", id, code, null, "Đại lý: " + customer.getCode() + " – " + customer.getName());
+        return id;
     }
 
     /** Điểm giao (có thể để trống khi còn nháp) phải thuộc đại lý của đơn; ngày giao không được ở quá khứ. */
@@ -204,36 +208,37 @@ public class OrderService {
         });
     }
 
-    /** Thêm dòng; sản phẩm và đơn vị đã có trong đơn thì cộng dồn số lượng vào dòng đó. */
+    /** Thêm dòng; dùng cùng transaction khi thêm nhanh cả nhóm hoặc sao chép đơn. */
     public void addLine(long orderId, long productId, long unitId, String quantityText, User actor) throws SQLException {
         requireOrders(actor);
         int quantity = parseQuantity(quantityText);
         Db.inTransaction(conn -> {
             Order order = lockVisible(conn, orderId, actor);
-            Product product = productDao.findById(conn, productId, false);
-            if (product == null) {
-                throw new ServiceException("Vui lòng chọn sản phẩm.");
-            }
-            if (product.getStatus() != Product.Status.ACTIVE) {
-                throw new ServiceException("Sản phẩm " + product.getSku() + " đã ngừng kinh doanh, không thêm vào đơn được.");
-            }
-            if (priceListService.effectivePrice(conn, order.getCustomerGroupId(), productId, LocalDate.now()) == null) {
-                throw new ServiceException("Sản phẩm " + product.getSku() + " chưa có giá trong bảng giá đang hiệu lực của nhóm "
-                        + order.getCustomerGroupName() + " nên chưa thêm vào đơn được.");
-            }
-            OrderLine existing = orderDao.findLine(conn, orderId, productId, unitId);
-            if (existing != null) {
-                setQuantity(conn, existing, unitId, existing.getQuantity() + (long) quantity);
-            } else {
-                if (orderDao.lines(conn, orderId).size() >= MAX_LINES) {
-                    throw new ServiceException("Một đơn có tối đa " + MAX_LINES + " dòng hàng.");
-                }
-                UnitConversionService.Converted c = unitService.toBase(conn, productId, unitId, BigDecimal.valueOf(quantity));
-                orderDao.insertLine(conn, orderId, productId, unitId, quantity, c.factor(), c.baseQuantity());
-            }
+            addLine(conn, order, productId, unitId, quantity);
             orderDao.touch(conn, orderId);
             return null;
         });
+    }
+
+    void addLine(Connection conn, Order order, long productId, long unitId, int quantity) throws SQLException {
+        if (quantity < 1 || quantity > MAX_QUANTITY) throw new ServiceException("Số lượng không hợp lệ.");
+        Product product = productDao.findById(conn, productId, false);
+        if (product == null || product.getStatus() != Product.Status.ACTIVE) {
+            throw new ServiceException("Sản phẩm không tồn tại hoặc đã ngừng kinh doanh.");
+        }
+        if (priceListService.effectivePrice(conn, order.getCustomerGroupId(), productId, LocalDate.now()) == null) {
+            throw new ServiceException("Sản phẩm " + product.getSku() + " chưa có giá trong bảng giá đang hiệu lực.");
+        }
+        OrderLine existing = orderDao.findLine(conn, order.getId(), productId, unitId);
+        if (existing != null) {
+            setQuantity(conn, existing, unitId, existing.getQuantity() + (long)quantity);
+        } else {
+            if (orderDao.lines(conn, order.getId()).size() >= MAX_LINES) {
+                throw new ServiceException("Một đơn có tối đa " + MAX_LINES + " dòng hàng.");
+            }
+            UnitConversionService.Converted converted = unitService.toBase(conn, productId, unitId, BigDecimal.valueOf(quantity));
+            orderDao.insertLine(conn, order.getId(), productId, unitId, quantity, converted.factor(), converted.baseQuantity());
+        }
     }
 
     /** Đổi đơn vị và / hoặc số lượng của một dòng. */
@@ -247,6 +252,35 @@ public class OrderService {
                 throw new ServiceException("Đơn đã có dòng " + line.getSku() + " với đơn vị này. Hãy sửa số lượng ở dòng đó.");
             }
             setQuantity(conn, line, unitId, quantity);
+            orderDao.touch(conn, orderId);
+            return null;
+        });
+    }
+
+    /**
+     * GHTK-39: cập nhật số lượng, đơn vị và giá chỉnh thủ công.
+     * Giá chỉnh thủ công được nhập theo đơn vị cơ sở; bỏ trống để dùng lại giá tự động.
+     */
+    public void updateLine(long orderId, long lineId, long unitId, String quantityText,
+                           String manualPriceText, User actor) throws SQLException {
+        requireOrders(actor);
+        int quantity = parseQuantity(quantityText);
+        BigDecimal manualBasePrice = Money.parse(manualPriceText, "Giá chỉnh thủ công");
+        // đại lý đặt hàng qua cổng cũng sửa được dòng hàng, nhưng không được tự đặt giá cho mình
+        if (manualBasePrice != null && !PermissionPolicy.canTakeOrders(actor.getRoles())) {
+            throw new ForbiddenException("Chỉ Nhân viên kinh doanh và Quản lý kinh doanh được chỉnh giá dòng hàng.");
+        }
+
+        Db.inTransaction(conn -> {
+            lockVisible(conn, orderId, actor);
+            OrderLine line = requireLine(conn, orderId, lineId);
+            if (unitId != line.getUnitId() && orderDao.findLine(conn, orderId, line.getProductId(), unitId) != null) {
+                throw new ServiceException("Đơn đã có dòng " + line.getSku() + " với đơn vị này. Hãy sửa số lượng ở dòng đó.");
+            }
+
+            UnitConversionService.Converted c =
+                    unitService.toBase(conn, line.getProductId(), unitId, BigDecimal.valueOf(quantity));
+            orderDao.updateLine(conn, line.getId(), unitId, quantity, c.factor(), c.baseQuantity(), manualBasePrice);
             orderDao.touch(conn, orderId);
             return null;
         });
@@ -267,6 +301,7 @@ public class OrderService {
         requireOrders(actor);
         Db.inTransaction(conn -> {
             Order order = lockVisible(conn, orderId, actor);
+            if (new OrderWorkflowDao().hasHistory(conn, orderId)) throw new ServiceException("Đơn đã có lịch sử duyệt; hãy huỷ thay vì xoá.");
             orderDao.delete(conn, orderId);
             auditDao.log(conn, actor.getId(), "ORDER_DELETE", "ORDER", orderId, order.getCode(),
                     "Đại lý: " + order.getCustomerCode() + " – " + order.getCustomerName() + "\nSố dòng hàng: " + order.getLineCount(), null);
@@ -279,7 +314,7 @@ public class OrderService {
             throw new ServiceException("Số lượng tối đa " + MAX_QUANTITY + " cho mỗi dòng.");
         }
         UnitConversionService.Converted c = unitService.toBase(conn, line.getProductId(), unitId, BigDecimal.valueOf(quantity));
-        orderDao.updateLine(conn, line.getId(), unitId, (int) quantity, c.factor(), c.baseQuantity());
+        orderDao.updateLine(conn, line.getId(), unitId, (int) quantity, c.factor(), c.baseQuantity(), line.getManualBasePrice());
     }
 
     private OrderLine requireLine(Connection conn, long orderId, long lineId) throws SQLException {
@@ -290,27 +325,30 @@ public class OrderService {
         return line;
     }
 
-    private Order lockVisible(Connection conn, long orderId, User viewer) throws SQLException {
+    Order lockVisible(Connection conn, long orderId, User viewer) throws SQLException {
         Order order = orderDao.findByIdForUpdate(conn, orderId);
         requireVisible(order, viewer);
+        if (order.getStatus() != Order.Status.DRAFT) throw new ServiceException("Chỉ sửa hoặc xoá được đơn Nháp.");
         return order;
     }
 
-    private static void requireVisible(Order order, User viewer) {
+    static void requireVisible(Order order, User viewer) {
         boolean visible = order != null && (PermissionPolicy.canSeeAllOrders(viewer.getRoles())
-                || (order.getCustomerSalesRepId() != null && order.getCustomerSalesRepId() == viewer.getId()));
+                || (viewer.hasRole(com.oms.model.Role.SALES_REP) && order.getCustomerSalesRepId() != null && order.getCustomerSalesRepId() == viewer.getId())
+                || (viewer.hasRole(com.oms.model.Role.CUSTOMER) && order.getCustomerAccountUserId() != null && order.getCustomerAccountUserId() == viewer.getId()));
         if (!visible) {
             throw new NotFoundException();
         }
     }
 
-    private static boolean canSeeCustomer(User viewer, Customer c) {
+    static boolean canSeeCustomer(Connection conn, User viewer, Customer c) throws SQLException {
         return PermissionPolicy.canSeeAllOrders(viewer.getRoles())
-                || (c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId());
+                || (viewer.hasRole(com.oms.model.Role.SALES_REP) && c.getSalesRepId() != null && c.getSalesRepId() == viewer.getId())
+                || (viewer.hasRole(com.oms.model.Role.CUSTOMER) && new com.oms.dao.PortalAccountDao().owns(conn,c.getId(),viewer.getId()));
     }
 
-    private static void requireOrders(User user) {
-        if (!PermissionPolicy.canTakeOrders(user.getRoles())) {
+    static void requireOrders(User user) {
+        if (!PermissionPolicy.canTakeOrders(user.getRoles()) && !user.hasRole(com.oms.model.Role.CUSTOMER)) {
             throw new ForbiddenException("Chỉ Nhân viên kinh doanh và Quản lý kinh doanh được lập đơn hàng.");
         }
     }
@@ -333,50 +371,82 @@ public class OrderService {
      * giảm trên mỗi đơn vị của chính sách có lợi nhất, xét trên tổng số lượng cơ sở của sản phẩm đó trong đơn.
      * Dòng của sản phẩm chưa (hoặc không còn) có giá thì để trống tiền và không vào tổng.
      */
-    private void price(Connection conn, Order order) throws SQLException {
+    void price(Connection conn, Order order) throws SQLException {
+        if (order.getStatus() != Order.Status.DRAFT) {
+            BigDecimal gross = BigDecimal.ZERO, discount = BigDecimal.ZERO;
+            int unpriced = 0;
+            for (OrderLine line : order.getLines()) {
+                if (!line.isPriced()) { unpriced++; continue; }
+                gross = gross.add(line.getGrossAmount());
+                discount = discount.add(line.getDiscountAmount());
+            }
+            order.setGrossTotal(gross); order.setDiscountTotal(discount); order.setUnpricedLines(unpriced);
+            return;
+        }
         LocalDate today = LocalDate.now();
         Map<Long, BigDecimal> totalBase = new HashMap<>();
         for (OrderLine l : order.getLines()) {
             totalBase.merge(l.getProductId(), l.getBaseQuantity(), BigDecimal::add);
         }
+
         Map<Long, PriceListItem> prices = new HashMap<>();
         Map<Long, DiscountService.Applied> discounts = new HashMap<>();
         for (Map.Entry<Long, BigDecimal> e : totalBase.entrySet()) {
             PriceListItem price = priceListService.effectivePrice(conn, order.getCustomerGroupId(), e.getKey(), today);
             if (price != null) {
                 prices.put(e.getKey(), price);
-                DiscountService.Applied applied = discountService.best(conn, e.getKey(), e.getValue(), price.getSalePrice(), today);
+                DiscountService.Applied applied =
+                        discountService.best(conn, e.getKey(), e.getValue(), price.getSalePrice(), today);
                 if (applied != null) {
                     discounts.put(e.getKey(), applied);
                 }
             }
         }
+
         BigDecimal gross = BigDecimal.ZERO;
         BigDecimal discount = BigDecimal.ZERO;
         int unpriced = 0;
+        boolean requiresApproval = false;
+
         for (OrderLine l : order.getLines()) {
             PriceListItem price = prices.get(l.getProductId());
             if (price == null) {
                 unpriced++;
                 continue;
             }
-            l.setUnitPrice(price.getSalePrice().multiply(l.getFactor()).setScale(2, RoundingMode.HALF_UP));
-            l.setGrossAmount(l.getBaseQuantity().multiply(price.getSalePrice()).setScale(2, RoundingMode.HALF_UP));
+
+            BigDecimal effectiveBasePrice =
+                    l.isManualPrice() ? l.getManualBasePrice() : price.getSalePrice();
+
+            l.setUnitPrice(effectiveBasePrice.multiply(l.getFactor()).setScale(2, RoundingMode.HALF_UP));
+            l.setGrossAmount(l.getBaseQuantity().multiply(effectiveBasePrice).setScale(2, RoundingMode.HALF_UP));
+
             DiscountService.Applied applied = discounts.get(l.getProductId());
             if (applied == null) {
                 l.setDiscountAmount(BigDecimal.ZERO);
+                l.setDiscountNote(null);
             } else {
                 l.setDiscountAmount(l.getBaseQuantity().multiply(applied.perUnit()).setScale(2, RoundingMode.HALF_UP));
                 l.setDiscountNote(applied.policyName() + ": " + DiscountPolicy.valueText(applied.type(), applied.value())
                         + " (mua từ " + applied.tierMinQty() + ")");
             }
+
+            BigDecimal floorTotal =
+                    l.getBaseQuantity().multiply(price.getFloorPrice()).setScale(2, RoundingMode.HALF_UP);
+            if (l.getNetAmount().compareTo(floorTotal) < 0) {
+                requiresApproval = true;
+            }
+
             gross = gross.add(l.getGrossAmount());
             discount = discount.add(l.getDiscountAmount());
         }
+
         order.setGrossTotal(gross);
         order.setDiscountTotal(discount);
         order.setUnpricedLines(unpriced);
+        order.setRequiresApproval(requiresApproval);
     }
+
 
     private static String describeHeader(Order o) {
         return "Điểm giao: " + (o.getDeliveryPointText() == null ? "chưa chọn" : o.getDeliveryPointText())

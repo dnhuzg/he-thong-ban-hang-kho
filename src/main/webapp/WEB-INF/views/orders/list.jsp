@@ -9,7 +9,7 @@
           <div>
             <p class="breadcrumb">Bán hàng</p>
             <h1>Đơn hàng</h1>
-            <p class="page-header__desc">Đơn nháp đang gõ dở: mở lại để tiếp tục thêm hàng. Chốt đơn, kiểm tồn kho và hạn mức công nợ làm ở bước sau.</p>
+            <p class="page-header__desc">Mở đơn nháp để gõ tiếp và chốt đơn; khi chốt, hệ thống kiểm tồn kho, hạn mức công nợ và giá sàn.</p>
           </div>
           <div class="page-header__actions">
             <a class="btn btn--primary" href="${ctx}/orders/new"><span class="icon icon--sm icon--plus" aria-hidden="true"></span>Tạo đơn</a>
@@ -107,13 +107,13 @@
                     <td class="num"><c:out value="${o.lineCount}"/></td>
                     <td class="num nowrap table__cell-main"><fmt:formatNumber value="${o.payable}" maxFractionDigits="2"/> ₫</td>
                     <td class="nowrap text-muted"><c:out value="${o.updatedAtText}"/></td>
-                    <td><span class="badge">Nháp</span></td>
+                    <td><span class="badge${empty o.status.tone ? '' : ' badge--'.concat(o.status.tone)}"><c:out value="${o.status.label}"/></span></td>
                     <td>
                       <details class="row-menu">
                         <summary aria-label="Thao tác với <c:out value='${o.code}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
                         <div class="row-menu__panel">
-                          <a href="${ctx}/orders/edit?id=${o.id}">Mở để gõ tiếp</a>
-                          <button type="button" class="is-danger" data-dialog-open="delete-${o.id}">Xoá nháp</button>
+                          <a href="${ctx}/orders/edit?id=${o.id}"><c:out value="${o.draft ? 'Mở để gõ tiếp' : 'Xem đơn'}"/></a>
+                          <c:if test="${o.draft}"><button type="button" class="is-danger" data-dialog-open="delete-${o.id}">Xoá nháp</button></c:if>
                         </div>
                       </details>
                     </td>
@@ -138,8 +138,8 @@
                   <details class="row-menu">
                     <summary aria-label="Thao tác với <c:out value='${o.code}'/>"><span class="icon icon--md icon--ellipsis" aria-hidden="true"></span></summary>
                     <div class="row-menu__panel">
-                      <a href="${ctx}/orders/edit?id=${o.id}">Mở để gõ tiếp</a>
-                      <button type="button" class="is-danger" data-dialog-open="delete-${o.id}">Xoá nháp</button>
+                      <a href="${ctx}/orders/edit?id=${o.id}"><c:out value="${o.draft ? 'Mở để gõ tiếp' : 'Xem đơn'}"/></a>
+                      <c:if test="${o.draft}"><button type="button" class="is-danger" data-dialog-open="delete-${o.id}">Xoá nháp</button></c:if>
                     </div>
                   </details>
                 </div>
@@ -149,7 +149,7 @@
                   <c:if test="${o.customerLocked}"><p>Đại lý đang bị khoá giao dịch</p></c:if>
                 </div>
                 <div class="product-card__foot">
-                  <span class="badge">Nháp</span>
+                  <span class="badge${empty o.status.tone ? '' : ' badge--'.concat(o.status.tone)}"><c:out value="${o.status.label}"/></span>
                   <span class="text-muted order-card__time"><c:out value="${o.updatedAtText}"/></span>
                 </div>
               </article>

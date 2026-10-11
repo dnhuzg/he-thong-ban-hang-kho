@@ -19,6 +19,39 @@ public final class AccessRules {
 
     private static final Map<String, Rule> RULES = Map.ofEntries(
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/portal/catalog", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/portal/cart", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/portal/create", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/add", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/update", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/remove", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/header", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/portal/submit", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/copy", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/pdf", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/search", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/cancel", new Rule(Kind.WRITE, Module.ORDER)),
+            // Ngoại lệ vòng đời: kho/kế toán chỉ có ORDER mức R nhưng được soạn/xuất/đóng đơn.
+            // Không dùng ORDER WRITE hay SHIPMENT WRITE vì sẽ chặn kế toán đóng đơn và NVKD xác nhận giao.
+            // OrderLifecycleService vẫn kiểm vai trò, kho phục vụ và từng bước chuyển trạng thái.
+            Map.entry("/api/orders/advance", new Rule(Kind.AUTHENTICATED, null)),
+
+            Map.entry("/api/orders/submit", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/orders/pending", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/orders/decide", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/api/orders/history", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/purchase-history", new Rule(Kind.READ, Module.ORDER)),
+            Map.entry("/api/orders/add-last-purchase", new Rule(Kind.WRITE, Module.ORDER)),
+
+            Map.entry("/api/orders/stock", new Rule(Kind.READ, Module.ORDER)),
+
+            Map.entry("/api/orders/credit", new Rule(Kind.READ, Module.ORDER)),
+
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/session/ping", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/account/change-password", new Rule(Kind.AUTHENTICATED, null)),
@@ -36,8 +69,11 @@ public final class AccessRules {
             Map.entry("/admin/roles", new Rule(Kind.ADMIN_ONLY, null)),
             Map.entry("/finance/credit-alerts", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/finance/route-collections", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/finance/payment-receipts", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/portal", new Rule(Kind.READ, Module.ORDER)),
             Map.entry("/portal/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/portal/my-debt", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/customer-ledger", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/products", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/new", new Rule(Kind.WRITE, Module.PRODUCT)),
@@ -52,6 +88,8 @@ public final class AccessRules {
             Map.entry("/inventory/warehouses", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/suppliers", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/stock", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/lots", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/stock-card", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/receipts", new Rule(Kind.READ, Module.INVENTORY)),
 	    Map.entry("/inventory/transfers", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/suppliers/new", new Rule(Kind.WRITE, Module.INVENTORY)),
@@ -67,6 +105,10 @@ public final class AccessRules {
             Map.entry("/orders/lines/add", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/lines/save", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/lines/delete", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/submit", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/cancel", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/decide", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/approvals", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/products/discounts", new Rule(Kind.READ, Module.PRODUCT)),
             Map.entry("/products/discounts/new", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/products/discounts/edit", new Rule(Kind.WRITE, Module.PRODUCT)),

@@ -95,6 +95,15 @@ document.addEventListener("DOMContentLoaded", () => {
     select.addEventListener("change", () => select.form.requestSubmit());
   });
 
+  document.querySelectorAll("input[data-order-qty-autosubmit]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const form = input.closest("form");
+      if (form && form.reportValidity()) {
+        form.requestSubmit();
+      }
+    });
+  });
+
   // Nhãn trạng thái bên cạnh ô chọn đổi theo lựa chọn hiện tại
   document.querySelectorAll("select[data-badge-target]").forEach((select) => {
     const badge = document.getElementById(select.dataset.badgeTarget);

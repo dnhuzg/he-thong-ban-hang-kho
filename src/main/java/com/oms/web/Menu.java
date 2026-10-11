@@ -35,7 +35,10 @@ public final class Menu {
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.CUSTOMER)) {
-            groups.add(new Group("Cổng đại lý", List.of(item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
+            groups.add(new Group("Cổng đại lý", List.of(
+                    item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),
+                    item("Công nợ của tôi", "/portal/my-debt", "wallet", path.equals("/portal/my-debt"), false),
+                    item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
         }
 
         if (policy.canRead(user.getRoles(), Module.PRODUCT)) {
@@ -57,7 +60,10 @@ public final class Menu {
 
         boolean takesOrders = PermissionPolicy.canTakeOrders(user.getRoles()) && policy.canWrite(user.getRoles(), Module.ORDER);
         if (takesOrders) {
-            groups.add(new Group("Bán hàng", List.of(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders"), true))));
+            boolean approvals = path.equals("/orders/approvals");
+            groups.add(new Group("Bán hàng", List.of(
+                    item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders") && !approvals, true),
+                    item("Duyệt đơn", "/orders/approvals", "circle-check", approvals, false))));
         }
 
         if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
@@ -92,6 +98,8 @@ public final class Menu {
                             item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
                             item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false),
                             item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false),
+                            item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
+                            item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 
