@@ -22,7 +22,7 @@ Email chỉ được đánh dấu `email_sent = 1` sau khi `MailService.send(...
 
 ## Migration
 
-`database/migrations/020_nhac_han_thanh_toan.sql` tạo `invoices`, `invoice_reminder_logs` và `notifications`.
+`database/migrations/022_nhac_han_thanh_toan.sql` tạo `invoices`, `invoice_reminder_logs` và `notifications`.
 
 `database/schema.sql` cũng được cập nhật để cài mới có đủ ba bảng.
 

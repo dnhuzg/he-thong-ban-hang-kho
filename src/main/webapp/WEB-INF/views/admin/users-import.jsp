@@ -8,7 +8,7 @@
             <p class="breadcrumb"><a href="${ctx}/admin/users">Người dùng</a> / Nhập từ Excel</p>
             <h1>Nhập người dùng từ Excel</h1>
           </div>
-          <a class="btn btn--secondary" href="${ctx}/admin/users/import/template">Tải tệp mẫu</a>
+          <a class="btn btn--secondary" href="${ctx}/admin/users/import/template" data-no-loading>Tải tệp mẫu</a>
         </div>
 
         <section class="card">

@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 /** Danh sách sản phẩm (S2-05): tìm theo SKU / tên, lọc nhóm hàng (gồm nhóm con) và trạng thái. */
 @WebServlet("/products")
@@ -32,6 +33,7 @@ public class ProductListServlet extends BaseServlet {
         try {
             req.setAttribute("result", productService.search(keyword, categoryId, status, intParam(req, "page", 1), currentUser(req)));
             req.setAttribute("categories", productService.categories().ordered());
+            req.setAttribute("stats", productService.catalogStats(LocalDate.now()));
             req.setAttribute("canWrite", permissionService.policy().canWrite(currentUser(req).getRoles(), Module.PRODUCT));
             req.setAttribute("canViewPriceLists", !permissionService.policy().isOwnScopeOnly(currentUser(req).getRoles(), Module.PRODUCT));
         } catch (SQLException e) {

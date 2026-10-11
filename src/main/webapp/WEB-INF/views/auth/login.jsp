@@ -5,8 +5,8 @@
 <%@ include file="/WEB-INF/views/layout/auth-top.jspf" %>
 
       <div class="auth-card__head">
-        <h1 class="auth-card__title">Đăng nhập</h1>
-        <p class="auth-card__subtitle">Chào mừng bạn trở lại hệ thống.</p>
+        <h1 class="auth-card__title">Đăng nhập hệ thống</h1>
+        <p class="auth-card__subtitle">Nhập tài khoản và mật khẩu để vào hệ thống.</p>
       </div>
 
       <c:if test="${not empty param.expired}">
@@ -35,14 +35,17 @@
           <input class="float-field__input" id="password" name="password" type="password" autocomplete="current-password" required placeholder=" ">
           <label class="float-field__label" for="password">Mật khẩu</label>
           <i class="float-field__line" aria-hidden="true"></i>
-          <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false"><img src="${ctx}/assets/img/icon-eye.svg" alt="" width="16" height="16"><span data-toggle-label>Hiện</span></button>
+          <button class="input-group__action" type="button" data-toggle-password="password" aria-pressed="false"><span class="icon icon--sm icon--eye" aria-hidden="true"></span><span data-toggle-label>Hiện</span></button>
         </div>
 
         <div class="auth-card__row">
           <a href="${ctx}/forgot-password">Quên mật khẩu?</a>
         </div>
 
-        <button class="btn btn--primary btn--block" type="submit">Đăng nhập</button>
+        <button class="btn btn--primary btn--block" type="submit">Đăng nhập hệ thống <span class="icon icon--sm icon--chevron-right" aria-hidden="true"></span></button>
       </form>
+
+      <p class="auth-card__signup">Chưa có tài khoản? <button class="link-button" type="button" data-dialog-open="dealer-contact">Đăng ký làm đại lý</button></p>
+      <%@ include file="/WEB-INF/views/layout/dealer-contact-dialog.jspf" %>
 
 <%@ include file="/WEB-INF/views/layout/auth-bottom.jspf" %>

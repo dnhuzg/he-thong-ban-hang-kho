@@ -55,21 +55,53 @@
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-1);
 }
 
-.sidebar__section {
+/* Mục cha gập / mở (thẻ <details>, không cần JavaScript) */
+.sidebar__parent > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.sidebar__parent > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar__parent-toggle.has-active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sidebar__parent-toggle.has-active .icon {
+  color: var(--color-primary);
+}
+
+.sidebar__chevron {
+  transition: transform 0.2s ease;
+}
+
+.sidebar__parent[open] > summary .sidebar__chevron {
+  transform: rotate(180deg);
+}
+
+.sidebar__children {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 2px;
+  margin: 2px 0 var(--space-2) 21px;
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border);
 }
 
-.sidebar__group {
-  margin: 0;
-  padding: 0 var(--space-3);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
+.sidebar__link--child {
+  min-height: 36px;
+  font-size: var(--font-size-sm);
+}
+
+.sidebar__link--child .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .sidebar__link {
@@ -186,8 +218,21 @@
   align-items: center;
   gap: var(--space-2);
   margin: 0 auto 0 0;
+  padding: 6px var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+.topbar__context strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.topbar__context .icon {
+  color: var(--color-primary);
 }
 
 /* Menu người dùng dùng <details> nên không cần JS */
@@ -221,11 +266,11 @@ img.user-menu__avatar {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   font-weight: 600;
   font-size: 0.6875rem;
 }
@@ -237,12 +282,12 @@ img.user-menu__avatar {
 }
 
 .user-menu__name {
-  font-weight: 500;
-  font-size: 0.75rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
 }
 
 .user-menu__role {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
 }
 
@@ -323,6 +368,11 @@ img.user-menu__avatar {
   font-size: 0.6875rem;
   font-weight: 500;
   color: var(--color-text-muted);
+}
+
+/* Dòng chỉ ghi tên nhóm đã hiện ở thanh trên cùng nên ẩn; dòng có liên kết quay lại (Người dùng / Tạo mới...) vẫn giữ */
+.breadcrumb:not(:has(a)) {
+  display: none;
 }
 
 /* ---------- Responsive: sidebar thành ngăn kéo trên màn hình nhỏ ---------- */
