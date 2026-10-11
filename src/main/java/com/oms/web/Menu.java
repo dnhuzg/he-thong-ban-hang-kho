@@ -35,7 +35,9 @@ public final class Menu {
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.CUSTOMER)) {
-            groups.add(new Group("Cổng đại lý", List.of(item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
+            groups.add(new Group("Cổng đại lý", List.of(
+                    item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),
+                    item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
         }
 
         if (policy.canRead(user.getRoles(), Module.PRODUCT)) {
