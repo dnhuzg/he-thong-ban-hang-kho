@@ -37,6 +37,7 @@ public final class Menu {
         if (user.getRoles().contains(Role.CUSTOMER)) {
             groups.add(new Group("Cổng đại lý", List.of(
                     item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),
+                    item("Công nợ của tôi", "/portal/my-debt", "wallet", path.equals("/portal/my-debt"), false),
                     item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
         }
 
