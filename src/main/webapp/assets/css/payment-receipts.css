@@ -1,0 +1,246 @@
+.payment-receipts {
+  display: grid;
+  gap: 20px;
+}
+
+.payment-receipts__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.payment-receipts__list,
+.payment-receipts__preview {
+  padding: 22px;
+  min-width: 0;
+}
+
+.payment-receipts__heading {
+  margin-bottom: 20px;
+}
+
+.payment-receipts__heading h2 {
+  margin: 0 0 6px;
+}
+
+.payment-receipts__heading p,
+.payment-receipts__note {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.payment-receipts__note {
+  margin: 16px 0 0;
+  font-size: 13px;
+}
+
+.payment-receipt-select {
+  white-space: nowrap;
+}
+
+.payment-receipt-paper {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.payment-receipt-paper__notice {
+  padding: 12px;
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  margin-bottom: 24px;
+}
+
+.payment-receipt-paper__header {
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 20px;
+}
+
+.payment-receipt-paper__header p {
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.payment-receipt-paper__header h2 {
+  font-size: 26px;
+  margin: 14px 0;
+  letter-spacing: 1px;
+}
+
+.payment-receipt-paper__details {
+  margin: 24px 0;
+}
+
+.payment-receipt-paper__details > div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.payment-receipt-paper__details dt {
+  color: var(--color-text-muted);
+}
+
+.payment-receipt-paper__details dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.payment-receipt-paper__amount {
+  padding: 16px;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-border);
+  color: var(--color-text);
+  border-radius: 8px;
+}
+
+.payment-receipt-paper__amount strong {
+  color: var(--color-primary);
+}
+
+.payment-receipt-paper__signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  text-align: center;
+  margin: 32px 0 70px;
+}
+
+.payment-receipt-paper__signatures div {
+  display: grid;
+  gap: 8px;
+}
+
+.payment-receipt-paper__signatures span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.payment-receipt-paper__footer {
+  border-top: 1px dashed var(--color-border-strong);
+  padding-top: 14px;
+  font-size: 11px;
+  color: var(--color-danger);
+  text-align: center;
+  font-weight: 700;
+}
+
+.payment-receipts__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@media (max-width: 1000px) {
+  .payment-receipts__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .payment-receipts__list,
+  .payment-receipts__preview {
+    padding: 14px;
+  }
+
+  .payment-receipt-paper {
+    padding: 16px;
+  }
+
+  .payment-receipt-paper__details > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #payment-receipt-paper,
+  #payment-receipt-paper * {
+    visibility: visible !important;
+  }
+
+  #payment-receipt-paper {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--color-surface);
+    color: var(--color-text);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  #payment-receipt-paper .payment-receipt-paper__notice {
+    border: 2px solid var(--color-text);
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+
+  #payment-receipt-paper .payment-receipt-paper__footer {
+    color: var(--color-text);
+  }
+  @media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #payment-receipt-paper,
+  #payment-receipt-paper * {
+    visibility: visible !important;
+  }
+
+  #payment-receipt-paper {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--color-surface);
+    color: var(--color-text);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  #payment-receipt-paper .payment-receipt-paper__notice {
+    border: 2px solid var(--color-text);
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+
+  #payment-receipt-paper .payment-receipt-paper__footer {
+    color: var(--color-text);
+  }
+}
+}
