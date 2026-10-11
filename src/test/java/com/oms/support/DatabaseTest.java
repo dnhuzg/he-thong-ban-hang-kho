@@ -166,6 +166,50 @@ public abstract class DatabaseTest {
             statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
+            statement.execute("""
+                    CREATE TABLE invoices (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) UNIQUE,
+                        customer_id BIGINT,
+                        recipient_user_id BIGINT,
+                        total_amount DECIMAL(15,2),
+                        issued_at TIMESTAMP NOT NULL,
+                        due_date DATE NOT NULL,
+                        status VARCHAR(20) DEFAULT 'ISSUED',
+                        paid_at TIMESTAMP
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE invoice_reminder_logs (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        invoice_id BIGINT,
+                        reminder_date DATE,
+                        reminder_type VARCHAR(20),
+                        email_sent BOOLEAN DEFAULT FALSE,
+                        in_app_sent BOOLEAN DEFAULT FALSE,
+                        email_sent_at TIMESTAMP,
+                        in_app_sent_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(invoice_id, reminder_date)
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE notifications (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        recipient_user_id BIGINT,
+                        invoice_id BIGINT,
+                        reminder_date DATE,
+                        notification_type VARCHAR(20),
+                        title VARCHAR(200),
+                        message VARCHAR(1000),
+                        read_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(recipient_user_id, invoice_id, reminder_date)
+                    )
+                    """);
         }
     }
 
