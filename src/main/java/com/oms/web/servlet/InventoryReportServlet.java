@@ -38,8 +38,9 @@ public class InventoryReportServlet extends BaseServlet {
 
         Long warehouseId = optionalPositiveLong(req.getParameter("warehouseId"));
         Long categoryId = optionalPositiveLong(req.getParameter("categoryId"));
-        if (warehouseId == INVALID || categoryId == INVALID) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "warehouseId/categoryId khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡.");
+        // So sánh bằng equals: warehouseId / categoryId là Long và bằng null khi không lọc
+        if (Long.valueOf(INVALID).equals(warehouseId) || Long.valueOf(INVALID).equals(categoryId)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Mã kho hoặc mã nhóm hàng không hợp lệ.");
             return;
         }
 
