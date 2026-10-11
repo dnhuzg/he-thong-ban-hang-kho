@@ -160,6 +160,50 @@ public abstract class DatabaseTest {
             statement.execute("CREATE TABLE order_status_history(id BIGINT AUTO_INCREMENT PRIMARY KEY,order_id BIGINT REFERENCES orders(id),from_status VARCHAR(32),to_status VARCHAR(32),action VARCHAR(30),opinion VARCHAR(500),actor_id BIGINT REFERENCES users(id),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("CREATE TABLE customer_accounts(customer_id BIGINT PRIMARY KEY REFERENCES customers(id),user_id BIGINT UNIQUE REFERENCES users(id))");
             statement.execute("ALTER TABLE orders ADD customer_submitted BOOLEAN DEFAULT FALSE NOT NULL");
+            statement.execute("""
+                    CREATE TABLE shipments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) UNIQUE,
+                        warehouse_id BIGINT,
+                        customer_id BIGINT,
+                        status VARCHAR(30) DEFAULT 'READY',
+                        recipient_name VARCHAR(200),
+                        delivered_at TIMESTAMP,
+                        proof_image_path VARCHAR(255),
+                        failure_reason VARCHAR(500),
+                        returned_at TIMESTAMP,
+                        invoice_eligible_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE shipment_items (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        shipment_id BIGINT,
+                        product_id BIGINT,
+                        unit_id BIGINT,
+                        quantity DECIMAL(15,4),
+                        FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE inventory_movements (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        warehouse_id BIGINT,
+                        product_id BIGINT,
+                        unit_id BIGINT,
+                        quantity DECIMAL(15,4),
+                        movement_type VARCHAR(30),
+                        reference_type VARCHAR(50),
+                        reference_id BIGINT,
+                        created_by BIGINT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+                        FOREIGN KEY (created_by) REFERENCES users(id)
+                    )
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
