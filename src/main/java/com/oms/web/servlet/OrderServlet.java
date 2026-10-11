@@ -36,7 +36,6 @@ public class OrderServlet extends BaseServlet {
                 }
                 case "/orders/new" -> {
                     String q = param(req, "q");
-                    // chặn người không được lập đơn trước khi tra danh sách đại lý
                     orderService.search(null, 1, currentUser(req));
                     req.setAttribute("q", q);
                     req.setAttribute("customers", customerService.search(q, null, null, null, null, 1, currentUser(req)));
@@ -44,7 +43,6 @@ public class OrderServlet extends BaseServlet {
                 }
                 case "/orders/edit" -> showEdit(req, resp);
                 case "/orders/products" -> {
-                    // gợi ý khi gõ: chỉ trả phần danh sách sản phẩm, không kèm khung trang
                     Order order = orderService.get(longParam(req, "id"), currentUser(req));
                     String q = param(req, "q");
                     req.setAttribute("order", order);
@@ -79,16 +77,19 @@ public class OrderServlet extends BaseServlet {
                 }
                 case "/orders/save" -> {
                     long point = longParam(req, "deliveryPointId");
-                    orderService.saveHeader(id, point > 0 ? point : null, date(param(req, "deliveryDate")), param(req, "note"), currentUser(req));
+                    orderService.saveHeader(id, point > 0 ? point : null,
+                            date(param(req, "deliveryDate")), param(req, "note"), currentUser(req));
                     flash(req, "Đã lưu nháp.");
                 }
                 case "/orders/lines/add" -> {
-                    orderService.addLine(id, longParam(req, "productId"), longParam(req, "unitId"), param(req, "quantity"), currentUser(req));
+                    orderService.addLine(id, longParam(req, "productId"), longParam(req, "unitId"),
+                            param(req, "quantity"), currentUser(req));
                     flash(req, "Đã thêm dòng hàng.");
                     back += "#dong-hang";
                 }
                 case "/orders/lines/save" -> {
-                    orderService.updateLine(id, longParam(req, "lineId"), longParam(req, "unitId"), param(req, "quantity"), currentUser(req));
+                    orderService.updateLine(id, longParam(req, "lineId"), longParam(req, "unitId"),
+                            param(req, "quantity"), param(req, "manualPrice"), currentUser(req));
                     flash(req, "Đã cập nhật dòng hàng.");
                     back += "#dong-hang";
                 }
@@ -121,7 +122,8 @@ public class OrderServlet extends BaseServlet {
         }
     }
 
-    private void showEdit(HttpServletRequest req, HttpServletResponse resp) throws SQLException, ServletException, IOException {
+    private void showEdit(HttpServletRequest req, HttpServletResponse resp)
+            throws SQLException, ServletException, IOException {
         Order order = orderService.get(longParam(req, "id"), currentUser(req));
         String q = param(req, "q");
         req.setAttribute("order", order);

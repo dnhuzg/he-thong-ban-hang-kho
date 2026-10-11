@@ -16,6 +16,13 @@ public class OrderLine {
     private int quantity;
     private BigDecimal factor;
     private BigDecimal baseQuantity;
+
+    /*
+     * Giá chỉnh thủ công theo đơn vị cơ sở.
+     * null nghĩa là dòng hàng dùng giá tự động từ bảng giá.
+     */
+    private BigDecimal manualBasePrice;
+
     // Các trường dưới đây do OrderService tính theo bảng giá và chính sách chiết khấu hiện hành
     private BigDecimal unitPrice;
     private BigDecimal grossAmount;
@@ -32,6 +39,10 @@ public class OrderLine {
 
     public boolean isDiscounted() {
         return discountAmount != null && discountAmount.signum() > 0;
+    }
+
+    public boolean isManualPrice() {
+        return manualBasePrice != null;
     }
 
     /** Số lượng quy ra đơn vị cơ sở, chỉ hiện khi dòng đặt theo đơn vị quy đổi (ví dụ "= 24 Lon"). */
@@ -61,6 +72,8 @@ public class OrderLine {
     public void setFactor(BigDecimal factor) { this.factor = factor; }
     public BigDecimal getBaseQuantity() { return baseQuantity; }
     public void setBaseQuantity(BigDecimal baseQuantity) { this.baseQuantity = baseQuantity; }
+    public BigDecimal getManualBasePrice() { return manualBasePrice; }
+    public void setManualBasePrice(BigDecimal manualBasePrice) { this.manualBasePrice = manualBasePrice; }
     public BigDecimal getUnitPrice() { return unitPrice; }
     public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
     public BigDecimal getGrossAmount() { return grossAmount; }

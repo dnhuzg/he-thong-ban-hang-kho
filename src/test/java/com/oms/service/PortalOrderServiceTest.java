@@ -29,6 +29,13 @@ class PortalOrderServiceTest extends OrderWorkflowServiceTest {
         assertEquals(Order.Status.APPROVED,orders.get(cart,customer).getStatus());
         assertEquals(1,count("order_inventory_reservations","order_id="+cart));
     }
+    @Test void customerCannotSetManualPrice() throws Exception {
+        long cart=portal.create(customer); portal.add(cart,500,1,"2",customer);
+        long line=orders.get(cart,customer).getLines().get(0).getId();
+        assertThrows(ForbiddenException.class,()->orders.updateLine(cart,line,1,"2","1",customer));
+        orders.updateLine(cart,line,1,"3","",customer);
+        assertEquals(3,orders.get(cart,customer).getLines().get(0).getQuantity());
+    }
     @Test void violationsCannotBeApprovedBySalesRepAndUnmappedAccountCannotCreate() throws Exception {
         sql("UPDATE customers SET credit_limit=0 WHERE id=900");
         long cart=portal.create(customer); portal.add(cart,500,1,"2",customer); portal.submit(cart,customer);
