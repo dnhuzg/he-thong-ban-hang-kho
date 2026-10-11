@@ -28,6 +28,9 @@ public class ShipmentConfirmationServlet extends BaseServlet {
             render(req, resp, "shipments/confirm");
         } catch (ShipmentService.NotFoundException e) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+        } catch (ServiceException e) {
+            // Thiếu hoặc sai mã phiếu giao (mở trang không qua danh sách): báo lỗi đầu vào thay vì lỗi máy chủ
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (SQLException e) {
             throw new ServletException(e);
         }
