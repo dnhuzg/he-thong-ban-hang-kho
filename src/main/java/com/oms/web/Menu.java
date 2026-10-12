@@ -32,6 +32,12 @@ public final class Menu {
 
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
+        if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
+                || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
+            groups.add(new Group("C\u00F4ng n\u1EE3 tr\u1EA3 h\u00E0ng",
+                    List.of(item("Gi\u1EA3m tr\u1EEB c\u00F4ng n\u1EE3", "/finance/return-credits",
+                            "clipboard-list", path.equals("/finance/return-credits"), false))));
+        }
         if (PermissionPolicy.canTakeOrders(user.getRoles())
                 || user.getRoles().contains(com.oms.model.Role.WH_MANAGER)) {
             groups.add(new Group("Tr\u1EA3 h\u00E0ng", List.of(item("Tr\u1EA3 h\u00E0ng t\u1EEB \u0111\u1EA1i l\u00FD", "/sales/returns",
