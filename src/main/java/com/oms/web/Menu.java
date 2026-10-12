@@ -34,6 +34,12 @@ public final class Menu {
         List<Group> groups = new ArrayList<>();
         if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
                 || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
+            groups.add(new Group("S\u1ED5 c\u00F4ng n\u1EE3",
+                    List.of(item("Chi ti\u1EBFt c\u00F4ng n\u1EE3 \u0111\u1EA1i l\u00FD", "/finance/debt-ledger",
+                            "history", path.equals("/finance/debt-ledger"), false))));
+        }
+        if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
+                || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
             groups.add(new Group("C\u00F4ng n\u1EE3 tr\u1EA3 h\u00E0ng",
                     List.of(item("Gi\u1EA3m tr\u1EEB c\u00F4ng n\u1EE3", "/finance/return-credits",
                             "clipboard-list", path.equals("/finance/return-credits"), false))));
