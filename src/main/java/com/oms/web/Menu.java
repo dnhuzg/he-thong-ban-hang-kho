@@ -51,6 +51,16 @@ public final class Menu {
         }
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
+        if (user.getRoles().contains(Role.SALES_MANAGER)
+                || user.getRoles().contains(Role.ADMIN)) {
+            groups.add(new Group("Điều hành", List.of(
+                    item("Dashboard bán hàng & kho",
+                            "/reports/management-dashboard",
+                            "boxes",
+                            path.equals("/reports/management-dashboard"),
+                            false))));
+        }
+
         if (user.getRoles().contains(Role.CUSTOMER)) {
             groups.add(new Group("Cổng đại lý", List.of(
                     item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),

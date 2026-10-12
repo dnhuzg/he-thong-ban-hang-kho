@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="${ctx}/assets/css/icons.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
   <link rel="stylesheet" href="${ctx}/assets/css/effects.css?v=${assetVersion}">
+  <c:if test="${not empty pageStylesheet}">
+    <link rel="stylesheet" href="${ctx}/assets/css/${pageStylesheet}?v=${assetVersion}">
+  </c:if>
 </head>
 <body data-ctx="${ctx}">
   <div class="app">
