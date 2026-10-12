@@ -32,6 +32,12 @@ public final class Menu {
 
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
+        if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
+                || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
+            groups.add(new Group("S\u1ED5 c\u00F4ng n\u1EE3",
+                    List.of(item("Chi ti\u1EBFt c\u00F4ng n\u1EE3 \u0111\u1EA1i l\u00FD", "/finance/debt-ledger",
+                            "history", path.equals("/finance/debt-ledger"), false))));
+        }
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.CUSTOMER)) {
