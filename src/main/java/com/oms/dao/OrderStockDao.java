@@ -3,6 +3,8 @@ import com.oms.service.ServiceException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -58,6 +60,16 @@ public class OrderStockDao {
         }
         try(var ps=conn.prepareStatement("DELETE FROM order_inventory_reservations WHERE order_id=?")) {
             ps.setLong(1,orderId); ps.executeUpdate();
+        }
+    }
+    /** SKU đang kinh doanh đã có dòng tồn ở các kho cho trước nhưng không còn khả dụng (đã hết hoặc giữ chỗ hết). */
+    public long countUnavailable(Connection conn,List<Long> warehouseIds) throws SQLException {
+        if(warehouseIds.isEmpty()) return 0;
+        String in=String.join(",",Collections.nCopies(warehouseIds.size(),"?"));
+        try(var ps=conn.prepareStatement("SELECT COUNT(*) FROM warehouse_inventory i JOIN products p ON p.id=i.product_id "
+                +"WHERE p.status='ACTIVE' AND i.on_hand-i.reserved<=0 AND i.warehouse_id IN ("+in+")")) {
+            for(int i=0;i<warehouseIds.size();i++) ps.setLong(i+1,warehouseIds.get(i));
+            try(var rs=ps.executeQuery()) { rs.next(); return rs.getLong(1); }
         }
     }
 }

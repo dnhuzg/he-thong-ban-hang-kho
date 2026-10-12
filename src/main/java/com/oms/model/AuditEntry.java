@@ -51,6 +51,16 @@ public class AuditEntry {
             Map.entry("ORDER_CREATE", "Tạo đơn nháp"),
             Map.entry("ORDER_UPDATE", "Sửa thông tin giao hàng của đơn"),
             Map.entry("ORDER_DELETE", "Xoá đơn nháp"),
+            Map.entry("ORDER_SUBMIT", "Chốt đơn"),
+            Map.entry("ORDER_APPROVE", "Duyệt đơn"),
+            Map.entry("ORDER_REJECT", "Từ chối đơn"),
+            Map.entry("ORDER_RETURN", "Trả đơn về sửa"),
+            Map.entry("ORDER_CANCEL", "Huỷ đơn"),
+            Map.entry("ORDER_ADVANCE", "Chuyển bước xử lý đơn"),
+            Map.entry("ORDER_COPY", "Sao chép đơn"),
+            Map.entry("ORDER_ADD_LAST_PURCHASE", "Thêm hàng từ lần mua trước"),
+            Map.entry("SHIPMENT_DELIVERED", "Xác nhận giao hàng"),
+            Map.entry("SHIPMENT_FAILED_RETURNED", "Giao không thành công, trả về kho"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
             Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
             Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),
@@ -78,6 +88,7 @@ public class AuditEntry {
         TARGET_LABELS.put("CUSTOMER", "Đại lý");
         TARGET_LABELS.put("ORDER", "Đơn hàng");
         TARGET_LABELS.put("DISCOUNT_POLICY", "Chính sách chiết khấu");
+        TARGET_LABELS.put("SHIPMENT", "Phiếu giao hàng");
     }
 
     private long id;

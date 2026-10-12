@@ -15,6 +15,11 @@ import java.util.List;
 
 public class AuditLogDao {
 
+    private static final String SELECT = "SELECT a.id, a.created_at, a.action, a.target_type, a.target_id, a.detail, "
+            + "a.old_value, a.new_value, u.full_name, u.username, u.avatar_path, t.username AS target_name "
+            + "FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id "
+            + "LEFT JOIN users t ON a.target_type = 'USER' AND t.id = a.target_id";
+
     /** Điều kiện lọc nhật ký (S2-04); trường null nghĩa là không lọc theo trường đó. */
     public record Filter(Long actorId, String targetType, LocalDate from, LocalDate to) {
     }
@@ -78,11 +83,7 @@ public class AuditLogDao {
             }
         }
 
-        String sql = "SELECT a.id, a.created_at, a.action, a.target_type, a.target_id, a.detail, a.old_value, a.new_value, "
-                + "u.full_name, u.username, u.avatar_path, t.username AS target_name "
-                + "FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id "
-                + "LEFT JOIN users t ON a.target_type = 'USER' AND t.id = a.target_id"
-                + where + " ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?";
+        String sql = SELECT + where + " ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?";
         List<AuditEntry> items = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, params);
@@ -95,6 +96,22 @@ public class AuditLogDao {
             }
         }
         return new PageResult<>(items, page, pageSize, total);
+    }
+
+    /** Thao tác gần nhất của một người; bỏ đăng nhập vì nó lấn hết các việc nghiệp vụ trong danh sách ngắn. */
+    public List<AuditEntry> recentByActor(Connection conn, long actorId, int limit) throws SQLException {
+        List<AuditEntry> items = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(SELECT + " WHERE a.actor_id = ? AND a.action <> 'LOGIN' "
+                + "ORDER BY a.created_at DESC, a.id DESC LIMIT ?")) {
+            ps.setLong(1, actorId);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    items.add(map(rs));
+                }
+            }
+        }
+        return items;
     }
 
     private static AuditEntry map(ResultSet rs) throws SQLException {
