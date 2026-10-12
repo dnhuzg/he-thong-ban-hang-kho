@@ -32,6 +32,11 @@ public final class Menu {
 
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
+        if (PermissionPolicy.canTakeOrders(user.getRoles())
+                || user.getRoles().contains(com.oms.model.Role.WH_MANAGER)) {
+            groups.add(new Group("Tr\u1EA3 h\u00E0ng", List.of(item("Tr\u1EA3 h\u00E0ng t\u1EEB \u0111\u1EA1i l\u00FD", "/sales/returns",
+                    "clipboard-list", path.equals("/sales/returns"), false))));
+        }
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.CUSTOMER)) {
