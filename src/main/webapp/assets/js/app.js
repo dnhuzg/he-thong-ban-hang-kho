@@ -1,5 +1,75 @@
 // Tương tác giao diện dùng chung, không chứa logic nghiệp vụ.
 
+// Giữ vị trí cuộn của menu bên trái khi chuyển trang (mỗi trang tải lại nên menu sẽ quay về đầu).
+// Chạy ngay khi script được nạp, trước DOMContentLoaded, để menu không bị nhảy.
+(() => {
+  const nav = document.getElementById("sidebar");
+  if (!nav) return;
+  const KEY = "oms-sidebar-scroll";
+  try {
+    nav.scrollTop = Number(sessionStorage.getItem(KEY)) || 0;
+    nav.addEventListener("scroll", () => sessionStorage.setItem(KEY, String(nav.scrollTop)), { passive: true });
+  } catch (e) {
+    // sessionStorage bị chặn (chế độ riêng tư): bỏ qua, menu về đầu như cũ
+  }
+})();
+
+// Cây nhóm hàng: mở / đóng nhóm cha, ẩn mọi nhóm con cháu khi nhóm cha đang đóng.
+// Trạng thái nhớ trong trình duyệt (tiện cho người xem, không ảnh hưởng dữ liệu). Chạy ngay khi script được nạp,
+// trước DOMContentLoaded, để sau mỗi lần gửi form cây hiện đúng trạng thái mà không thấy nhóm con co lại.
+document.querySelectorAll("table[data-tree]").forEach((table) => {
+  const key = "oms.categoryTree.collapsed";
+  const rows = [...table.querySelectorAll("tbody tr[data-cat-id]")];
+  const parentOf = new Map(rows.map((r) => [r.dataset.catId, r.dataset.parentId]));
+  let collapsed = new Set();
+  try {
+    collapsed = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+  } catch (e) {
+    collapsed = new Set();
+  }
+
+  const hiddenByAncestor = (id) => {
+    for (let p = parentOf.get(id); p; p = parentOf.get(p)) {
+      if (collapsed.has(p)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const refresh = () => {
+    rows.forEach((row) => {
+      row.hidden = hiddenByAncestor(row.dataset.catId);
+      const btn = row.querySelector("[data-tree-toggle]");
+      if (btn) {
+        btn.setAttribute("aria-expanded", String(!collapsed.has(row.dataset.catId)));
+      }
+    });
+  };
+
+  table.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-tree-toggle]");
+    if (!btn) {
+      return;
+    }
+    const id = btn.closest("tr").dataset.catId;
+    if (collapsed.has(id)) {
+      collapsed.delete(id);
+    } else {
+      collapsed.add(id);
+    }
+    try {
+      localStorage.setItem(key, JSON.stringify([...collapsed]));
+    } catch (e) {
+      // trình duyệt chặn lưu trữ: vẫn dùng được, chỉ không nhớ lần sau
+    }
+    refresh();
+  });
+
+  refresh();
+  document.documentElement.classList.remove("tree-pending");
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   const app = document.querySelector(".app");
 
@@ -25,6 +95,15 @@ document.addEventListener("DOMContentLoaded", () => {
     select.addEventListener("change", () => select.form.requestSubmit());
   });
 
+  document.querySelectorAll("input[data-order-qty-autosubmit]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const form = input.closest("form");
+      if (form && form.reportValidity()) {
+        form.requestSubmit();
+      }
+    });
+  });
+
   // Nhãn trạng thái bên cạnh ô chọn đổi theo lựa chọn hiện tại
   document.querySelectorAll("select[data-badge-target]").forEach((select) => {
     const badge = document.getElementById(select.dataset.badgeTarget);
@@ -34,59 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Cây nhóm hàng: mở / đóng nhóm cha, ẩn mọi nhóm con cháu khi nhóm cha đang đóng.
-  // Trạng thái nhớ trong trình duyệt (tiện cho người xem, không ảnh hưởng dữ liệu).
-  document.querySelectorAll("table[data-tree]").forEach((table) => {
-    const key = "oms.categoryTree.collapsed";
-    const rows = [...table.querySelectorAll("tbody tr[data-cat-id]")];
-    const parentOf = new Map(rows.map((r) => [r.dataset.catId, r.dataset.parentId]));
-    let collapsed = new Set();
-    try {
-      collapsed = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
-    } catch (e) {
-      collapsed = new Set();
-    }
-
-    const hiddenByAncestor = (id) => {
-      for (let p = parentOf.get(id); p; p = parentOf.get(p)) {
-        if (collapsed.has(p)) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    const refresh = () => {
-      rows.forEach((row) => {
-        row.hidden = hiddenByAncestor(row.dataset.catId);
-        const btn = row.querySelector("[data-tree-toggle]");
-        if (btn) {
-          btn.setAttribute("aria-expanded", String(!collapsed.has(row.dataset.catId)));
-        }
-      });
-    };
-
-    table.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-tree-toggle]");
-      if (!btn) {
-        return;
-      }
-      const id = btn.closest("tr").dataset.catId;
-      if (collapsed.has(id)) {
-        collapsed.delete(id);
-      } else {
-        collapsed.add(id);
-      }
-      try {
-        localStorage.setItem(key, JSON.stringify([...collapsed]));
-      } catch (e) {
-        // trình duyệt chặn lưu trữ: vẫn dùng được, chỉ không nhớ lần sau
-      }
-      refresh();
-    });
-
-    refresh();
-  });
 
   // Ô tick đầu cột bật / tắt mọi ô cùng tên (chọn tất cả đại lý khi chuyển giao)
   document.querySelectorAll("input[data-check-all]").forEach((all) => {
@@ -205,6 +231,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 250);
     });
+  });
+
+  // Trang Nhóm hàng: một bộ hộp thoại dùng chung; nút của từng dòng mang id, tên, số sản phẩm của dòng đó
+  document.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-cat-dialog]");
+    if (!btn) {
+      return;
+    }
+    const dialog = document.getElementById(btn.dataset.catDialog);
+    const data = { id: btn.dataset.catId, name: btn.dataset.catName, count: btn.dataset.catCount };
+    dialog.querySelectorAll("[data-cat-field]").forEach((field) => {
+      field.value = data[field.dataset.catField];
+    });
+    dialog.querySelectorAll("[data-cat-fill]").forEach((el) => {
+      el.textContent = data[el.dataset.catFill];
+    });
+    // nhóm đích không được là chính nhóm đang chuyển
+    dialog.querySelectorAll("select option").forEach((option) => {
+      const self = option.value !== "" && option.value === data.id;
+      option.hidden = self;
+      option.disabled = self;
+    });
+    dialog.querySelectorAll("select").forEach((select) => {
+      select.value = "";
+    });
+    dialog.showModal();
   });
 
   // Mở / đóng <dialog>

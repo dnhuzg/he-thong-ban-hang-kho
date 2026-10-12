@@ -1,0 +1,351 @@
+
+.portal-page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 0 var(--space-6);
+    color: var(--color-text);
+}
+
+.portal-page * {
+    box-sizing: border-box;
+}
+
+.portal-header,
+.portal-section-heading,
+.portal-summary-row,
+.portal-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.portal-header {
+    margin-bottom: 28px;
+}
+
+.portal-eyebrow,
+.portal-section-label {
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.portal-header h1 {
+    margin: 8px 0;
+    font-size: 32px;
+}
+
+.portal-subtitle,
+.portal-muted,
+.portal-submit-note {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+}
+
+.portal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    align-items: start;
+    gap: 24px;
+}
+
+.portal-catalog,
+.portal-cart {
+    min-width: 0;
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+}
+
+.portal-cart {
+    position: sticky;
+    top: 20px;
+}
+
+.portal-section-heading {
+    margin-bottom: 20px;
+}
+
+.portal-section-heading h2 {
+    margin: 6px 0 0;
+    font-size: 21px;
+}
+
+.portal-section-heading-small {
+    margin-bottom: 12px;
+}
+
+.portal-toolbar {
+    margin-bottom: 24px;
+}
+
+.portal-search {
+    display: flex;
+    gap: 12px;
+    max-width: 650px;
+}
+
+.portal-search input {
+    flex: 1;
+    min-width: 0;
+}
+
+.portal-page input,
+.portal-page select,
+.portal-page textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 9px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+}
+
+.portal-page input:focus,
+.portal-page select:focus,
+.portal-page textarea:focus {
+    outline: 2px solid var(--color-primary-border);
+    outline-offset: 1px;
+}
+
+.portal-primary-button,
+.portal-secondary-button,
+.portal-cart-button {
+    padding: 11px 16px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.portal-primary-button {
+    background: var(--color-primary);
+    color: var(--color-surface);
+}
+
+.portal-primary-button:hover {
+    background: var(--color-primary-hover);
+}
+
+.portal-secondary-button,
+.portal-cart-button {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary-border);
+    color: var(--color-primary-hover);
+}
+
+.portal-page button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.portal-cart-button {
+    flex-shrink: 0;
+}
+
+#cartCount {
+    display: inline-block;
+    min-width: 24px;
+    margin-left: 6px;
+    padding: 3px 6px;
+    border-radius: 20px;
+    background: var(--color-primary-soft);
+    text-align: center;
+}
+
+.portal-product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.portal-product-card {
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+}
+
+.portal-product-card h3 {
+    margin: 8px 0;
+    font-size: 17px;
+}
+
+.portal-product-price {
+    margin: 12px 0;
+    color: var(--color-primary-hover);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.portal-product-card label,
+.portal-delivery label {
+    display: block;
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.portal-product-card button {
+    width: 100%;
+    margin-top: 14px;
+}
+
+.portal-state {
+    padding: 28px 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.portal-pagination {
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.portal-cart-line {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.portal-cart-line h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+}
+
+.portal-cart-line-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.portal-cart-line-controls input {
+    width: 76px;
+}
+
+.portal-cart-line-controls select {
+    flex: 1;
+    min-width: 100px;
+}
+
+.portal-summary,
+.portal-credit,
+.portal-delivery,
+.portal-submit-area {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.portal-summary-row {
+    margin-bottom: 12px;
+}
+
+.portal-summary-total {
+    padding-top: 14px;
+    border-top: 1px dashed var(--color-border-strong);
+    font-size: 18px;
+}
+
+.portal-credit-content {
+    line-height: 1.8;
+}
+
+.portal-delivery h3,
+.portal-credit h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+}
+
+.portal-full-button {
+    width: 100%;
+    margin-top: 14px;
+}
+
+.portal-message {
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-primary-border);
+    border-radius: 10px;
+    background: var(--color-primary-soft);
+}
+
+.portal-message.is-error {
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.portal-order-code {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.portal-page [hidden] {
+    display: none !important;
+}
+
+.portal-page .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 1050px) {
+    .portal-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .portal-cart {
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .portal-page {
+        padding: 18px 12px 40px;
+    }
+
+    .portal-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .portal-header h1 {
+        font-size: 26px;
+    }
+
+    .portal-catalog,
+    .portal-cart {
+        padding: 16px;
+    }
+
+    .portal-product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portal-search {
+        flex-direction: column;
+    }
+
+    .portal-search button {
+        width: 100%;
+    }
+
+    .portal-section-heading h2 {
+        font-size: 18px;
+    }
+
+    .portal-pagination {
+        gap: 8px;
+    }
+}

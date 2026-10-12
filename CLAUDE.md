@@ -53,6 +53,8 @@ File này hướng dẫn Claude Code cách làm việc trong repo này. Hãy đ�
 
 ## Cơ sở dữ liệu
 
+Dữ liệu demo lớn (118 nhóm hàng nhiều cấp, 416 sản phẩm FMCG kèm quy đổi đơn vị) nằm ở `database/demo/demo_catalog.sql` (chạy lại an toàn, không đổi dữ liệu có sẵn); giá bán demo cho các sản phẩm đó ở `demo_prices.sql` (chạy sau `demo_catalog.sql`, để thử tạo đơn); gỡ cả hai bằng `demo_catalog_remove.sql`; nguồn có cấu trúc ở `database/demo/source/` (sửa `data.js` rồi chạy `gen.js`). Không phải migration, chỉ chạy khi cần dữ liệu thử.
+
 Hiện dùng schema tự thiết kế cho Sprint 1 trong `database/schema.sql` + `seed.sql`. Thiết kế đầy đủ của nhóm là `OMS_schema_mysql.sql` (69 bảng) nhưng file này chưa có trong repo; khi có thì phải đối chiếu và chuyển sang.
 
 ## Môi trường
@@ -125,10 +127,11 @@ Những điểm cần đọc nhiều file mới thấy:
 - `layout.css`: sidebar, topbar, thanh điều hướng nhanh trên điện thoại, responsive. `components.css`: nút, form, alert, card, bảng, badge, phân trang, dialog, danh sách / thẻ trên điện thoại, trang lỗi. `auth.css`: các trang trước đăng nhập (đăng nhập hai cột).
 - `effects.css` + `js/effects.js` + `WEB-INF/views/effects/*.jspf`: **nơi duy nhất chứa hiệu ứng giao diện** (ô gạch chân nhãn nổi ở đăng nhập, nút sáng / tối và bộ màu tối). Hiệu ứng mới thêm vào cuối hai file này, không viết rải ở file khác. Bộ màu tối là khối `:root[data-theme="dark"]` trong `base.css`.
 - `icons.css` + `assets/img/icons/*.svg`: biểu tượng tải từ Figma, dùng `<span class="icon icon--tên"></span>` (mặt nạ CSS, màu theo màu chữ). Thêm biểu tượng: lưu SVG vào `img/icons` và thêm một dòng `.icon--tên` trong `icons.css`.
+- `landing.css` + `views/landing.jsp`: trang chờ cho khách chưa đăng nhập ở địa chỉ gốc `/` (đã đăng nhập thì `/` chuyển sang `/home`), theo thiết kế Figma của nhóm; màu riêng là các biến `--landing-*` trong `base.css` (xanh rêu `#005b52`).
 - `js/app.js`: chỉ tương tác UI (menu trên màn hình nhỏ, hiện mật khẩu, `<dialog>` qua `data-dialog-open`, ô chọn bộ lọc `data-autosubmit`).
 - CSS/JS gắn `?v=${assetVersion}` (đổi mỗi lần khởi động ứng dụng) nên không cần Ctrl+F5 sau khi triển khai.
 - Thiết kế giao diện nằm trong file Figma của nhóm (đăng nhập, sản phẩm, form sản phẩm, bảng giá, người dùng; desktop và điện thoại). Làm giao diện chỉ đổi cách hiển thị, không đổi chức năng.
-- Giao diện sáng, màu nhấn xanh dương. Chỉ dùng biến trong `base.css`, không hardcode mã màu ở file khác; không viết `style` inline.
+- Giao diện sáng, màu nhấn xanh rêu (`#005b52`, theo thiết kế Figma của nhóm). Chỉ dùng biến trong `base.css`, không hardcode mã màu ở file khác; không viết `style` inline.
 
 ## Quy ước code
 

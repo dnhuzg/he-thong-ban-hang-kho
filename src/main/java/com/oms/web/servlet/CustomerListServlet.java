@@ -28,6 +28,7 @@ public class CustomerListServlet extends BaseServlet {
             String q = param(req, "q");
             req.setAttribute("result", customerService.search(q, groupId, areaId, repId, status,
                     intParam(req, "page", 1), currentUser(req)));
+            req.setAttribute("stats", customerService.stats(currentUser(req)));
             req.setAttribute("q", q);
             req.setAttribute("selectedGroup", groupId);
             req.setAttribute("selectedArea", areaId);

@@ -370,6 +370,7 @@ CREATE TABLE order_lines (
   quantity       INT           NOT NULL,
   factor         DECIMAL(12,4) NOT NULL,
   base_quantity  DECIMAL(14,4) NOT NULL,
+  manual_base_price DECIMAL(15,2) NULL,
   created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_order_lines_product_unit (order_id, product_id, unit_id),
@@ -380,6 +381,87 @@ CREATE TABLE order_lines (
   CONSTRAINT chk_order_lines_qty CHECK (quantity > 0 AND factor > 0 AND base_quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S6-08: phiếu giao hàng, dòng hàng giao và biến động tồn kho khi xác nhận giao.
+CREATE TABLE shipments (
+  id                  BIGINT       NOT NULL AUTO_INCREMENT,
+  code                VARCHAR(30)  NOT NULL,
+  warehouse_id        BIGINT       NOT NULL,
+  customer_id         BIGINT       NOT NULL,
+  status              ENUM('READY','DELIVERED','FAILED_RETURNED') NOT NULL DEFAULT 'READY',
+  recipient_name      VARCHAR(200) NULL,
+  delivered_at        DATETIME     NULL,
+  proof_image_path    VARCHAR(255) NULL,
+  failure_reason      VARCHAR(500) NULL,
+  returned_at         DATETIME     NULL,
+  invoice_eligible_at DATETIME     NULL,
+  created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_shipments_code (code),
+  KEY idx_shipments_warehouse_status (warehouse_id, status),
+  KEY idx_shipments_customer (customer_id),
+  KEY idx_shipments_invoice_eligible (invoice_eligible_at),
+  CONSTRAINT fk_shipments_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_shipments_customer FOREIGN KEY (customer_id) REFERENCES customers (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE shipment_items (
+  id          BIGINT         NOT NULL AUTO_INCREMENT,
+  shipment_id BIGINT         NOT NULL,
+  product_id  BIGINT         NOT NULL,
+  unit_id     BIGINT         NOT NULL,
+  quantity    DECIMAL(15,4)  NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_shipment_items_shipment (shipment_id),
+  KEY idx_shipment_items_product (product_id),
+  CONSTRAINT fk_shipment_items_shipment FOREIGN KEY (shipment_id) REFERENCES shipments (id) ON DELETE CASCADE,
+  CONSTRAINT fk_shipment_items_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_shipment_items_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT chk_shipment_items_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Nhật ký hàng quay về kho khi giao thất bại.
+-- Tồn kho thực tế có thể tổng hợp từ các movement của module INVENTORY.
+CREATE TABLE inventory_movements (
+  id             BIGINT        NOT NULL AUTO_INCREMENT,
+  warehouse_id   BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  unit_id        BIGINT        NOT NULL,
+  quantity       DECIMAL(15,4) NOT NULL,
+  movement_type  ENUM('SHIPMENT_RETURN') NOT NULL,
+  reference_type VARCHAR(50)   NOT NULL,
+  reference_id   BIGINT        NOT NULL,
+  created_by     BIGINT        NOT NULL,
+  created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inventory_movements_warehouse_created (warehouse_id, created_at),
+  KEY idx_inventory_movements_reference (reference_type, reference_id),
+  CONSTRAINT fk_inventory_movements_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_inventory_movements_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_inventory_movements_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT fk_inventory_movements_user FOREIGN KEY (created_by) REFERENCES users (id),
+  CONSTRAINT chk_inventory_movements_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE inventory_lots (
+  id                  BIGINT        NOT NULL AUTO_INCREMENT,
+  warehouse_id        BIGINT        NOT NULL,
+  product_id          BIGINT        NOT NULL,
+  remaining_quantity  DECIMAL(14,4) NOT NULL,
+  unit_cost           DECIMAL(15,2) NOT NULL,
+  received_at         DATETIME      NOT NULL,
+  source_type         VARCHAR(30)   NULL,
+  source_id           BIGINT        NULL,
+  created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inventory_lots_warehouse_product (warehouse_id, product_id),
+  KEY idx_inventory_lots_product_received (product_id, received_at),
+  CONSTRAINT fk_inventory_lots_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_inventory_lots_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT chk_inventory_lots_quantity CHECK (remaining_quantity > 0),
+  CONSTRAINT chk_inventory_lots_cost CHECK (unit_cost >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE user_warehouses (
   user_id       BIGINT NOT NULL,
   warehouse_id  BIGINT NOT NULL,
@@ -426,4 +508,141 @@ CREATE TABLE audit_logs (
   KEY idx_audit_created (created_at),
   KEY idx_audit_actor_created (actor_id, created_at),
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS customer_receivables (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  document_code VARCHAR(50) NOT NULL UNIQUE,
+  issued_on DATE NOT NULL,
+  outstanding DECIMAL(15,2) NOT NULL,
+  CONSTRAINT fk_receivable_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT chk_receivable_amount CHECK (outstanding >= 0),
+  KEY idx_receivable_customer (customer_id, issued_on)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS order_credit_reservations (
+  order_id BIGINT NOT NULL PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  CONSTRAINT fk_credit_reservation_order FOREIGN KEY (order_id) REFERENCES orders(id),
+  CONSTRAINT fk_credit_reservation_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT chk_credit_reservation_amount CHECK (amount >= 0),
+  KEY idx_credit_reservation_customer (customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS warehouse_inventory (
+  warehouse_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  on_hand DECIMAL(14,4) NOT NULL DEFAULT 0,
+  reserved DECIMAL(14,4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (warehouse_id, product_id),
+  CONSTRAINT fk_inventory_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+  CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT chk_inventory_nonnegative CHECK (on_hand >= 0 AND reserved >= 0 AND reserved <= on_hand)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS order_inventory_reservations (
+  order_id BIGINT NOT NULL,
+  warehouse_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity DECIMAL(14,4) NOT NULL,
+  PRIMARY KEY (order_id, warehouse_id, product_id),
+  CONSTRAINT fk_stock_reservation_order FOREIGN KEY (order_id) REFERENCES orders(id),
+  CONSTRAINT fk_stock_reservation_inventory FOREIGN KEY (warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id),
+  CONSTRAINT chk_stock_reservation_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE customers ADD serving_warehouse_id BIGINT NULL, ADD CONSTRAINT fk_customer_serving_warehouse FOREIGN KEY (serving_warehouse_id) REFERENCES warehouses(id);
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS order_status_history (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  from_status VARCHAR(32) NOT NULL,
+  to_status VARCHAR(32) NOT NULL,
+  action VARCHAR(30) NOT NULL,
+  opinion VARCHAR(500) NULL,
+  actor_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_order_history_order FOREIGN KEY(order_id) REFERENCES orders(id),
+  CONSTRAINT fk_order_history_actor FOREIGN KEY(actor_id) REFERENCES users(id),
+  KEY idx_order_history_order(order_id,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE orders MODIFY status VARCHAR(32) NOT NULL DEFAULT 'DRAFT', ADD approval_reason VARCHAR(1000) NULL, ADD warehouse_id BIGINT NULL, ADD CONSTRAINT fk_order_warehouse FOREIGN KEY(warehouse_id) REFERENCES warehouses(id);
+ALTER TABLE order_lines ADD unit_price DECIMAL(15,2) NULL, ADD gross_amount DECIMAL(18,2) NULL, ADD discount_amount DECIMAL(18,2) NULL, ADD discount_note VARCHAR(500) NULL;
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS customer_accounts (
+  customer_id BIGINT NOT NULL PRIMARY KEY,
+  user_id BIGINT NOT NULL UNIQUE,
+  CONSTRAINT fk_customer_account_customer FOREIGN KEY(customer_id) REFERENCES customers(id),
+  CONSTRAINT fk_customer_account_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE orders ADD customer_submitted BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- S7-08: hoá đơn, nhật ký nhắc hạn và thông báo trong ứng dụng.
+CREATE TABLE invoices (
+  id                 BIGINT        NOT NULL AUTO_INCREMENT,
+  code               VARCHAR(30)   NOT NULL,
+  customer_id        BIGINT        NOT NULL,
+  recipient_user_id  BIGINT        NOT NULL,
+  total_amount       DECIMAL(15,2) NOT NULL,
+  issued_at          DATETIME      NOT NULL,
+  due_date           DATE          NOT NULL,
+  status             ENUM('ISSUED','PAID','CANCELLED') NOT NULL DEFAULT 'ISSUED',
+  paid_at            DATETIME      NULL,
+  created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_invoices_code (code),
+  KEY idx_invoices_reminder (status, due_date),
+  KEY idx_invoices_customer (customer_id),
+  KEY idx_invoices_recipient (recipient_user_id),
+  CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_invoices_recipient FOREIGN KEY (recipient_user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE invoice_reminder_logs (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  invoice_id      BIGINT       NOT NULL,
+  reminder_date   DATE         NOT NULL,
+  reminder_type   ENUM('DUE_SOON','OVERDUE') NOT NULL,
+  email_sent      TINYINT(1)   NOT NULL DEFAULT 0,
+  in_app_sent     TINYINT(1)   NOT NULL DEFAULT 0,
+  email_sent_at   DATETIME     NULL,
+  in_app_sent_at  DATETIME     NULL,
+  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_invoice_reminder_day (invoice_id, reminder_date),
+  KEY idx_reminder_date (reminder_date),
+  CONSTRAINT fk_reminder_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notifications (
+  id                 BIGINT        NOT NULL AUTO_INCREMENT,
+  recipient_user_id  BIGINT        NOT NULL,
+  invoice_id         BIGINT        NOT NULL,
+  reminder_date      DATE          NOT NULL,
+  notification_type  ENUM('DUE_SOON','OVERDUE') NOT NULL,
+  title              VARCHAR(200)  NOT NULL,
+  message            VARCHAR(1000) NOT NULL,
+  read_at            DATETIME      NULL,
+  created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_notification_invoice_day (recipient_user_id, invoice_id, reminder_date),
+  KEY idx_notifications_user_read (recipient_user_id, read_at, created_at),
+  CONSTRAINT fk_notifications_user FOREIGN KEY (recipient_user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
