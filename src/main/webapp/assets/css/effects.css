@@ -1,0 +1,297 @@
+/*
+ * Hiệu ứng giao diện (ngoài chức năng): mỗi hiệu ứng một khối có chú thích đầu khối.
+ * Thêm hiệu ứng mới vào CUỐI file này (CSS) và effects.js (nếu cần JavaScript); không viết hiệu ứng vào file khác.
+ * Màu lấy từ biến trong base.css như mọi file CSS khác.
+ */
+
+/* Ô nhập gạch chân, nhãn nổi lên khi bấm vào hoặc đã có chữ (trang đăng nhập) */
+.float-field {
+  position: relative;
+  margin-top: var(--space-6);
+}
+
+.float-field__input {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  background: transparent;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.02em;
+}
+
+.float-field--action .float-field__input {
+  padding-right: 72px;
+}
+
+.float-field__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transition: transform 0.3s, color 0.3s, font-size 0.3s;
+}
+
+.float-field__input:focus ~ .float-field__label,
+.float-field__input:not(:placeholder-shown) ~ .float-field__label,
+.float-field__input:-webkit-autofill ~ .float-field__label {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transform: translate(calc(-1 * var(--space-3)), -34px);
+}
+
+.float-field__line {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 4px 4px 0 0;
+  pointer-events: none;
+  transition: height 0.3s, background-color 0.3s;
+}
+
+.float-field__input:focus ~ .float-field__line,
+.float-field__input:-webkit-autofill ~ .float-field__line {
+  height: 100%;
+  background: var(--color-primary-soft);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.float-field .input-group__action {
+  z-index: 4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-field__label,
+  .float-field__line {
+    transition: none;
+  }
+}
+
+/*
+ * Nút chuyển sáng / tối (nguồn: Uiverse.io, JustCode14): ban ngày (mặt trời, mây) và ban đêm (trăng, sao).
+ * Hình dạng phụ thuộc data-theme trên <html> (được đặt trước khi trang vẽ), không phụ thuộc ô tick, để mỗi lần
+ * chuyển trang nút xuất hiện đúng trạng thái ngay lập tức mà không chạy lại hiệu ứng trượt.
+ */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 4em;
+  height: 2.2em;
+  font-size: 14px;
+  border-radius: 30px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Trang trước đăng nhập: nút nổi ở góc trên bên phải */
+.theme-switch--floating {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 20;
+}
+
+.theme-switch__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+/* Mặc định (giao diện sáng): nền trời, mặt trời, mây */
+.theme-switch__slider {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--toggle-day);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+.theme-switch__input:focus-visible + .theme-switch__slider {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.theme-switch__slider::before {
+  content: "";
+  position: absolute;
+  bottom: 0.5em;
+  left: 0.5em;
+  width: 1.2em;
+  height: 1.2em;
+  border-radius: 50%;
+  transform: translateX(1.8em);
+  box-shadow: inset 1.2em -0.25em 0 1.2em var(--toggle-sun);
+  transition: 0.4s;
+  transition-timing-function: cubic-bezier(0.81, -0.04, 0.38, 1.5);
+}
+
+.theme-switch__star {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background-color: var(--toggle-star);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.4s;
+}
+
+.theme-switch__star--1 { top: 0.5em; left: 2.5em; }
+.theme-switch__star--2 { top: 1.2em; left: 2.2em; }
+.theme-switch__star--3 { top: 0.9em; left: 3em; }
+
+.theme-switch__cloud {
+  position: absolute;
+  bottom: -0.55em;
+  left: -0.9em;
+  width: 3.2em;
+  opacity: 1;
+  transition: all 0.4s;
+}
+
+.theme-switch__cloud-back { fill: var(--toggle-cloud-back); }
+.theme-switch__cloud-front { fill: var(--toggle-cloud); }
+
+/* Giao diện tối: nền đêm, trăng khuyết, sao */
+:root[data-theme="dark"] .theme-switch__slider {
+  background-color: var(--toggle-night);
+}
+
+:root[data-theme="dark"] .theme-switch__slider::before {
+  transform: none;
+  box-shadow: inset 0.5em -0.25em 0 0 var(--toggle-moon);
+}
+
+:root[data-theme="dark"] .theme-switch__star {
+  opacity: 1;
+}
+
+:root[data-theme="dark"] .theme-switch__cloud {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch__slider,
+  .theme-switch__slider::before,
+  .theme-switch__star,
+  .theme-switch__cloud {
+    transition: none;
+  }
+}
+
+/*
+ * Màn chờ khi gửi form hoặc chuyển trang (nguồn: Uiverse.io, dovatgabriel – Newton's cradle).
+ * effects.js chỉ thêm lớp này khi trang chậm hơn khoảng 0,3 giây nên thao tác nhanh không bị nháy.
+ */
+.page-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: var(--loading-veil);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  animation: page-loading-in 0.2s ease-out;
+}
+
+.newtons-cradle {
+  --uib-size: 56px;
+  --uib-speed: 1.2s;
+  --uib-color: var(--color-primary);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--uib-size);
+  height: var(--uib-size);
+}
+
+.newtons-cradle__dot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 25%;
+  height: 100%;
+  transform-origin: center top;
+}
+
+.newtons-cradle__dot::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 25%;
+  border-radius: 50%;
+  background-color: var(--uib-color);
+}
+
+.newtons-cradle__dot:first-child {
+  animation: newtons-cradle-swing var(--uib-speed) linear infinite;
+}
+
+.newtons-cradle__dot:last-child {
+  animation: newtons-cradle-swing-2 var(--uib-speed) linear infinite;
+}
+
+@keyframes newtons-cradle-swing {
+  0% {
+    transform: rotate(0deg);
+    animation-timing-function: ease-out;
+  }
+
+  25% {
+    transform: rotate(70deg);
+    animation-timing-function: ease-in;
+  }
+
+  50% {
+    transform: rotate(0deg);
+    animation-timing-function: linear;
+  }
+}
+
+@keyframes newtons-cradle-swing-2 {
+  0% {
+    transform: rotate(0deg);
+    animation-timing-function: linear;
+  }
+
+  50% {
+    transform: rotate(0deg);
+    animation-timing-function: ease-out;
+  }
+
+  75% {
+    transform: rotate(-70deg);
+    animation-timing-function: ease-in;
+  }
+}
+
+@keyframes page-loading-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .newtons-cradle {
+    --uib-speed: 2.4s;
+  }
+}

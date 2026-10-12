@@ -5,4 +5,7 @@
           <c:if test="${canViewPriceLists}">
             <a class="tabs__item ${catalogTab == 'prices' ? 'is-active' : ''}" href="${ctx}/products/price-lists" ${catalogTab == 'prices' ? 'aria-current="page"' : ''}>Bảng giá</a>
           </c:if>
+          <c:if test="${canManageDiscounts}">
+            <a class="tabs__item ${catalogTab == 'discounts' ? 'is-active' : ''}" href="${ctx}/products/discounts" ${catalogTab == 'discounts' ? 'aria-current="page"' : ''}>Chiết khấu</a>
+          </c:if>
         </nav>

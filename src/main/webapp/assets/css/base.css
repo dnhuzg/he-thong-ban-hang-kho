@@ -1,10 +1,10 @@
-/* Biến thiết kế (design token) + reset dùng chung cho toàn bộ giao diện OMS (theme sáng, nhấn xanh dương) */
+/* Biến thiết kế (design token) + reset dùng chung cho toàn bộ giao diện OMS (theme sáng, nhấn xanh rêu theo thiết kế Figma của nhóm) */
 
 :root {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-soft: #eff4ff;
-  --color-primary-border: #cfdcfb;
+  --color-primary: #005b52;
+  --color-primary-hover: #00473f;
+  --color-primary-soft: #e3f3ef;
+  --color-primary-border: #c4e4dc;
 
   --color-bg: #f5f7fb;
   --color-surface: #ffffff;
@@ -13,14 +13,15 @@
   --color-border-strong: #cbd3df;
 
   --color-text: #1f2937;
-  --color-text-muted: #6b7280;
+  --color-text-muted: #64748b;
+  --color-text-disabled: #94a3b8;
   --color-text-inverse: #ffffff;
 
   --color-success: #15803d;
   --color-success-soft: #ecfdf3;
   --color-success-border: #b7ebc9;
-  --color-warning: #b45309;
-  --color-warning-soft: #fff7e6;
+  --color-warning: #a16207;
+  --color-warning-soft: #fffbeb;
   --color-warning-border: #f7d9a6;
   --color-danger: #dc2626;
   --color-danger-soft: #fef2f2;
@@ -29,9 +30,48 @@
   --color-info-soft: #eef7fd;
   --color-info-border: #bae0f7;
 
+  --color-brand-dark: #0b4a43;
+  --color-brand-text: #cdeee8;
+  --color-on-brand-faint: rgba(255, 255, 255, 0.05);
+  --color-on-brand-soft: rgba(255, 255, 255, 0.07);
+  --color-on-brand-border: rgba(255, 255, 255, 0.15);
+
   --color-overlay: rgba(15, 23, 42, 0.35);
+  --loading-veil: rgba(255, 255, 255, 0.65);
   --color-auth-glow-1: #e3ecff;
   --color-auth-glow-2: #e6f4ff;
+
+  /* Trang chờ (theo thiết kế Figma của nhóm): màu nhấn xanh rêu */
+  --landing-accent: #005b52;
+  --landing-accent-hover: #00473f;
+  --landing-on-accent: #ffffff;
+  --landing-accent-soft: #e3f3ef;
+  --landing-accent-border: #c4e4dc;
+  --landing-heading: #0f172a;
+  --landing-text: #64748b;
+  --landing-bg: #ffffff;
+  --landing-band: #f8fafc;
+  --landing-fade: rgba(255, 255, 255, 0.96);
+  --landing-fade-clear: rgba(255, 255, 255, 0);
+
+  /* Trang đăng nhập (theo thiết kế Figma của nhóm): nền trái xanh rêu chuyển màu */
+  --auth-hero-from: #153947;
+  --auth-hero-to: #008378;
+  --auth-hero-text: rgba(255, 255, 255, 0.78);
+  --auth-hero-card: rgba(255, 255, 255, 0.08);
+  --auth-hero-card-border: rgba(255, 255, 255, 0.14);
+  --auth-hero-chip: rgba(255, 255, 255, 0.12);
+  --auth-hero-icon: #83eee1;
+  --auth-notice-bg: #f5f8ff;
+
+  /* Nút chuyển sáng / tối ở các trang trước đăng nhập */
+  --toggle-night: #2a2a2a;
+  --toggle-day: #00a6ff;
+  --toggle-moon: #ffffff;
+  --toggle-sun: #ffcf48;
+  --toggle-star: #ffffff;
+  --toggle-cloud: #ffffff;
+  --toggle-cloud-back: #cfe9fb;
 
   --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   --font-size-sm: 0.8125rem;
@@ -55,6 +95,63 @@
 
   --sidebar-width: 248px;
   --topbar-height: 60px;
+}
+
+/* Giao diện tối: chỉ ghi đè biến màu; trang đặt data-theme="dark" trên <html> */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #129e8f;
+  --color-primary-hover: #0f8a7d;
+  --color-primary-soft: #0f2e2b;
+  --color-primary-border: #1d4d45;
+
+  --color-bg: #0f172a;
+  --color-surface: #162033;
+  --color-surface-muted: #1b263b;
+  --color-border: #2a3650;
+  --color-border-strong: #3b4a68;
+
+  --color-text: #e5e9f2;
+  --color-text-muted: #9aa8c0;
+  --color-text-disabled: #6b7a96;
+
+  --color-success: #4ade80;
+  --color-success-soft: #0f2a1c;
+  --color-success-border: #1f5a38;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #2b2210;
+  --color-warning-border: #6b4e12;
+  --color-danger: #f87171;
+  --color-danger-soft: #2d1417;
+  --color-danger-border: #7a2a2a;
+  --color-info: #7dd3fc;
+  --color-info-soft: #0e2433;
+  --color-info-border: #1f5578;
+
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --loading-veil: rgba(15, 23, 42, 0.6);
+  --color-auth-glow-1: #14234a;
+  --color-auth-glow-2: #0f2a3d;
+
+  --landing-accent: #5eead4;
+  --landing-accent-hover: #99f6e4;
+  --landing-on-accent: #042f2e;
+  --landing-accent-soft: #10302b;
+  --landing-accent-border: #1d4d45;
+  --landing-heading: #f1f5f9;
+  --landing-text: #94a3b8;
+  --landing-bg: #0f172a;
+  --landing-band: #131d33;
+  --landing-fade: rgba(15, 23, 42, 0.97);
+  --landing-fade-clear: rgba(15, 23, 42, 0);
+
+  --auth-hero-from: #0b1f26;
+  --auth-hero-to: #0a4f49;
+  --auth-notice-bg: #131d33;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 *,
@@ -143,4 +240,8 @@ textarea {
 
 .mt-4 {
   margin-top: var(--space-4);
+}
+
+.mb-4 {
+  margin-bottom: var(--space-4);
 }

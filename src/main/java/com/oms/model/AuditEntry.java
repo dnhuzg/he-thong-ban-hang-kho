@@ -44,7 +44,23 @@ public class AuditEntry {
             Map.entry("PRICE_ITEM_SAVE", "Sửa giá bán / giá sàn"),
             Map.entry("PRICE_ITEM_DELETE", "Xoá dòng giá"),
             Map.entry("PRODUCT_IMPORT", "Nhập sản phẩm từ Excel"),
-            Map.entry("USER_IMPORT", "Nhập người dùng từ Excel"));
+            Map.entry("USER_IMPORT", "Nhập người dùng từ Excel"),
+            Map.entry("DISCOUNT_CREATE", "Tạo chính sách chiết khấu"),
+            Map.entry("DISCOUNT_UPDATE", "Sửa chính sách chiết khấu"),
+            Map.entry("DISCOUNT_DELETE", "Xoá chính sách chiết khấu"),
+            Map.entry("ORDER_CREATE", "Tạo đơn nháp"),
+            Map.entry("ORDER_UPDATE", "Sửa thông tin giao hàng của đơn"),
+            Map.entry("ORDER_DELETE", "Xoá đơn nháp"),
+            Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
+            Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
+            Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),
+            Map.entry("DELIVERY_POINT_SAVE", "Lưu điểm giao hàng"),
+            Map.entry("DELIVERY_POINT_DEFAULT", "Đặt điểm giao mặc định"),
+            Map.entry("DELIVERY_POINT_DELETE", "Xoá điểm giao hàng"),
+            Map.entry("CUSTOMER_CREDIT_UPDATE", "Đổi hạn mức công nợ"),
+            Map.entry("CUSTOMER_TRANSFER", "Chuyển giao đại lý"),
+            Map.entry("CUSTOMER_LOCK", "Khoá giao dịch với đại lý"),
+            Map.entry("CUSTOMER_UNLOCK", "Mở giao dịch với đại lý"));
 
     // Giá trị trước / sau của các thao tác này chứa giá vốn: chỉ người được xem giá vốn mới thấy
     private static final Set<String> COST_SENSITIVE = Set.of("PRODUCT_COST_UPDATE");
@@ -59,6 +75,9 @@ public class AuditEntry {
         TARGET_LABELS.put("CATEGORY", "Nhóm hàng");
         TARGET_LABELS.put("SUPPLIER", "Nhà cung cấp");
         TARGET_LABELS.put("PRICE_LIST", "Bảng giá");
+        TARGET_LABELS.put("CUSTOMER", "Đại lý");
+        TARGET_LABELS.put("ORDER", "Đơn hàng");
+        TARGET_LABELS.put("DISCOUNT_POLICY", "Chính sách chiết khấu");
     }
 
     private long id;

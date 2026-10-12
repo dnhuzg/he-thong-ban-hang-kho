@@ -35,7 +35,7 @@ public class ProductFormServlet extends BaseServlet {
                 form.setCategoryId(product.getCategoryId());
                 form.setBaseUnitId(product.getBaseUnitId());
                 form.setPackingSpec(product.getPackingSpec() == null ? "" : product.getPackingSpec());
-                form.setCostPrice(product.getCostPrice() == null ? "" : product.getCostPrice().toPlainString());
+                form.setCostPrice(product.getCostPrice() == null ? "" : product.getCostPrice().stripTrailingZeros().toPlainString());
                 form.setStatus(product.getStatus().name());
             }
             show(req, resp, form, product);

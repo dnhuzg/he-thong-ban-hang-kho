@@ -1,5 +1,75 @@
 // Tương tác giao diện dùng chung, không chứa logic nghiệp vụ.
 
+// Giữ vị trí cuộn của menu bên trái khi chuyển trang (mỗi trang tải lại nên menu sẽ quay về đầu).
+// Chạy ngay khi script được nạp, trước DOMContentLoaded, để menu không bị nhảy.
+(() => {
+  const nav = document.getElementById("sidebar");
+  if (!nav) return;
+  const KEY = "oms-sidebar-scroll";
+  try {
+    nav.scrollTop = Number(sessionStorage.getItem(KEY)) || 0;
+    nav.addEventListener("scroll", () => sessionStorage.setItem(KEY, String(nav.scrollTop)), { passive: true });
+  } catch (e) {
+    // sessionStorage bị chặn (chế độ riêng tư): bỏ qua, menu về đầu như cũ
+  }
+})();
+
+// Cây nhóm hàng: mở / đóng nhóm cha, ẩn mọi nhóm con cháu khi nhóm cha đang đóng.
+// Trạng thái nhớ trong trình duyệt (tiện cho người xem, không ảnh hưởng dữ liệu). Chạy ngay khi script được nạp,
+// trước DOMContentLoaded, để sau mỗi lần gửi form cây hiện đúng trạng thái mà không thấy nhóm con co lại.
+document.querySelectorAll("table[data-tree]").forEach((table) => {
+  const key = "oms.categoryTree.collapsed";
+  const rows = [...table.querySelectorAll("tbody tr[data-cat-id]")];
+  const parentOf = new Map(rows.map((r) => [r.dataset.catId, r.dataset.parentId]));
+  let collapsed = new Set();
+  try {
+    collapsed = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+  } catch (e) {
+    collapsed = new Set();
+  }
+
+  const hiddenByAncestor = (id) => {
+    for (let p = parentOf.get(id); p; p = parentOf.get(p)) {
+      if (collapsed.has(p)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const refresh = () => {
+    rows.forEach((row) => {
+      row.hidden = hiddenByAncestor(row.dataset.catId);
+      const btn = row.querySelector("[data-tree-toggle]");
+      if (btn) {
+        btn.setAttribute("aria-expanded", String(!collapsed.has(row.dataset.catId)));
+      }
+    });
+  };
+
+  table.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-tree-toggle]");
+    if (!btn) {
+      return;
+    }
+    const id = btn.closest("tr").dataset.catId;
+    if (collapsed.has(id)) {
+      collapsed.delete(id);
+    } else {
+      collapsed.add(id);
+    }
+    try {
+      localStorage.setItem(key, JSON.stringify([...collapsed]));
+    } catch (e) {
+      // trình duyệt chặn lưu trữ: vẫn dùng được, chỉ không nhớ lần sau
+    }
+    refresh();
+  });
+
+  refresh();
+  document.documentElement.classList.remove("tree-pending");
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   const app = document.querySelector(".app");
 
@@ -20,13 +90,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Ô chọn bộ lọc tự gửi form khi đổi giá trị (nút Lọc vẫn dùng được khi tắt JavaScript)
+  document.querySelectorAll("select[data-autosubmit]").forEach((select) => {
+    select.addEventListener("change", () => select.form.requestSubmit());
+  });
+
+  document.querySelectorAll("input[data-order-qty-autosubmit]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const form = input.closest("form");
+      if (form && form.reportValidity()) {
+        form.requestSubmit();
+      }
+    });
+  });
+
+  // Nhãn trạng thái bên cạnh ô chọn đổi theo lựa chọn hiện tại
+  document.querySelectorAll("select[data-badge-target]").forEach((select) => {
+    const badge = document.getElementById(select.dataset.badgeTarget);
+    select.addEventListener("change", () => {
+      badge.textContent = select.options[select.selectedIndex].text;
+      badge.classList.toggle("badge--success", select.value === "ACTIVE");
+    });
+  });
+
+
+  // Ô tick đầu cột bật / tắt mọi ô cùng tên (chọn tất cả đại lý khi chuyển giao)
+  document.querySelectorAll("input[data-check-all]").forEach((all) => {
+    const boxes = document.querySelectorAll('input[name="' + all.dataset.checkAll + '"]');
+    all.addEventListener("change", () => boxes.forEach((box) => { box.checked = all.checked; }));
+  });
+
   // Hiện / ẩn mật khẩu
   document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
     const input = document.getElementById(btn.dataset.togglePassword);
     btn.addEventListener("click", () => {
       const show = input.type === "password";
       input.type = show ? "text" : "password";
-      btn.textContent = show ? "Ẩn" : "Hiện";
+      (btn.querySelector("[data-toggle-label]") || btn).textContent = show ? "Ẩn" : "Hiện";
       btn.setAttribute("aria-pressed", String(show));
     });
   });
@@ -82,6 +182,82 @@ document.addEventListener("DOMContentLoaded", () => {
       + "hãy mở trang đăng nhập ở tab mới, đăng nhập lại rồi quay lại để lưu.";
     content.prepend(alert);
   }
+
+  // Chính sách chiết khấu: chỉ hiện ô chọn sản phẩm hoặc nhóm hàng theo phạm vi đã chọn
+  document.querySelectorAll("select[data-scope-switch]").forEach((select) => {
+    const apply = () => document.querySelectorAll("[data-scope-field]").forEach((el) => {
+      el.hidden = el.dataset.scopeField !== select.value;
+    });
+    select.addEventListener("change", apply);
+    apply();
+  });
+
+  // Gợi ý khi gõ: ô có data-live-search="id-vùng-kết-quả" tải danh sách từ data-url của vùng đó sau khi ngừng gõ một chút.
+  // Không có JavaScript thì vẫn dùng nút Tìm / Enter như thường.
+  document.querySelectorAll("[data-live-search]").forEach((input) => {
+    const box = document.getElementById(input.dataset.liveSearch);
+    if (!box) {
+      return;
+    }
+    let timer = null;
+    let controller = null;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const q = input.value.trim();
+        if (controller) {
+          controller.abort();
+        }
+        if (q === "") {
+          box.innerHTML = "";
+          return;
+        }
+        controller = new AbortController();
+        try {
+          const res = await fetch(box.dataset.url + "&q=" + encodeURIComponent(q), {
+            credentials: "same-origin",
+            signal: controller.signal,
+          });
+          if (res.redirected || !res.ok) {
+            // hết phiên: tải lại để chuyển về trang đăng nhập; lỗi khác thì giữ nguyên kết quả cũ
+            if (res.redirected) {
+              location.reload();
+            }
+            return;
+          }
+          box.innerHTML = await res.text();
+        } catch (e) {
+          // bị huỷ vì đã gõ tiếp, hoặc mất mạng: bỏ qua
+        }
+      }, 250);
+    });
+  });
+
+  // Trang Nhóm hàng: một bộ hộp thoại dùng chung; nút của từng dòng mang id, tên, số sản phẩm của dòng đó
+  document.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-cat-dialog]");
+    if (!btn) {
+      return;
+    }
+    const dialog = document.getElementById(btn.dataset.catDialog);
+    const data = { id: btn.dataset.catId, name: btn.dataset.catName, count: btn.dataset.catCount };
+    dialog.querySelectorAll("[data-cat-field]").forEach((field) => {
+      field.value = data[field.dataset.catField];
+    });
+    dialog.querySelectorAll("[data-cat-fill]").forEach((el) => {
+      el.textContent = data[el.dataset.catFill];
+    });
+    // nhóm đích không được là chính nhóm đang chuyển
+    dialog.querySelectorAll("select option").forEach((option) => {
+      const self = option.value !== "" && option.value === data.id;
+      option.hidden = self;
+      option.disabled = self;
+    });
+    dialog.querySelectorAll("select").forEach((select) => {
+      select.value = "";
+    });
+    dialog.showModal();
+  });
 
   // Mở / đóng <dialog>
   document.querySelectorAll("[data-dialog-open]").forEach((btn) => {

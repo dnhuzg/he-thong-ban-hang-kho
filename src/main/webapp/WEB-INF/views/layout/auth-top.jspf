@@ -6,17 +6,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><c:out value="${pageTitle}"/> — OMS Bán hàng &amp; Kho</title>
+  <%@ include file="/WEB-INF/views/effects/theme-init.jspf" %>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
-  <link rel="stylesheet" href="${ctx}/assets/css/base.css">
-  <link rel="stylesheet" href="${ctx}/assets/css/components.css">
-  <link rel="stylesheet" href="${ctx}/assets/css/auth.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/base.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/components.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/icons.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/auth.css?v=${assetVersion}">
+  <link rel="stylesheet" href="${ctx}/assets/css/effects.css?v=${assetVersion}">
 </head>
 <body>
-  <main class="auth-page">
-    <section class="auth-card">
-      <div class="auth-card__brand">
-        <span class="logo-mark">OMS</span>
-        <span>Bán hàng &amp; Kho</span>
-      </div>
+  <c:set var="themeSwitchFloating" value="${true}"/>
+  <%@ include file="/WEB-INF/views/effects/theme-switch.jspf" %>
+  <c:choose>
+    <%-- Trang đăng nhập dùng bố cục hai cột (authSplit = true): giới thiệu bên trái, biểu mẫu bên phải --%>
+    <c:when test="${authSplit}">
+      <main class="auth-split">
+        <aside class="auth-hero">
+          <div>
+            <p class="auth-hero__chip"><span class="auth-hero__dot" aria-hidden="true"></span>Hệ thống quản lý bán hàng &amp; kho</p>
+            <h2 class="auth-hero__title">Bán hàng &amp; Kho — điều hành bán sỉ cho nhà phân phối</h2>
+            <p class="auth-hero__text">Đơn hàng chỉ nhập một lần rồi tự chảy qua tồn kho, xuất hàng và công nợ.</p>
+          </div>
+          <ul class="auth-hero__features">
+            <li class="auth-feature">
+              <span class="auth-feature__icon"><span class="icon icon--md icon--shield-check" aria-hidden="true"></span></span>
+              <div>
+                <p class="auth-feature__title">Phân quyền theo vai trò <span class="auth-feature__tag">7 vai trò</span></p>
+                <p class="auth-feature__text">Mỗi người chỉ thấy đúng phần việc của mình; quyền được kiểm ở máy chủ, giá vốn chỉ quản lý được xem.</p>
+              </div>
+            </li>
+            <li class="auth-feature">
+              <span class="auth-feature__icon"><span class="icon icon--md icon--building-2" aria-hidden="true"></span></span>
+              <div>
+                <p class="auth-feature__title">Kho &amp; đại lý <span class="auth-feature__tag">Kiểm khi chốt đơn</span></p>
+                <p class="auth-feature__text">Tồn kho, giá sàn và hạn mức công nợ được kiểm ngay lúc chốt đơn, không đợi hàng đi rồi mới biết.</p>
+              </div>
+            </li>
+            <li class="auth-feature">
+              <span class="auth-feature__icon"><span class="icon icon--md icon--history" aria-hidden="true"></span></span>
+              <div>
+                <p class="auth-feature__title">Nhật ký thao tác <span class="auth-feature__tag">Trước / sau</span></p>
+                <p class="auth-feature__text">Mọi thay đổi về giá, tồn kho và công nợ đều lưu người làm, thời điểm, giá trị trước và sau.</p>
+              </div>
+            </li>
+          </ul>
+          <p class="auth-hero__foot">Hệ thống quản lý bán hàng và kho</p>
+        </aside>
+        <div class="auth-split__panel">
+          <section class="auth-card auth-card--split">
+            <div class="auth-card__brand">
+              <span class="logo-mark logo-mark--sm"><img src="${ctx}/assets/img/brand-boxes.svg" alt="" width="20" height="20"></span>
+              <span class="auth-card__brand-text">
+                <span class="auth-card__brand-name">Bán hàng &amp; Kho</span>
+                <span class="auth-card__brand-tag">Hệ thống quản trị</span>
+              </span>
+            </div>
+    </c:when>
+    <c:otherwise>
+      <main class="auth-page">
+        <section class="auth-card">
+          <div class="auth-card__brand">
+            <span class="logo-mark">OMS</span>
+            <span>Bán hàng &amp; Kho</span>
+          </div>
+    </c:otherwise>
+  </c:choose>

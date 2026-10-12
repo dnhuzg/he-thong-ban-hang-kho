@@ -47,7 +47,39 @@ public abstract class DatabaseTest {
                     """);
             statement.execute("CREATE TABLE customer_groups (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(100))");
             statement.execute("INSERT INTO customer_groups (id, code, name) VALUES (1, 'DL1', 'Đại lý cấp 1'), (2, 'DL2', 'Đại lý cấp 2'), (3, 'LE', 'Khách lẻ')");
-            statement.execute("CREATE TABLE customers (id BIGINT PRIMARY KEY, code VARCHAR(20), name VARCHAR(200), sales_rep_id BIGINT, group_id BIGINT REFERENCES customer_groups(id))");
+            statement.execute("""
+                    CREATE TABLE customers (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(200),
+                        phone VARCHAR(20), tax_code VARCHAR(14) UNIQUE, area_id BIGINT REFERENCES areas(id),
+                        group_id BIGINT REFERENCES customer_groups(id), sales_rep_id BIGINT REFERENCES users(id),
+                        status VARCHAR(20) DEFAULT 'ACTIVE', credit_limit DECIMAL(15,2) DEFAULT 0 NOT NULL,
+                        credit_days INT DEFAULT 0 NOT NULL, lock_reason VARCHAR(500), locked_at TIMESTAMP,
+                        locked_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_lock_history (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, action VARCHAR(10), reason VARCHAR(500),
+                        changed_by BIGINT REFERENCES users(id), changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_assignments (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, from_user_id BIGINT REFERENCES users(id),
+                        to_user_id BIGINT REFERENCES users(id), reason VARCHAR(500), changed_by BIGINT REFERENCES users(id),
+                        changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_credit_history (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, old_limit DECIMAL(15,2),
+                        new_limit DECIMAL(15,2), old_days INT, new_days INT, reason VARCHAR(500),
+                        changed_by BIGINT REFERENCES users(id), changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE customer_delivery_points (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE, address VARCHAR(255),
+                        receiver_name VARCHAR(150), receiver_phone VARCHAR(20), route_note VARCHAR(500),
+                        is_default BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             // Danh mục sản phẩm (S2-05, S2-06); dữ liệu mẫu: cây 3 cấp 1 → 2 → 3 và nhóm gốc 4
             statement.execute("CREATE TABLE product_categories (id BIGINT AUTO_INCREMENT PRIMARY KEY, parent_id BIGINT REFERENCES product_categories(id), name VARCHAR(150), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("CREATE TABLE units (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, name VARCHAR(50))");
@@ -81,12 +113,147 @@ public abstract class DatabaseTest {
                         product_id BIGINT REFERENCES products(id), sale_price DECIMAL(15,2), floor_price DECIMAL(15,2),
                         PRIMARY KEY (price_list_id, product_id), CHECK (floor_price >= 0 AND floor_price <= sale_price))
                     """);
+            statement.execute("""
+                    CREATE TABLE price_history (id BIGINT AUTO_INCREMENT PRIMARY KEY, product_id BIGINT REFERENCES products(id),
+                        price_list_id BIGINT REFERENCES price_lists(id), change_type VARCHAR(10),
+                        old_sale_price DECIMAL(15,2), old_floor_price DECIMAL(15,2), new_sale_price DECIMAL(15,2),
+                        new_floor_price DECIMAL(15,2), effective_from DATE, changed_by BIGINT REFERENCES users(id),
+                        changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE discount_policies (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150),
+                        product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
+                        category_id BIGINT REFERENCES product_categories(id) ON DELETE CASCADE,
+                        discount_type VARCHAR(10), valid_from DATE, valid_to DATE, status VARCHAR(10) DEFAULT 'ACTIVE',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE discount_tiers (policy_id BIGINT REFERENCES discount_policies(id) ON DELETE CASCADE,
+                        min_qty INT, discount_value DECIMAL(15,2), PRIMARY KEY (policy_id, min_qty))
+                    """);
+            statement.execute("""
+                    CREATE TABLE orders (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        customer_id BIGINT REFERENCES customers(id), delivery_point_id BIGINT REFERENCES customer_delivery_points(id),
+                        delivery_date DATE, note VARCHAR(500), status VARCHAR(32) DEFAULT 'DRAFT',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE order_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE, product_id BIGINT REFERENCES products(id),
+                        unit_id BIGINT REFERENCES units(id), quantity INT, factor DECIMAL(12,4), base_quantity DECIMAL(14,4),
+                        manual_base_price DECIMAL(15,2),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (order_id, product_id, unit_id))
+                    """);
+            statement.execute("CREATE TABLE customer_receivables (id BIGINT AUTO_INCREMENT PRIMARY KEY, customer_id BIGINT REFERENCES customers(id), document_code VARCHAR(50) UNIQUE, issued_on DATE, outstanding DECIMAL(15,2))");
+            statement.execute("CREATE TABLE order_credit_reservations (order_id BIGINT PRIMARY KEY REFERENCES orders(id), customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2))");
+            statement.execute("ALTER TABLE customers ADD serving_warehouse_id BIGINT REFERENCES warehouses(id)");
+            statement.execute("CREATE TABLE warehouse_inventory(warehouse_id BIGINT REFERENCES warehouses(id),product_id BIGINT REFERENCES products(id),on_hand DECIMAL(14,4),reserved DECIMAL(14,4) DEFAULT 0,PRIMARY KEY(warehouse_id,product_id),CHECK(reserved>=0 AND reserved<=on_hand))");
+            statement.execute("CREATE TABLE order_inventory_reservations(order_id BIGINT REFERENCES orders(id),warehouse_id BIGINT,product_id BIGINT,quantity DECIMAL(14,4),PRIMARY KEY(order_id,warehouse_id,product_id),FOREIGN KEY(warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id))");
+
+            statement.execute("ALTER TABLE orders ADD warehouse_id BIGINT REFERENCES warehouses(id)");
+            statement.execute("ALTER TABLE orders ADD approval_reason VARCHAR(1000)");
+            statement.execute("ALTER TABLE order_lines ADD unit_price DECIMAL(15,2)");
+            statement.execute("ALTER TABLE order_lines ADD gross_amount DECIMAL(18,2)");
+            statement.execute("ALTER TABLE order_lines ADD discount_amount DECIMAL(18,2)");
+            statement.execute("ALTER TABLE order_lines ADD discount_note VARCHAR(500)");
+            statement.execute("CREATE TABLE order_status_history(id BIGINT AUTO_INCREMENT PRIMARY KEY,order_id BIGINT REFERENCES orders(id),from_status VARCHAR(32),to_status VARCHAR(32),action VARCHAR(30),opinion VARCHAR(500),actor_id BIGINT REFERENCES users(id),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+            statement.execute("CREATE TABLE customer_accounts(customer_id BIGINT PRIMARY KEY REFERENCES customers(id),user_id BIGINT UNIQUE REFERENCES users(id))");
+            statement.execute("ALTER TABLE orders ADD customer_submitted BOOLEAN DEFAULT FALSE NOT NULL");
+            statement.execute("""
+                    CREATE TABLE shipments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) UNIQUE,
+                        warehouse_id BIGINT,
+                        customer_id BIGINT,
+                        status VARCHAR(30) DEFAULT 'READY',
+                        recipient_name VARCHAR(200),
+                        delivered_at TIMESTAMP,
+                        proof_image_path VARCHAR(255),
+                        failure_reason VARCHAR(500),
+                        returned_at TIMESTAMP,
+                        invoice_eligible_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE shipment_items (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        shipment_id BIGINT,
+                        product_id BIGINT,
+                        unit_id BIGINT,
+                        quantity DECIMAL(15,4),
+                        FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE inventory_movements (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        warehouse_id BIGINT,
+                        product_id BIGINT,
+                        unit_id BIGINT,
+                        quantity DECIMAL(15,4),
+                        movement_type VARCHAR(30),
+                        reference_type VARCHAR(50),
+                        reference_id BIGINT,
+                        created_by BIGINT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+                        FOREIGN KEY (created_by) REFERENCES users(id)
+                    )
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
             statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
+            statement.execute("""
+                    CREATE TABLE invoices (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) UNIQUE,
+                        customer_id BIGINT,
+                        recipient_user_id BIGINT,
+                        total_amount DECIMAL(15,2),
+                        issued_at TIMESTAMP NOT NULL,
+                        due_date DATE NOT NULL,
+                        status VARCHAR(20) DEFAULT 'ISSUED',
+                        paid_at TIMESTAMP
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE invoice_reminder_logs (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        invoice_id BIGINT,
+                        reminder_date DATE,
+                        reminder_type VARCHAR(20),
+                        email_sent BOOLEAN DEFAULT FALSE,
+                        in_app_sent BOOLEAN DEFAULT FALSE,
+                        email_sent_at TIMESTAMP,
+                        in_app_sent_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(invoice_id, reminder_date)
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE notifications (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        recipient_user_id BIGINT,
+                        invoice_id BIGINT,
+                        reminder_date DATE,
+                        notification_type VARCHAR(20),
+                        title VARCHAR(200),
+                        message VARCHAR(1000),
+                        read_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(recipient_user_id, invoice_id, reminder_date)
+                    )
+                    """);
         }
     }
 

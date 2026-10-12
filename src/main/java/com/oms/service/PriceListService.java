@@ -2,9 +2,11 @@ package com.oms.service;
 
 import com.oms.config.Db;
 import com.oms.dao.AuditLogDao;
+import com.oms.dao.PriceHistoryDao;
 import com.oms.dao.PriceListDao;
 import com.oms.dao.ProductDao;
 import com.oms.model.NamedItem;
+import com.oms.model.PriceChange;
 import com.oms.model.PriceList;
 import com.oms.model.PriceListItem;
 import com.oms.model.Product;
@@ -34,6 +36,7 @@ public class PriceListService {
     private final PriceListDao priceListDao = new PriceListDao();
     private final ProductDao productDao = new ProductDao();
     private final AuditLogDao auditDao = new AuditLogDao();
+    private final PriceHistoryDao historyDao = new PriceHistoryDao();
 
     public List<PriceList> list(Long groupId) throws SQLException {
         try (Connection conn = Db.getConnection()) {
@@ -129,6 +132,9 @@ public class PriceListService {
                 return null;
             }
             priceListDao.upsertItem(conn, listId, productId, sale, floor, old != null);
+            historyDao.insert(conn, productId, listId, old == null ? PriceChange.Type.ADD : PriceChange.Type.UPDATE,
+                    old == null ? null : old.getSalePrice(), old == null ? null : old.getFloorPrice(),
+                    sale, floor, pl.getValidFrom(), actor.getId());
             auditDao.log(conn, actor.getId(), "PRICE_ITEM_SAVE", "PRICE_LIST", listId, pl.getCode() + " / " + product.getSku(),
                     old == null ? null : prices(old.getSalePrice(), old.getFloorPrice()), prices(sale, floor));
             return null;
@@ -143,6 +149,8 @@ public class PriceListService {
                 throw new ServiceException("Dòng giá không còn tồn tại. Vui lòng tải lại trang.");
             }
             priceListDao.deleteItem(conn, listId, productId);
+            historyDao.insert(conn, productId, listId, PriceChange.Type.REMOVE, old.getSalePrice(), old.getFloorPrice(),
+                    null, null, pl.getValidFrom(), actor.getId());
             auditDao.log(conn, actor.getId(), "PRICE_ITEM_DELETE", "PRICE_LIST", listId, pl.getCode() + " / " + old.getSku(),
                     prices(old.getSalePrice(), old.getFloorPrice()), null);
             return null;

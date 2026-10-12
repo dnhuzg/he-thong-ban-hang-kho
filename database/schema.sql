@@ -98,16 +98,93 @@ CREATE TABLE customers (
   code          VARCHAR(20)  NOT NULL,
   name          VARCHAR(200) NOT NULL,
   phone         VARCHAR(20)  NULL,
+  tax_code      VARCHAR(14)  NULL,
   area_id       BIGINT       NULL,
   group_id      BIGINT       NULL,
   sales_rep_id  BIGINT       NULL,
+  status        ENUM('ACTIVE','LOCKED') NOT NULL DEFAULT 'ACTIVE',
+  credit_limit  DECIMAL(15,2) NOT NULL DEFAULT 0,
+  credit_days   INT          NOT NULL DEFAULT 0,
+  lock_reason   VARCHAR(500) NULL,
+  locked_at     DATETIME     NULL,
+  locked_by     BIGINT       NULL,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_customers_code (code),
+  UNIQUE KEY uk_customers_tax_code (tax_code),
+  KEY idx_customers_name (name),
   KEY idx_customers_sales_rep (sales_rep_id),
+  CONSTRAINT chk_customers_credit CHECK (credit_limit >= 0 AND credit_days >= 0),
   CONSTRAINT fk_customers_area FOREIGN KEY (area_id) REFERENCES areas (id),
   CONSTRAINT fk_customers_group FOREIGN KEY (group_id) REFERENCES customer_groups (id),
-  CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id)
+  CONSTRAINT fk_customers_sales_rep FOREIGN KEY (sales_rep_id) REFERENCES users (id),
+  CONSTRAINT fk_customers_locked_by FOREIGN KEY (locked_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-04: điểm giao hàng của đại lý; mỗi đại lý tối đa một điểm mặc định (ứng dụng giữ)
+CREATE TABLE customer_delivery_points (
+  id              BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id     BIGINT        NOT NULL,
+  address         VARCHAR(255)  NOT NULL,
+  receiver_name   VARCHAR(150)  NOT NULL,
+  receiver_phone  VARCHAR(20)   NOT NULL,
+  route_note      VARCHAR(500)  NULL,
+  is_default      BOOLEAN       NOT NULL DEFAULT FALSE,
+  created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_delivery_points_customer (customer_id),
+  CONSTRAINT fk_delivery_points_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-05: lịch sử thay đổi hạn mức công nợ (chỉ thêm, không sửa / xoá); mọi lần đổi bắt buộc có lý do
+CREATE TABLE customer_credit_history (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  old_limit     DECIMAL(15,2) NOT NULL,
+  new_limit     DECIMAL(15,2) NOT NULL,
+  old_days      INT           NOT NULL,
+  new_days      INT           NOT NULL,
+  reason        VARCHAR(500)  NOT NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_credit_history_customer (customer_id, changed_at),
+  CONSTRAINT fk_credit_history_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_credit_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-06: lịch sử phân công người phụ trách đại lý (chỉ thêm, không sửa / xoá); null là chưa có người phụ trách
+CREATE TABLE customer_assignments (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  from_user_id  BIGINT        NULL,
+  to_user_id    BIGINT        NULL,
+  reason        VARCHAR(500)  NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_assignments_customer (customer_id, changed_at),
+  KEY idx_assignments_changed_at (changed_at),
+  CONSTRAINT fk_assignments_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_assignments_from FOREIGN KEY (from_user_id) REFERENCES users (id),
+  CONSTRAINT fk_assignments_to FOREIGN KEY (to_user_id) REFERENCES users (id),
+  CONSTRAINT fk_assignments_by FOREIGN KEY (changed_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-07: lịch sử khoá / mở giao dịch với đại lý (chỉ thêm, không sửa / xoá)
+CREATE TABLE customer_lock_history (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  customer_id   BIGINT        NOT NULL,
+  action        ENUM('LOCK','UNLOCK') NOT NULL,
+  reason        VARCHAR(500)  NULL,
+  changed_by    BIGINT        NOT NULL,
+  changed_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_lock_history_customer (customer_id, changed_at),
+  CONSTRAINT fk_lock_history_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE,
+  CONSTRAINT fk_lock_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- S2-05 / S2-06: nhóm hàng (cây nhiều cấp), đơn vị tính, sản phẩm. Giá vốn chỉ Quản lý kinh doanh xem / sửa.
@@ -213,6 +290,178 @@ CREATE TABLE price_list_items (
   CONSTRAINT chk_price_items CHECK (floor_price >= 0 AND floor_price <= sale_price)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- S3-02: lịch sử đổi giá của sản phẩm; chỉ thêm, không sửa / xoá (khoá ngoại không CASCADE)
+CREATE TABLE price_history (
+  id               BIGINT        NOT NULL AUTO_INCREMENT,
+  product_id       BIGINT        NOT NULL,
+  price_list_id    BIGINT        NOT NULL,
+  change_type      ENUM('ADD','UPDATE','REMOVE') NOT NULL,
+  old_sale_price   DECIMAL(15,2) NULL,
+  old_floor_price  DECIMAL(15,2) NULL,
+  new_sale_price   DECIMAL(15,2) NULL,
+  new_floor_price  DECIMAL(15,2) NULL,
+  effective_from   DATE          NOT NULL,
+  changed_by       BIGINT        NOT NULL,
+  changed_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_price_history_product (product_id, changed_at),
+  KEY idx_price_history_list (price_list_id),
+  CONSTRAINT fk_price_history_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_price_history_list FOREIGN KEY (price_list_id) REFERENCES price_lists (id),
+  CONSTRAINT fk_price_history_user FOREIGN KEY (changed_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-01: chính sách chiết khấu theo sản lượng (một sản phẩm hoặc một nhóm hàng, nhiều bậc theo số lượng)
+CREATE TABLE discount_policies (
+  id             BIGINT       NOT NULL AUTO_INCREMENT,
+  name           VARCHAR(150) NOT NULL,
+  product_id     BIGINT       NULL,
+  category_id    BIGINT       NULL,
+  discount_type  ENUM('PERCENT','AMOUNT') NOT NULL,
+  valid_from     DATE         NULL,
+  valid_to       DATE         NULL,
+  status         ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_discount_policies_product (product_id),
+  KEY idx_discount_policies_category (category_id),
+  CONSTRAINT fk_discount_policies_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_discount_policies_category FOREIGN KEY (category_id) REFERENCES product_categories (id) ON DELETE CASCADE,
+  CONSTRAINT chk_discount_policies_scope CHECK ((product_id IS NULL) <> (category_id IS NULL)),
+  CONSTRAINT chk_discount_policies_dates CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_to >= valid_from)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE discount_tiers (
+  policy_id       BIGINT        NOT NULL,
+  min_qty         INT           NOT NULL,
+  discount_value  DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (policy_id, min_qty),
+  CONSTRAINT fk_discount_tiers_policy FOREIGN KEY (policy_id) REFERENCES discount_policies (id) ON DELETE CASCADE,
+  CONSTRAINT chk_discount_tiers CHECK (min_qty > 0 AND discount_value > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S3-09: đơn hàng nháp và các dòng hàng (EP-04 mở rộng trạng thái); khoá ngoại không CASCADE trừ dòng theo đơn
+CREATE TABLE orders (
+  id                 BIGINT       NOT NULL AUTO_INCREMENT,
+  code               VARCHAR(20)  NULL,
+  customer_id        BIGINT       NOT NULL,
+  delivery_point_id  BIGINT       NULL,
+  delivery_date      DATE         NULL,
+  note               VARCHAR(500) NULL,
+  status             ENUM('DRAFT') NOT NULL DEFAULT 'DRAFT',
+  created_by         BIGINT       NOT NULL,
+  created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_orders_code (code),
+  KEY idx_orders_customer (customer_id),
+  KEY idx_orders_updated (updated_at),
+  CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_orders_delivery_point FOREIGN KEY (delivery_point_id) REFERENCES customer_delivery_points (id),
+  CONSTRAINT fk_orders_user FOREIGN KEY (created_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE order_lines (
+  id             BIGINT        NOT NULL AUTO_INCREMENT,
+  order_id       BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  unit_id        BIGINT        NOT NULL,
+  quantity       INT           NOT NULL,
+  factor         DECIMAL(12,4) NOT NULL,
+  base_quantity  DECIMAL(14,4) NOT NULL,
+  manual_base_price DECIMAL(15,2) NULL,
+  created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_order_lines_product_unit (order_id, product_id, unit_id),
+  KEY idx_order_lines_product (product_id),
+  CONSTRAINT fk_order_lines_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_lines_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_order_lines_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT chk_order_lines_qty CHECK (quantity > 0 AND factor > 0 AND base_quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S6-08: phiếu giao hàng, dòng hàng giao và biến động tồn kho khi xác nhận giao.
+CREATE TABLE shipments (
+  id                  BIGINT       NOT NULL AUTO_INCREMENT,
+  code                VARCHAR(30)  NOT NULL,
+  warehouse_id        BIGINT       NOT NULL,
+  customer_id         BIGINT       NOT NULL,
+  status              ENUM('READY','DELIVERED','FAILED_RETURNED') NOT NULL DEFAULT 'READY',
+  recipient_name      VARCHAR(200) NULL,
+  delivered_at        DATETIME     NULL,
+  proof_image_path    VARCHAR(255) NULL,
+  failure_reason      VARCHAR(500) NULL,
+  returned_at         DATETIME     NULL,
+  invoice_eligible_at DATETIME     NULL,
+  created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_shipments_code (code),
+  KEY idx_shipments_warehouse_status (warehouse_id, status),
+  KEY idx_shipments_customer (customer_id),
+  KEY idx_shipments_invoice_eligible (invoice_eligible_at),
+  CONSTRAINT fk_shipments_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_shipments_customer FOREIGN KEY (customer_id) REFERENCES customers (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE shipment_items (
+  id          BIGINT         NOT NULL AUTO_INCREMENT,
+  shipment_id BIGINT         NOT NULL,
+  product_id  BIGINT         NOT NULL,
+  unit_id     BIGINT         NOT NULL,
+  quantity    DECIMAL(15,4)  NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_shipment_items_shipment (shipment_id),
+  KEY idx_shipment_items_product (product_id),
+  CONSTRAINT fk_shipment_items_shipment FOREIGN KEY (shipment_id) REFERENCES shipments (id) ON DELETE CASCADE,
+  CONSTRAINT fk_shipment_items_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_shipment_items_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT chk_shipment_items_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Nhật ký hàng quay về kho khi giao thất bại.
+-- Tồn kho thực tế có thể tổng hợp từ các movement của module INVENTORY.
+CREATE TABLE inventory_movements (
+  id             BIGINT        NOT NULL AUTO_INCREMENT,
+  warehouse_id   BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  unit_id        BIGINT        NOT NULL,
+  quantity       DECIMAL(15,4) NOT NULL,
+  movement_type  ENUM('SHIPMENT_RETURN') NOT NULL,
+  reference_type VARCHAR(50)   NOT NULL,
+  reference_id   BIGINT        NOT NULL,
+  created_by     BIGINT        NOT NULL,
+  created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inventory_movements_warehouse_created (warehouse_id, created_at),
+  KEY idx_inventory_movements_reference (reference_type, reference_id),
+  CONSTRAINT fk_inventory_movements_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_inventory_movements_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_inventory_movements_unit FOREIGN KEY (unit_id) REFERENCES units (id),
+  CONSTRAINT fk_inventory_movements_user FOREIGN KEY (created_by) REFERENCES users (id),
+  CONSTRAINT chk_inventory_movements_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE inventory_lots (
+  id                  BIGINT        NOT NULL AUTO_INCREMENT,
+  warehouse_id        BIGINT        NOT NULL,
+  product_id          BIGINT        NOT NULL,
+  remaining_quantity  DECIMAL(14,4) NOT NULL,
+  unit_cost           DECIMAL(15,2) NOT NULL,
+  received_at         DATETIME      NOT NULL,
+  source_type         VARCHAR(30)   NULL,
+  source_id           BIGINT        NULL,
+  created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inventory_lots_warehouse_product (warehouse_id, product_id),
+  KEY idx_inventory_lots_product_received (product_id, received_at),
+  CONSTRAINT fk_inventory_lots_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+  CONSTRAINT fk_inventory_lots_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT chk_inventory_lots_quantity CHECK (remaining_quantity > 0),
+  CONSTRAINT chk_inventory_lots_cost CHECK (unit_cost >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE user_warehouses (
   user_id       BIGINT NOT NULL,
   warehouse_id  BIGINT NOT NULL,
@@ -259,4 +508,141 @@ CREATE TABLE audit_logs (
   KEY idx_audit_created (created_at),
   KEY idx_audit_actor_created (actor_id, created_at),
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS customer_receivables (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  document_code VARCHAR(50) NOT NULL UNIQUE,
+  issued_on DATE NOT NULL,
+  outstanding DECIMAL(15,2) NOT NULL,
+  CONSTRAINT fk_receivable_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT chk_receivable_amount CHECK (outstanding >= 0),
+  KEY idx_receivable_customer (customer_id, issued_on)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS order_credit_reservations (
+  order_id BIGINT NOT NULL PRIMARY KEY,
+  customer_id BIGINT NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  CONSTRAINT fk_credit_reservation_order FOREIGN KEY (order_id) REFERENCES orders(id),
+  CONSTRAINT fk_credit_reservation_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT chk_credit_reservation_amount CHECK (amount >= 0),
+  KEY idx_credit_reservation_customer (customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS warehouse_inventory (
+  warehouse_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  on_hand DECIMAL(14,4) NOT NULL DEFAULT 0,
+  reserved DECIMAL(14,4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (warehouse_id, product_id),
+  CONSTRAINT fk_inventory_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+  CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT chk_inventory_nonnegative CHECK (on_hand >= 0 AND reserved >= 0 AND reserved <= on_hand)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS order_inventory_reservations (
+  order_id BIGINT NOT NULL,
+  warehouse_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity DECIMAL(14,4) NOT NULL,
+  PRIMARY KEY (order_id, warehouse_id, product_id),
+  CONSTRAINT fk_stock_reservation_order FOREIGN KEY (order_id) REFERENCES orders(id),
+  CONSTRAINT fk_stock_reservation_inventory FOREIGN KEY (warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id),
+  CONSTRAINT chk_stock_reservation_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE customers ADD serving_warehouse_id BIGINT NULL, ADD CONSTRAINT fk_customer_serving_warehouse FOREIGN KEY (serving_warehouse_id) REFERENCES warehouses(id);
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS order_status_history (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  from_status VARCHAR(32) NOT NULL,
+  to_status VARCHAR(32) NOT NULL,
+  action VARCHAR(30) NOT NULL,
+  opinion VARCHAR(500) NULL,
+  actor_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_order_history_order FOREIGN KEY(order_id) REFERENCES orders(id),
+  CONSTRAINT fk_order_history_actor FOREIGN KEY(actor_id) REFERENCES users(id),
+  KEY idx_order_history_order(order_id,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE orders MODIFY status VARCHAR(32) NOT NULL DEFAULT 'DRAFT', ADD approval_reason VARCHAR(1000) NULL, ADD warehouse_id BIGINT NULL, ADD CONSTRAINT fk_order_warehouse FOREIGN KEY(warehouse_id) REFERENCES warehouses(id);
+ALTER TABLE order_lines ADD unit_price DECIMAL(15,2) NULL, ADD gross_amount DECIMAL(18,2) NULL, ADD discount_amount DECIMAL(18,2) NULL, ADD discount_note VARCHAR(500) NULL;
+
+-- Backend Sprint 4
+
+CREATE TABLE IF NOT EXISTS customer_accounts (
+  customer_id BIGINT NOT NULL PRIMARY KEY,
+  user_id BIGINT NOT NULL UNIQUE,
+  CONSTRAINT fk_customer_account_customer FOREIGN KEY(customer_id) REFERENCES customers(id),
+  CONSTRAINT fk_customer_account_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+ALTER TABLE orders ADD customer_submitted BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- S7-08: hoá đơn, nhật ký nhắc hạn và thông báo trong ứng dụng.
+CREATE TABLE invoices (
+  id                 BIGINT        NOT NULL AUTO_INCREMENT,
+  code               VARCHAR(30)   NOT NULL,
+  customer_id        BIGINT        NOT NULL,
+  recipient_user_id  BIGINT        NOT NULL,
+  total_amount       DECIMAL(15,2) NOT NULL,
+  issued_at          DATETIME      NOT NULL,
+  due_date           DATE          NOT NULL,
+  status             ENUM('ISSUED','PAID','CANCELLED') NOT NULL DEFAULT 'ISSUED',
+  paid_at            DATETIME      NULL,
+  created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_invoices_code (code),
+  KEY idx_invoices_reminder (status, due_date),
+  KEY idx_invoices_customer (customer_id),
+  KEY idx_invoices_recipient (recipient_user_id),
+  CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_invoices_recipient FOREIGN KEY (recipient_user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE invoice_reminder_logs (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  invoice_id      BIGINT       NOT NULL,
+  reminder_date   DATE         NOT NULL,
+  reminder_type   ENUM('DUE_SOON','OVERDUE') NOT NULL,
+  email_sent      TINYINT(1)   NOT NULL DEFAULT 0,
+  in_app_sent     TINYINT(1)   NOT NULL DEFAULT 0,
+  email_sent_at   DATETIME     NULL,
+  in_app_sent_at  DATETIME     NULL,
+  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_invoice_reminder_day (invoice_id, reminder_date),
+  KEY idx_reminder_date (reminder_date),
+  CONSTRAINT fk_reminder_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notifications (
+  id                 BIGINT        NOT NULL AUTO_INCREMENT,
+  recipient_user_id  BIGINT        NOT NULL,
+  invoice_id         BIGINT        NOT NULL,
+  reminder_date      DATE          NOT NULL,
+  notification_type  ENUM('DUE_SOON','OVERDUE') NOT NULL,
+  title              VARCHAR(200)  NOT NULL,
+  message            VARCHAR(1000) NOT NULL,
+  read_at            DATETIME      NULL,
+  created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_notification_invoice_day (recipient_user_id, invoice_id, reminder_date),
+  KEY idx_notifications_user_read (recipient_user_id, read_at, created_at),
+  CONSTRAINT fk_notifications_user FOREIGN KEY (recipient_user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

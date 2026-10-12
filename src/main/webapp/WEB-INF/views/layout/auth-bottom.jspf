@@ -1,5 +1,13 @@
     </section>
+  <c:if test="${authSplit}">
+      <aside class="auth-notice">
+        <span class="icon icon--sm icon--shield-check" aria-hidden="true"></span>
+        <p><strong>Thông báo bảo mật:</strong> Trang đăng nhập chỉ dành cho nhân sự công ty và đại lý được cấp tài khoản. Mọi thao tác trên giá, tồn kho và công nợ đều được ghi nhật ký.</p>
+      </aside>
+    </div>
+  </c:if>
   </main>
-  <script src="${ctx}/assets/js/app.js"></script>
+  <script src="${ctx}/assets/js/app.js?v=${assetVersion}"></script>
+  <script src="${ctx}/assets/js/effects.js?v=${assetVersion}"></script>
 </body>
 </html>

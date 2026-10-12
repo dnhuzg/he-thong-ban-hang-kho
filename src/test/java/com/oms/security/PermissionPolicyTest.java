@@ -72,6 +72,15 @@ class PermissionPolicyTest {
     }
 
     @Test
+    void onlySalesManagerAndAdminManageDiscounts() {
+        assertTrue(PermissionPolicy.canManageDiscounts(EnumSet.of(Role.SALES_MANAGER)));
+        assertTrue(PermissionPolicy.canManageDiscounts(EnumSet.of(Role.ADMIN)));
+        for (Role r : EnumSet.of(Role.SALES_REP, Role.ACCOUNTANT, Role.WAREHOUSE, Role.WH_MANAGER, Role.CUSTOMER)) {
+            assertFalse(PermissionPolicy.canManageDiscounts(EnumSet.of(r)), r.name());
+        }
+    }
+
+    @Test
     void multipleRolesCombinePermissions() {
         Set<Role> roles = EnumSet.of(Role.WAREHOUSE, Role.ACCOUNTANT);
         assertTrue(policy.canWrite(roles, Module.INVENTORY));

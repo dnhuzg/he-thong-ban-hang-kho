@@ -1,0 +1,374 @@
+package com.oms.service;
+
+import com.oms.model.DiscountPolicy;
+import com.oms.model.Order;
+import com.oms.model.OrderLine;
+import com.oms.model.PriceList;
+import com.oms.model.Role;
+import com.oms.model.User;
+import com.oms.support.DatabaseTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** S3-09: đơn nháp — chọn đại lý / điểm giao / ngày giao, dòng hàng theo đơn vị, tổng tiền và chiết khấu, quyền xem. */
+class OrderServiceTest extends DatabaseTest {
+
+    private static final long COCA = 500;
+    private static final long SNACK = 501;
+    private static final long OLD = 502;
+    private static final long LON = 1;
+    private static final long THUNG = 2;
+    private static final long GOI = 3;
+
+    private final OrderService service = new OrderService();
+    private User manager;
+    private User rep;
+    private User otherRep;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        manager = user("qlkd", Role.SALES_MANAGER);
+        rep = user("nvkd", Role.SALES_REP);
+        otherRep = user("nvkd2", Role.SALES_REP);
+        sql("INSERT INTO customers (id, code, name, group_id, sales_rep_id) VALUES (900, 'DL900', 'Đại lý thử', 1, " + rep.getId() + ")");
+        sql("INSERT INTO customers (id, code, name, group_id, sales_rep_id) VALUES (901, 'DL901', 'Đại lý khác', 1, " + otherRep.getId() + ")");
+        sql("INSERT INTO customer_delivery_points (id, customer_id, address, receiver_name, receiver_phone, is_default) "
+                + "VALUES (800, 900, '12 Hàng Bài', 'Chị Lan', '0901234567', FALSE), (801, 900, 'Kho Long Biên', 'Anh Hùng', '0912345678', TRUE), "
+                + "(802, 901, '5 Nguyễn Trãi', 'Chú Ba', '0933333333', TRUE)");
+        sql("INSERT INTO products (id, sku, name, category_id, base_unit_id) VALUES (500, 'COCA', 'Coca lon', 3, 1)");
+        sql("INSERT INTO products (id, sku, name, category_id, base_unit_id) VALUES (501, 'SNACK', 'Snack', 4, 3)");
+        sql("INSERT INTO products (id, sku, name, category_id, base_unit_id, status) VALUES (502, 'OLD', 'Hàng cũ', 3, 1, 'DISCONTINUED')");
+        sql("INSERT INTO product_units (product_id, unit_id, factor) VALUES (500, 2, 24)");
+        PriceList list = new PriceList();
+        list.setCode("BG1");
+        list.setName("Bảng giá cấp 1");
+        list.setCustomerGroupId(1);
+        list.setValidFrom(LocalDate.of(2020, 1, 1));
+        long listId = new PriceListService().create(list, manager);
+        new PriceListService().saveItem(listId, COCA, "10.000", "9.000", manager);
+    }
+
+    @Test
+    void createsDraftWithCodeAndDefaultDeliveryPoint() throws Exception {
+        long id = service.create(900, rep);
+
+        Order o = service.get(id, rep);
+        assertEquals(String.format("DH%06d", id), o.getCode());
+        assertEquals("DL900", o.getCustomerCode());
+        assertEquals("Đại lý cấp 1", o.getCustomerGroupName());
+        assertEquals(801L, o.getDeliveryPointId());
+        assertTrue(o.getDeliveryPointText().contains("Kho Long Biên"));
+        assertNull(o.getDeliveryDate());
+        assertEquals(0, o.getLines().size());
+        assertEquals(0, BigDecimal.ZERO.compareTo(o.getPayable()));
+        assertEquals(1, count("audit_logs", "action = 'ORDER_CREATE'"));
+    }
+
+    @Test
+    void onlySalesRolesTakeOrders() throws Exception {
+        User accountant = user("ketoan", Role.ACCOUNTANT);
+        User warehouse = user("kho", Role.WAREHOUSE);
+        User admin = user("admin2", Role.ADMIN);
+        long id = service.create(900, manager);
+
+        for (User u : List.of(accountant, warehouse)) {
+            assertThrows(ForbiddenException.class, () -> service.search(null, 1, u));
+            assertThrows(ForbiddenException.class, () -> service.create(900, u));
+            assertThrows(ForbiddenException.class, () -> service.get(id, u));
+            assertThrows(ForbiddenException.class, () -> service.addLine(id, COCA, LON, "1", u));
+            assertThrows(ForbiddenException.class, () -> service.delete(id, u));
+        }
+        assertEquals(1, service.search(null, 1, admin).getTotal());
+    }
+
+    @Test
+    void salesRepOnlyHandlesOrdersOfOwnCustomers() throws Exception {
+        assertThrows(OrderService.NotFoundException.class, () -> service.create(901, rep));
+        assertThrows(OrderService.NotFoundException.class, () -> service.create(999, rep));
+        long own = service.create(900, rep);
+        long others = service.create(901, manager);
+
+        assertEquals(1, service.search(null, 1, rep).getTotal());
+        assertEquals(2, service.search(null, 1, manager).getTotal());
+        assertThrows(OrderService.NotFoundException.class, () -> service.get(others, rep));
+        assertThrows(OrderService.NotFoundException.class, () -> service.addLine(others, COCA, LON, "1", rep));
+        assertThrows(OrderService.NotFoundException.class, () -> service.saveHeader(others, null, null, null, rep));
+        assertThrows(OrderService.NotFoundException.class, () -> service.delete(others, rep));
+        assertThrows(OrderService.NotFoundException.class, () -> service.get(own, otherRep));
+        assertEquals(1, count("orders", "id = " + others));
+    }
+
+    @Test
+    void lockedCustomerCannotStartNewOrderButOpenDraftContinues() throws Exception {
+        long id = service.create(900, rep);
+        sql("UPDATE customers SET status = 'LOCKED', lock_reason = 'Nợ quá hạn' WHERE id = 900");
+
+        ServiceException e = assertThrows(ServiceException.class, () -> service.create(900, rep));
+        assertTrue(e.getMessage().contains("khoá giao dịch"));
+        assertEquals(1, count("orders", "customer_id = 900"));
+
+        // đơn đang dở vẫn gõ tiếp được, kèm cờ để giao diện cảnh báo
+        service.addLine(id, COCA, LON, "5", rep);
+        Order o = service.get(id, rep);
+        assertTrue(o.isCustomerLocked());
+        assertEquals("Nợ quá hạn", o.getCustomerLockReason());
+        assertEquals(1, o.getLines().size());
+    }
+
+    @Test
+    void headerKeepsOwnPointDateAndNote() throws Exception {
+        long id = service.create(900, rep);
+        LocalDate day = LocalDate.now().plusDays(2);
+
+        service.saveHeader(id, 800L, day, "  Giao buổi sáng  ", rep);
+
+        Order o = service.get(id, rep);
+        assertEquals(800L, o.getDeliveryPointId());
+        assertEquals(day, o.getDeliveryDate());
+        assertEquals("Giao buổi sáng", o.getNote());
+        assertEquals(1, count("audit_logs", "action = 'ORDER_UPDATE'"));
+        // lưu lại y nguyên thì không ghi nhật ký thêm; hôm nay vẫn hợp lệ
+        service.saveHeader(id, 800L, day, "Giao buổi sáng", rep);
+        service.saveHeader(id, 800L, LocalDate.now(), "Giao buổi sáng", rep);
+        assertEquals(2, count("audit_logs", "action = 'ORDER_UPDATE'"));
+    }
+
+    @Test
+    void headerRejectsForeignPointPastDateAndLongNote() throws Exception {
+        long id = service.create(900, rep);
+
+        assertThrows(ServiceException.class, () -> service.saveHeader(id, 802L, null, null, rep));
+        assertThrows(ServiceException.class, () -> service.saveHeader(id, 999L, null, null, rep));
+        assertThrows(ServiceException.class, () -> service.saveHeader(id, 800L, LocalDate.now().minusDays(1), null, rep));
+        assertThrows(ServiceException.class, () -> service.saveHeader(id, 800L, null, "x".repeat(501), rep));
+        // điểm giao có thể để trống khi còn nháp
+        service.saveHeader(id, null, null, null, rep);
+        assertNull(service.get(id, rep).getDeliveryPointId());
+    }
+
+    @Test
+    void totalsAndDiscountUseAllLinesOfTheSameProduct() throws Exception {
+        DiscountPolicy policy = new DiscountPolicy();
+        policy.setName("Coca 5%");
+        policy.setProductId(COCA);
+        policy.setType(DiscountPolicy.Type.PERCENT);
+        new DiscountService().save(0, policy, List.<String[]>of(new String[]{"100", "5"}), manager);
+        long id = service.create(900, rep);
+
+        service.addLine(id, COCA, LON, "10", rep);
+        Order o = service.get(id, rep);
+        assertEquals(0, new BigDecimal("100000").compareTo(o.getGrossTotal()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(o.getDiscountTotal()));
+        assertEquals(0, new BigDecimal("100000").compareTo(o.getPayable()));
+
+        // 5 thùng = 120 lon; cùng với 10 lon là 130 lon ≥ 100 nên cả hai dòng đều được giảm 5%
+        service.addLine(id, COCA, THUNG, "5", rep);
+        o = service.get(id, rep);
+        OrderLine lon = o.getLines().get(0);
+        OrderLine thung = o.getLines().get(1);
+        assertEquals(0, new BigDecimal("10000.00").compareTo(lon.getUnitPrice()));
+        assertEquals(0, new BigDecimal("5000.00").compareTo(lon.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("240000.00").compareTo(thung.getUnitPrice()));
+        assertEquals(0, new BigDecimal("1200000.00").compareTo(thung.getGrossAmount()));
+        assertEquals(0, new BigDecimal("60000.00").compareTo(thung.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("1140000.00").compareTo(thung.getNetAmount()));
+        assertTrue(thung.getDiscountNote().contains("Coca 5%"));
+        assertTrue(thung.isConverted());
+        assertFalse(lon.isConverted());
+        assertEquals(0, new BigDecimal("1300000").compareTo(o.getGrossTotal()));
+        assertEquals(0, new BigDecimal("65000").compareTo(o.getDiscountTotal()));
+        assertEquals(0, new BigDecimal("1235000").compareTo(o.getPayable()));
+        assertEquals(0, new BigDecimal("120").compareTo(thung.getBaseQuantity()));
+        assertEquals(0, new BigDecimal("24").compareTo(thung.getFactor()));
+    }
+
+    @Test
+    void sameProductAndUnitMergesIntoOneLine() throws Exception {
+        long id = service.create(900, rep);
+
+        service.addLine(id, COCA, LON, "5", rep);
+        service.addLine(id, COCA, LON, "7", rep);
+
+        Order o = service.get(id, rep);
+        assertEquals(1, o.getLines().size());
+        assertEquals(12, o.getLines().get(0).getQuantity());
+        assertEquals(0, new BigDecimal("120000").compareTo(o.getPayable()));
+    }
+
+    @Test
+    void rejectsBadLines() throws Exception {
+        long id = service.create(900, rep);
+
+        assertThrows(ServiceException.class, () -> service.addLine(id, COCA, LON, "0", rep));
+        assertThrows(ServiceException.class, () -> service.addLine(id, COCA, LON, "abc", rep));
+        assertThrows(ServiceException.class, () -> service.addLine(id, COCA, LON, "", rep));
+        assertThrows(ServiceException.class, () -> service.addLine(id, COCA, LON, "1000001", rep));
+        assertThrows(ServiceException.class, () -> service.addLine(id, 999, LON, "1", rep));
+        // không có giá trong bảng giá của nhóm
+        ServiceException noPrice = assertThrows(ServiceException.class, () -> service.addLine(id, SNACK, GOI, "1", rep));
+        assertTrue(noPrice.getMessage().contains("chưa có giá"));
+        // đã ngừng kinh doanh, và đơn vị chưa khai báo quy đổi cho sản phẩm
+        assertThrows(ServiceException.class, () -> service.addLine(id, OLD, LON, "1", rep));
+        assertThrows(ServiceException.class, () -> service.addLine(id, COCA, GOI, "1", rep));
+        assertEquals(0, count("order_lines", "1 = 1"));
+    }
+
+    @Test
+    void updateAndDeleteLines() throws Exception {
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "5", rep);
+        service.addLine(id, COCA, THUNG, "1", rep);
+        List<OrderLine> lines = service.get(id, rep).getLines();
+        long lonLine = lines.get(0).getId();
+        long thungLine = lines.get(1).getId();
+
+        service.updateLine(id, lonLine, LON, "20", rep);
+        assertEquals(20, service.get(id, rep).getLines().get(0).getQuantity());
+        // đổi đơn vị trùng với dòng khác cùng sản phẩm bị từ chối
+        assertThrows(ServiceException.class, () -> service.updateLine(id, lonLine, THUNG, "1", rep));
+        assertThrows(ServiceException.class, () -> service.updateLine(id, lonLine, LON, "0", rep));
+        assertThrows(ServiceException.class, () -> service.updateLine(id, 9999, LON, "1", rep));
+        service.updateLine(id, thungLine, THUNG, "2", rep);
+        assertEquals(2, service.get(id, rep).getLines().get(1).getQuantity());
+        assertEquals(0, new BigDecimal("48").compareTo(service.get(id, rep).getLines().get(1).getBaseQuantity()));
+    }
+
+    @Test
+    void deleteLineAndOrder() throws Exception {
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "5", rep);
+        long line = service.get(id, rep).getLines().get(0).getId();
+
+        service.deleteLine(id, line, rep);
+        assertEquals(0, service.get(id, rep).getLines().size());
+        assertThrows(ServiceException.class, () -> service.deleteLine(id, line, rep));
+
+        service.addLine(id, COCA, LON, "5", rep);
+        service.delete(id, rep);
+        assertEquals(0, count("orders", "id = " + id));
+        assertEquals(0, count("order_lines", "1 = 1"));
+        assertEquals(1, count("audit_logs", "action = 'ORDER_DELETE'"));
+        assertThrows(OrderService.NotFoundException.class, () -> service.get(id, rep));
+    }
+
+    @Test
+    void lineWithoutCurrentPriceIsFlaggedAndExcludedFromTotals() throws Exception {
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "10", rep);
+        sql("DELETE FROM price_list_items");
+
+        Order o = service.get(id, rep);
+        assertEquals(1, o.getUnpricedLines());
+        assertFalse(o.getLines().get(0).isPriced());
+        assertEquals(0, BigDecimal.ZERO.compareTo(o.getPayable()));
+    }
+
+        @Test
+    void productSearchShowsPriceAndUnitsOnlyForActiveProducts() throws Exception {
+        long id = service.create(900, rep);
+        Order order = service.get(id, rep);
+
+        List<OrderService.ProductChoice> byName = service.searchProducts(order, "Coca");
+        assertEquals(1, byName.size());
+        OrderService.ProductChoice coca = byName.get(0);
+        assertEquals("COCA", coca.sku());
+        assertEquals(0, new BigDecimal("10000").compareTo(coca.basePrice()));
+        assertEquals(2, coca.units().size());
+        assertEquals("Lon", coca.units().get(0).getName());
+        assertTrue(coca.units().get(1).getName().contains("= 24"));
+
+        assertEquals(1, service.searchProducts(order, "SNACK").size());
+        assertNull(service.searchProducts(order, "SNACK").get(0).basePrice());
+        assertEquals(0, service.searchProducts(order, "OLD").size());
+        assertEquals(0, service.searchProducts(order, " ").size());
+    }
+
+    @Test
+    void manualBasePriceOverridesAutomaticPriceAndCanBeCleared() throws Exception {
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, THUNG, "1", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+
+        service.updateLine(id, line.getId(), THUNG, "1", "9500", rep);
+
+        Order manual = service.get(id, rep);
+        OrderLine manualLine = manual.getLines().get(0);
+
+        assertTrue(manualLine.isManualPrice());
+        assertEquals(0, new BigDecimal("9500.00").compareTo(manualLine.getManualBasePrice()));
+        assertEquals(0, new BigDecimal("228000.00").compareTo(manualLine.getUnitPrice()));
+        assertEquals(0, new BigDecimal("228000.00").compareTo(manualLine.getGrossAmount()));
+
+        service.updateLine(id, line.getId(), THUNG, "1", "", rep);
+
+        Order automatic = service.get(id, rep);
+        OrderLine automaticLine = automatic.getLines().get(0);
+
+        assertFalse(automaticLine.isManualPrice());
+        assertNull(automaticLine.getManualBasePrice());
+        assertEquals(0, new BigDecimal("240000.00").compareTo(automaticLine.getUnitPrice()));
+        assertEquals(0, new BigDecimal("240000.00").compareTo(automaticLine.getGrossAmount()));
+    }
+
+        @Test
+    void quantityChangeRecalculatesDiscountAutomatically() throws Exception {
+        DiscountPolicy policy = new DiscountPolicy();
+        policy.setName("Coca 5%");
+        policy.setProductId(COCA);
+        policy.setType(DiscountPolicy.Type.PERCENT);
+        new DiscountService().save(0, policy, List.<String[]>of(new String[]{"100", "5"}), manager);
+
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "10", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+        assertEquals(0, BigDecimal.ZERO.compareTo(line.getDiscountAmount()));
+
+        service.updateLine(id, line.getId(), LON, "100", "", rep);
+
+        Order updated = service.get(id, rep);
+        OrderLine updatedLine = updated.getLines().get(0);
+
+        assertEquals(100, updatedLine.getQuantity());
+        assertEquals(0, new BigDecimal("1000000.00").compareTo(updatedLine.getGrossAmount()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(updatedLine.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("950000.00").compareTo(updatedLine.getNetAmount()));
+        assertTrue(updatedLine.getDiscountNote().contains("5%"));
+    }
+
+    @Test
+    void manualPriceBelowFloorAfterDiscountRequiresApproval() throws Exception {
+       DiscountPolicy policy = new DiscountPolicy();
+        policy.setName("Coca 5%");
+        policy.setProductId(COCA);
+        policy.setType(DiscountPolicy.Type.PERCENT);
+        new DiscountService().save(0, policy, List.<String[]>of(new String[]{"100", "5"}), manager);
+        long id = service.create(900, rep);
+        service.addLine(id, COCA, LON, "100", rep);
+
+        OrderLine line = service.get(id, rep).getLines().get(0);
+
+        service.updateLine(id, line.getId(), LON, "100", "9200", rep);
+
+        Order order = service.get(id, rep);
+        OrderLine updatedLine = order.getLines().get(0);
+
+        assertTrue(updatedLine.isManualPrice());
+        assertEquals(0, new BigDecimal("9200.00").compareTo(updatedLine.getManualBasePrice()));
+        assertEquals(0, new BigDecimal("920000.00").compareTo(updatedLine.getGrossAmount()));
+        assertEquals(0, new BigDecimal("50000.00").compareTo(updatedLine.getDiscountAmount()));
+        assertEquals(0, new BigDecimal("870000.00").compareTo(updatedLine.getNetAmount()));
+        assertTrue(order.isRequiresApproval());
+    }
+}

@@ -1,0 +1,11 @@
+<%-- Đặt giao diện sáng / tối trước khi trình duyệt vẽ trang để không bị nháy; ưu tiên lựa chọn đã lưu, không có thì theo máy --%>
+  <script>
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("oms-theme"); } catch (e) { /* trình duyệt chặn lưu trữ */ }
+      if (theme !== "dark" && theme !== "light") {
+        theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>

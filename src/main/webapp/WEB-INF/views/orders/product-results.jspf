@@ -1,0 +1,63 @@
+<%-- Danh sách sản phẩm gợi ý khi thêm hàng vào đơn; dùng cho trang gõ đơn và cho endpoint /orders/products --%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+
+<fmt:setLocale value="vi_VN"/>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+
+<c:if test="${not empty q and empty choices}">
+  <p class="text-muted">
+    Không có sản phẩm đang kinh doanh nào khớp "<c:out value="${q}"/>".
+  </p>
+</c:if>
+
+<c:forEach var="ch" items="${choices}">
+  <form class="order-add" action="${ctx}/orders/lines/add" method="post">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+    <input type="hidden" name="id" value="${order.id}">
+    <input type="hidden" name="productId" value="${ch.productId}">
+
+    <div class="order-add__info">
+      <p class="order-add__name"><c:out value="${ch.name}"/></p>
+
+      <p class="order-add__meta">
+        <c:out value="${ch.sku}"/> ·
+        <c:choose>
+          <c:when test="${empty ch.basePrice}">
+            <span class="badge badge--warning">Không có bảng giá hiệu lực</span>
+          </c:when>
+          <c:otherwise>
+            <fmt:formatNumber value="${ch.basePrice}" maxFractionDigits="2"/>
+            ₫/<c:out value="${ch.baseUnitName}"/>
+          </c:otherwise>
+        </c:choose>
+      </p>
+    </div>
+
+    <div class="order-add__controls">
+      <label class="visually-hidden" for="au-${ch.productId}">Đơn vị tính</label>
+      <select class="select" id="au-${ch.productId}" name="unitId">
+        <c:forEach var="u" items="${ch.units}">
+          <option value="${u.id}"><c:out value="${u.name}"/></option>
+        </c:forEach>
+      </select>
+
+      <label class="visually-hidden" for="aq-${ch.productId}">Số lượng</label>
+      <input class="input order-qty"
+             id="aq-${ch.productId}"
+             name="quantity"
+             type="number"
+             min="1"
+             step="1"
+             inputmode="numeric"
+             value="1"
+             required>
+
+      <button class="btn btn--primary"
+              type="submit"
+              ${empty ch.basePrice ? 'disabled' : ''}>
+        Thêm
+      </button>
+    </div>
+  </form>
+</c:forEach>

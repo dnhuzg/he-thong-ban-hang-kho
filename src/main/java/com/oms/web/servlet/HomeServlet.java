@@ -2,6 +2,8 @@ package com.oms.web.servlet;
 
 import com.oms.model.Module;
 import com.oms.model.User;
+import com.oms.service.AuditService;
+import com.oms.service.MailService;
 import com.oms.service.PermissionService;
 import com.oms.service.UserService;
 import jakarta.servlet.ServletException;
@@ -19,14 +21,20 @@ public class HomeServlet extends BaseServlet {
 
     private final UserService userService = new UserService();
     private final PermissionService permissionService = new PermissionService();
+    private final AuditService auditService = new AuditService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User user = currentUser(req);
         if (!req.getServletPath().equals("/home")) {
-            redirect(req, resp, "/home");
+            // Địa chỉ gốc là trang chờ cho khách; đã đăng nhập thì vào thẳng trang chủ
+            if (user == null) {
+                render(req, resp, "landing");
+            } else {
+                redirect(req, resp, "/home");
+            }
             return;
         }
-        User user = currentUser(req);
         try {
             if (permissionService.policy().canRead(user.getRoles(), Module.USER_AUDIT)) {
                 // Key dạng chuỗi để JSP tra được bằng userStats['ACTIVE']
@@ -34,7 +42,10 @@ public class HomeServlet extends BaseServlet {
                 userService.countByStatus().forEach((status, count) -> stats.put(status.name(), count));
                 req.setAttribute("userStats", stats);
                 req.setAttribute("handover", userService.customersNeedingHandover());
+                req.setAttribute("canAssign", com.oms.security.PermissionPolicy.canAssignCustomers(user.getRoles()));
                 req.setAttribute("canManageUsers", permissionService.policy().canWrite(user.getRoles(), Module.USER_AUDIT));
+                req.setAttribute("recentActivity", auditService.recent(5));
+                req.setAttribute("mailConfigured", MailService.isConfigured());
             }
         } catch (SQLException e) {
             throw new ServletException(e);

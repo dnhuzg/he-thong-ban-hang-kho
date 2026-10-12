@@ -1,0 +1,49 @@
+/* Biểu tượng từ thiết kế Figma (assets/img/icons). Dùng mặt nạ để đổi màu theo màu chữ: <span class="icon icon--house"></span> */
+
+.icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.icon--sm {
+  width: 16px;
+  height: 16px;
+}
+
+.icon--md {
+  width: 20px;
+  height: 20px;
+}
+
+.icon--house { --icon: url("../img/icons/house.svg"); }
+.icon--package { --icon: url("../img/icons/package.svg"); }
+.icon--layers { --icon: url("../img/icons/layers.svg"); }
+.icon--clipboard-list { --icon: url("../img/icons/clipboard-list.svg"); }
+.icon--percent { --icon: url("../img/icons/percent.svg"); }
+.icon--tags { --icon: url("../img/icons/tags.svg"); }
+.icon--truck { --icon: url("../img/icons/truck.svg"); }
+.icon--users { --icon: url("../img/icons/users.svg"); }
+.icon--shield-check { --icon: url("../img/icons/shield-check.svg"); }
+.icon--history { --icon: url("../img/icons/history.svg"); }
+.icon--building-2 { --icon: url("../img/icons/building-2.svg"); }
+.icon--upload { --icon: url("../img/icons/upload.svg"); }
+.icon--plus { --icon: url("../img/icons/plus.svg"); }
+.icon--search { --icon: url("../img/icons/search.svg"); }
+.icon--chevron-down { --icon: url("../img/icons/chevron-down.svg"); }
+.icon--ellipsis { --icon: url("../img/icons/ellipsis.svg"); }
+.icon--boxes { --icon: url("../img/icons/boxes.svg"); }
+.icon--menu { --icon: url("../img/icons/menu.svg"); }
+.icon--arrow-left { --icon: url("../img/icons/arrow-left.svg"); }
+.icon--wallet { --icon: url("../img/icons/wallet.svg"); }
+.icon--circle-check { --icon: url("../img/icons/circle-check.svg"); }
+.icon--check { --icon: url("../img/icons/check.svg"); }
+.icon--info { --icon: url("../img/icons/info.svg"); }
+.icon--list-filter { --icon: url("../img/icons/list-filter.svg"); }
+.icon--chevron-right { --icon: url("../img/icons/chevron-right.svg"); }
+.icon--lock-keyhole { --icon: url("../img/icons/lock-keyhole.svg"); }
+.icon--eye { --icon: url("../img/icons/eye.svg"); }
