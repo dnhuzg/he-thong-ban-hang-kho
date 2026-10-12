@@ -126,6 +126,7 @@ public final class AccessRules {
             Map.entry("/products/import/apply", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/reports/inventory", new Rule(Kind.READ, Module.REPORT)),
             Map.entry("/reports/inventory/export", new Rule(Kind.READ, Module.REPORT)),
+            Map.entry("/reports/management-dashboard", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/products/import/template", new Rule(Kind.WRITE, Module.PRODUCT)),
             Map.entry("/customers", new Rule(Kind.READ, Module.CUSTOMER_CREDIT)),
             Map.entry("/finance/debt-aging", new Rule(Kind.READ, Module.INVOICE)),
