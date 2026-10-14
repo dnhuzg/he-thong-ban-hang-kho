@@ -100,6 +100,7 @@ public class ShipmentService {
 
             for (var item : items) {
                 shipmentDao.insertReturnMovement(conn, shipment.getWarehouseId(), item, actor.getId(), shipmentId);
+                shipmentDao.returnToStock(conn, shipment.getWarehouseId(), item);
             }
 
             auditDao.log(conn, actor.getId(), "SHIPMENT_FAILED_RETURNED", "SHIPMENT", shipmentId,

@@ -69,6 +69,9 @@ class ShipmentServiceTest extends DatabaseTest {
         assertFalse(result.isInvoiceEligible());
         assertEquals(2, count("inventory_movements", "reference_type = 'SHIPMENT' AND reference_id = " + shipmentId));
         assertEquals(1, count("audit_logs", "action = 'SHIPMENT_FAILED_RETURNED'"));
+        // Hàng quay về được cộng lại vào tồn thực tế của kho
+        assertEquals(1, count("warehouse_inventory", "warehouse_id = 10 AND product_id = 500 AND on_hand = 24"));
+        assertEquals(1, count("warehouse_inventory", "warehouse_id = 10 AND product_id = 501 AND on_hand = 10"));
     }
 
     @Test
