@@ -290,7 +290,8 @@
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-narrow {
@@ -322,6 +323,15 @@
   gap: var(--space-4);
 }
 
+.card-grid--5 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* Năm thẻ một hàng thì thẻ hẹp: số tiền nhỏ lại để không tràn */
+.card-grid--5 .stat__value--money {
+  font-size: var(--font-size-lg);
+}
+
 .card-grid .card + .card {
   margin-top: 0;
 }
@@ -333,8 +343,9 @@
 
 .stat__value {
   margin-top: var(--space-1);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 /* ---------- Toolbar (tìm kiếm + bộ lọc) ---------- */
@@ -370,7 +381,7 @@
 
 .table th,
 .table td {
-  padding: 20px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
@@ -378,11 +389,21 @@
 
 .table th {
   padding: var(--space-3) 20px;
-  background: var(--color-bg);
-  font-size: 0.625rem;
-  font-weight: 500;
+  background: var(--color-surface-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+.table tbody tr:hover td {
+  background: var(--color-surface-muted);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .table__actions {
@@ -410,14 +431,29 @@
 /* ---------- Nhãn trạng thái ---------- */
 
 .badge {
-  display: inline-block;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
+}
+
+/* Nhãn có sắc thái: thêm chấm màu phía trước như thiết kế */
+.badge--primary::before,
+.badge--success::before,
+.badge--danger::before,
+.badge--warning::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .badge--primary {
@@ -443,6 +479,57 @@
   color: var(--color-warning);
   border-color: var(--color-warning-border);
 }
+
+/* Thanh tỉ lệ (ví dụ hạn mức đã dùng): xanh an toàn, cam cảnh báo, đỏ vượt */
+.meter {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 140px;
+}
+
+.meter__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.meter__value {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.meter__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-success);
+}
+
+/* Độ rộng theo bậc 10% để không phải viết style inline */
+.meter__fill--0 { width: 0%; }
+.meter__fill--10 { width: 10%; }
+.meter__fill--20 { width: 20%; }
+.meter__fill--30 { width: 30%; }
+.meter__fill--40 { width: 40%; }
+.meter__fill--50 { width: 50%; }
+.meter__fill--60 { width: 60%; }
+.meter__fill--70 { width: 70%; }
+.meter__fill--80 { width: 80%; }
+.meter__fill--90 { width: 90%; }
+.meter__fill--100 { width: 100%; }
+
+.meter--warning .meter__fill { background: var(--color-warning); }
+.meter--danger .meter__fill { background: var(--color-danger); }
+.meter--danger .meter__value { color: var(--color-danger); }
 
 .badge-list {
   display: flex;
@@ -879,6 +966,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
+  min-width: 220px;
 }
 
 .row-menu {

@@ -48,9 +48,12 @@ public class InvoiceService {
     private static final int MAX_SHIPMENTS = 50;
     private static final int RECENT = 30;
 
-    public record Page(List<Invoice.Eligible> eligible, List<Invoice> recent) {
+    public record Page(InvoiceDao.Summary summary, List<Invoice.Eligible> eligible, List<Invoice> recent,
+                       List<InvoiceDao.Debtor> debtors) {
+        public InvoiceDao.Summary getSummary() { return summary; }
         public List<Invoice.Eligible> getEligible() { return eligible; }
         public List<Invoice> getRecent() { return recent; }
+        public List<InvoiceDao.Debtor> getDebtors() { return debtors; }
     }
 
     public static class NotFoundException extends ServiceException {
@@ -65,7 +68,8 @@ public class InvoiceService {
     public Page page(User viewer) throws SQLException {
         requireAccountant(viewer);
         try (Connection conn = Db.getConnection()) {
-            return new Page(dao.eligible(conn), dao.recent(conn, RECENT));
+            LocalDate today = LocalDate.now();
+            return new Page(dao.summary(conn, today), dao.eligible(conn), dao.recent(conn, RECENT), dao.debtors(conn, today));
         }
     }
 

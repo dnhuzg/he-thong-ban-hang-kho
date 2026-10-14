@@ -234,6 +234,14 @@ textarea {
   color: var(--color-text-muted);
 }
 
+.text-success {
+  color: var(--color-success);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
 .text-sm {
   font-size: var(--font-size-sm);
 }

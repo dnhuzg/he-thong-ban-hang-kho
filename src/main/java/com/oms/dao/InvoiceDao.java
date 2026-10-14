@@ -213,6 +213,61 @@ public class InvoiceDao {
         return invoice;
     }
 
+    /** Tổng hợp cho thẻ số liệu: số hoá đơn, tổng giá trị, đã thu, còn phải thu và số hoá đơn quá hạn (trừ đã huỷ). */
+    public record Summary(long count, BigDecimal total, BigDecimal paid, BigDecimal outstanding, long overdue) {
+        public long getCount() { return count; }
+        public BigDecimal getTotal() { return total; }
+        public BigDecimal getPaid() { return paid; }
+        public BigDecimal getOutstanding() { return outstanding; }
+        public long getOverdue() { return overdue; }
+    }
+
+    /** Công nợ của một đại lý: tổng còn phải thu và phần đã quá hạn. */
+    public record Debtor(String code, String name, BigDecimal outstanding, BigDecimal overdue, LocalDate oldestDue) {
+        public String getCode() { return code; }
+        public String getName() { return name; }
+        public BigDecimal getOutstanding() { return outstanding; }
+        public BigDecimal getOverdue() { return overdue; }
+        public BigDecimal getCurrent() { return outstanding.subtract(overdue); }
+        public boolean isLate() { return overdue.signum() > 0; }
+        public String getOldestDueText() { return oldestDue == null ? "" : oldestDue.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")); }
+    }
+
+    public Summary summary(Connection conn, LocalDate today) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*), COALESCE(SUM(total_amount), 0), COALESCE(SUM(paid_amount), 0), "
+                        + "COALESCE(SUM(total_amount - paid_amount), 0), "
+                        + "COALESCE(SUM(CASE WHEN status IN ('ISSUED', 'PARTIAL') AND due_date < ? THEN 1 ELSE 0 END), 0) "
+                        + "FROM invoices WHERE status <> 'CANCELLED'")) {
+            ps.setDate(1, Date.valueOf(today));
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return new Summary(rs.getLong(1), rs.getBigDecimal(2), rs.getBigDecimal(3), rs.getBigDecimal(4), rs.getLong(5));
+            }
+        }
+    }
+
+    public List<Debtor> debtors(Connection conn, LocalDate today) throws SQLException {
+        List<Debtor> list = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT c.code, c.name, SUM(i.total_amount - i.paid_amount), "
+                        + "SUM(CASE WHEN i.due_date < ? THEN i.total_amount - i.paid_amount ELSE 0 END), "
+                        + "MIN(CASE WHEN i.due_date < ? THEN i.due_date END) "
+                        + "FROM invoices i JOIN customers c ON c.id = i.customer_id WHERE i.status IN ('ISSUED', 'PARTIAL') "
+                        + "GROUP BY c.id, c.code, c.name ORDER BY 4 DESC, 3 DESC")) {
+            ps.setDate(1, Date.valueOf(today));
+            ps.setDate(2, Date.valueOf(today));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Date oldest = rs.getDate(5);
+                    list.add(new Debtor(rs.getString(1), rs.getString(2), rs.getBigDecimal(3), rs.getBigDecimal(4),
+                            oldest == null ? null : oldest.toLocalDate()));
+                }
+            }
+        }
+        return list;
+    }
+
     public List<Invoice> recent(Connection conn, int limit) throws SQLException {
         return select(conn, "", null, limit);
     }
