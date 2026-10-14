@@ -15,6 +15,7 @@ public class Invoice {
 
     public enum Status {
         ISSUED("Chưa thanh toán", "warning"),
+        PARTIAL("Thanh toán một phần", "primary"),
         PAID("Đã thanh toán", "success"),
         CANCELLED("Đã huỷ", "danger");
 
@@ -36,11 +37,13 @@ public class Invoice {
     private String customerCode;
     private String customerName;
     private BigDecimal totalAmount;
+    private BigDecimal paidAmount = BigDecimal.ZERO;
     private LocalDateTime issuedAt;
     private LocalDate dueDate;
     private Status status;
     private String issuedByName;
     private final List<Line> lines = new ArrayList<>();
+    private final List<Payment.Allocation> payments = new ArrayList<>();
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -54,6 +57,9 @@ public class Invoice {
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
+    public BigDecimal getOutstanding() { return totalAmount == null ? BigDecimal.ZERO : totalAmount.subtract(paidAmount); }
     public LocalDateTime getIssuedAt() { return issuedAt; }
     public void setIssuedAt(LocalDateTime issuedAt) { this.issuedAt = issuedAt; }
     public String getIssuedAtText() { return issuedAt == null ? "" : issuedAt.format(DATE_TIME); }
@@ -65,6 +71,8 @@ public class Invoice {
     public String getIssuedByName() { return issuedByName; }
     public void setIssuedByName(String issuedByName) { this.issuedByName = issuedByName; }
     public List<Line> getLines() { return lines; }
+    /** Các lần thu đã đối trừ vào hoá đơn này. */
+    public List<Payment.Allocation> getPayments() { return payments; }
 
     /** Một dòng hàng thực giao; số lượng và đơn giá theo đơn vị cơ sở. */
     public static class Line {

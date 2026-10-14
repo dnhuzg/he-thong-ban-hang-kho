@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InvoiceServiceTest extends PickingServiceTest {
 
     private final ShipmentExportService exports = new ShipmentExportService();
-    private final InvoiceService invoices = new InvoiceService();
-    private User accountant;
+    protected final InvoiceService invoices = new InvoiceService();
+    protected User accountant;
 
     @BeforeEach
     void accountant() throws Exception {
@@ -27,7 +27,7 @@ class InvoiceServiceTest extends PickingServiceTest {
     }
 
     /** Soạn, hoàn tất, xuất kho rồi đánh dấu đã giao; trả về ID phiếu xuất. */
-    private long deliver(long orderId, String pickedA) throws Exception {
+    protected long deliver(long orderId, String pickedA) throws Exception {
         long list = picking.create(List.of(orderId), keeper);
         for (PickingList.Line line : picking.get(list, keeper).getLines()) {
             BigDecimal picked = "A".equals(line.getSku()) ? new BigDecimal(pickedA) : line.getRequired();

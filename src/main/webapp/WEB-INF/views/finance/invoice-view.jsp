@@ -52,4 +52,36 @@
           </div>
         </section>
 
+        <section class="card list-card">
+          <div class="list-summary">
+            <span class="list-summary__title">Thanh toán</span>
+            <span>Đã thu <strong><fmt:formatNumber value="${invoice.paidAmount}" maxFractionDigits="0"/> ₫</strong> · còn phải thu <strong><fmt:formatNumber value="${invoice.outstanding}" maxFractionDigits="0"/> ₫</strong></span>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-sku">Phiếu thu</th>
+                  <th scope="col">Ngày thu</th>
+                  <th scope="col">Hình thức</th>
+                  <th scope="col" class="num">Đối trừ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <c:if test="${empty invoice.payments}">
+                  <tr><td colspan="4" class="text-muted">Chưa có khoản thu nào cho hoá đơn này.</td></tr>
+                </c:if>
+                <c:forEach var="p" items="${invoice.payments}">
+                  <tr>
+                    <td class="nowrap table__cell-code"><c:out value="${p.paymentCode}"/></td>
+                    <td class="nowrap"><c:out value="${p.paidOnText}"/></td>
+                    <td><c:out value="${p.method.label}"/></td>
+                    <td class="num nowrap"><fmt:formatNumber value="${p.amount}" maxFractionDigits="0"/> ₫</td>
+                  </tr>
+                </c:forEach>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

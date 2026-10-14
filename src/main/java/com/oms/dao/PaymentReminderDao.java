@@ -22,7 +22,7 @@ public class PaymentReminderDao {
         String sql = "SELECT i.id, i.code, i.recipient_user_id, u.email, u.full_name, i.total_amount, i.due_date, "
                 + "CASE WHEN i.due_date = ? THEN 'DUE_SOON' ELSE 'OVERDUE' END AS reminder_type "
                 + "FROM invoices i JOIN users u ON u.id = i.recipient_user_id "
-                + "WHERE i.status = 'ISSUED' AND u.status = 'ACTIVE' "
+                + "WHERE i.status IN ('ISSUED', 'PARTIAL') AND u.status = 'ACTIVE' "
                 + "AND (i.due_date = ? OR i.due_date < ?) ORDER BY i.due_date, i.id";
         List<InvoiceReminderCandidate> candidates = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

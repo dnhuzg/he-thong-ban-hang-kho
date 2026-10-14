@@ -293,7 +293,15 @@ public abstract class DatabaseTest {
             statement.execute("ALTER TABLE invoices ADD issued_by BIGINT REFERENCES users(id)");
             statement.execute("ALTER TABLE shipments ADD invoice_id BIGINT REFERENCES invoices(id)");
             statement.execute("CREATE TABLE document_sequences (name VARCHAR(30) PRIMARY KEY, last_number BIGINT DEFAULT 0)");
-            statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0)");
+            statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0), ('PAYMENT', 0)");
+            statement.execute("ALTER TABLE invoices ADD paid_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
+            statement.execute("""
+                    CREATE TABLE payments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2), method VARCHAR(20), paid_on DATE,
+                        collected_by BIGINT REFERENCES users(id), note VARCHAR(500), created_by BIGINT REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("CREATE TABLE payment_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, payment_id BIGINT REFERENCES payments(id), invoice_id BIGINT REFERENCES invoices(id), amount DECIMAL(15,2))");
             statement.execute("""
                     CREATE TABLE invoice_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY, invoice_id BIGINT REFERENCES invoices(id),
                         shipment_id BIGINT REFERENCES shipments(id), product_id BIGINT REFERENCES products(id),

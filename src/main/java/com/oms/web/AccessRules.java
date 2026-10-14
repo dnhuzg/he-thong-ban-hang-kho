@@ -111,6 +111,8 @@ public final class AccessRules {
             Map.entry("/finance/invoices/view", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/finance/invoices/pdf", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/finance/invoices/issue", new Rule(Kind.WRITE, Module.INVOICE)),
+            Map.entry("/finance/payments", new Rule(Kind.READ, Module.INVOICE)),
+            Map.entry("/finance/payments/record", new Rule(Kind.WRITE, Module.INVOICE)),
             Map.entry("/orders", new Rule(Kind.READ, Module.ORDER)),
             Map.entry("/orders/products", new Rule(Kind.READ, Module.ORDER)),
             Map.entry("/orders/new", new Rule(Kind.WRITE, Module.ORDER)),

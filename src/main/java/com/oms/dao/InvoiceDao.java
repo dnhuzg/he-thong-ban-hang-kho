@@ -209,6 +209,7 @@ public class InvoiceDao {
                 }
             }
         }
+        invoice.getPayments().addAll(new PaymentDao().allocationsOf(conn, id));
         return invoice;
     }
 
@@ -220,7 +221,7 @@ public class InvoiceDao {
         List<Invoice> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT i.id, i.code, i.customer_id, c.code, c.name, i.total_amount, i.issued_at, i.due_date, i.status, "
-                        + "u.full_name FROM invoices i JOIN customers c ON c.id = i.customer_id "
+                        + "u.full_name, i.paid_amount FROM invoices i JOIN customers c ON c.id = i.customer_id "
                         + "LEFT JOIN users u ON u.id = i.issued_by" + where + " ORDER BY i.id DESC LIMIT ?")) {
             int index = 1;
             if (id != null) {
@@ -241,6 +242,7 @@ public class InvoiceDao {
                     invoice.setDueDate(due == null ? null : due.toLocalDate());
                     invoice.setStatus(Invoice.Status.valueOf(rs.getString(9)));
                     invoice.setIssuedByName(rs.getString(10));
+                    invoice.setPaidAmount(rs.getBigDecimal(11));
                     list.add(invoice);
                 }
             }

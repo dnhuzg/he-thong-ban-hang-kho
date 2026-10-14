@@ -601,9 +601,10 @@ CREATE TABLE invoices (
   customer_id        BIGINT        NOT NULL,
   recipient_user_id  BIGINT        NULL,
   total_amount       DECIMAL(15,2) NOT NULL,
+  paid_amount        DECIMAL(15,2) NOT NULL DEFAULT 0,
   issued_at          DATETIME      NOT NULL,
   due_date           DATE          NOT NULL,
-  status             ENUM('ISSUED','PAID','CANCELLED') NOT NULL DEFAULT 'ISSUED',
+  status             ENUM('ISSUED','PARTIAL','PAID','CANCELLED') NOT NULL DEFAULT 'ISSUED',
   paid_at            DATETIME      NULL,
   issued_by          BIGINT        NULL,
   created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -785,7 +786,43 @@ CREATE TABLE invoice_lines (
   CONSTRAINT chk_invoice_lines_quantity CHECK (quantity > 0 AND unit_price >= 0 AND amount >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO document_sequences (name, last_number) VALUES ('INVOICE', 0);
+INSERT INTO document_sequences (name, last_number) VALUES ('INVOICE', 0), ('PAYMENT', 0);
 
 ALTER TABLE shipments ADD invoice_id BIGINT NULL AFTER order_id, ADD KEY idx_shipments_invoice (invoice_id),
   ADD CONSTRAINT fk_shipments_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id);
+
+-- S7-02: ghi nhận thanh toán và đối trừ vào hoá đơn
+-- Phiếu thu tiền của đại lý; đã ghi nhận thì không xoá
+CREATE TABLE payments (
+  id            BIGINT        NOT NULL AUTO_INCREMENT,
+  code          VARCHAR(20)   NOT NULL,
+  customer_id   BIGINT        NOT NULL,
+  amount        DECIMAL(15,2) NOT NULL,
+  method        ENUM('CASH','BANK_TRANSFER','OTHER') NOT NULL,
+  paid_on       DATE          NOT NULL,
+  collected_by  BIGINT        NOT NULL,
+  note          VARCHAR(500)  NULL,
+  created_by    BIGINT        NOT NULL,
+  created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_payments_code (code),
+  KEY idx_payments_customer (customer_id, paid_on),
+  CONSTRAINT fk_payments_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_payments_collected_by FOREIGN KEY (collected_by) REFERENCES users (id),
+  CONSTRAINT fk_payments_created_by FOREIGN KEY (created_by) REFERENCES users (id),
+  CONSTRAINT chk_payments_amount CHECK (amount > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Phân bổ một phiếu thu vào các hoá đơn
+CREATE TABLE payment_allocations (
+  id          BIGINT        NOT NULL AUTO_INCREMENT,
+  payment_id  BIGINT        NOT NULL,
+  invoice_id  BIGINT        NOT NULL,
+  amount      DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_payment_allocations_payment (payment_id),
+  KEY idx_payment_allocations_invoice (invoice_id),
+  CONSTRAINT fk_payment_allocations_payment FOREIGN KEY (payment_id) REFERENCES payments (id),
+  CONSTRAINT fk_payment_allocations_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id),
+  CONSTRAINT chk_payment_allocations_amount CHECK (amount > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

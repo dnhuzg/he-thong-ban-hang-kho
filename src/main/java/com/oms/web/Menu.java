@@ -107,6 +107,7 @@ public final class Menu {
         }
         if (accountant) {
             financeItems.add(0, item("Hoá đơn", "/finance/invoices", "clipboard-list", path.startsWith("/finance/invoices"), false));
+            financeItems.add(1, item("Ghi nhận thanh toán", "/finance/payments", "wallet", path.startsWith("/finance/payments"), false));
             financeItems.add(item("Chi tiết công nợ đại lý", "/finance/debt-ledger", "history", path.equals("/finance/debt-ledger"), false));
             financeItems.add(item("Giảm trừ công nợ", "/finance/return-credits", "clipboard-list", path.equals("/finance/return-credits"), false));
         }
