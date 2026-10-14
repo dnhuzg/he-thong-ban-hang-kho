@@ -244,7 +244,8 @@ public abstract class DatabaseTest {
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
             statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
-            statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");
+            statement.execute("ALTER TABLE warehouses ADD code VARCHAR(20)");
+            statement.execute("INSERT INTO warehouses (id, name, code) VALUES (10, 'Kho A', 'KHO-A'), (20, 'Kho B', 'KHO-B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
             statement.execute("""
                     CREATE TABLE invoices (
