@@ -204,6 +204,21 @@ public abstract class DatabaseTest {
                         FOREIGN KEY (created_by) REFERENCES users(id)
                     )
                     """);
+            statement.execute("""
+                    CREATE TABLE goods_receipts (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        supplier_id BIGINT REFERENCES suppliers(id), document_no VARCHAR(50), received_date DATE,
+                        warehouse_id BIGINT REFERENCES warehouses(id), note VARCHAR(500), status VARCHAR(20) DEFAULT 'DRAFT',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, confirmed_by BIGINT REFERENCES users(id),
+                        confirmed_at TIMESTAMP, UNIQUE (supplier_id, document_no))
+                    """);
+            statement.execute("""
+                    CREATE TABLE goods_receipt_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        receipt_id BIGINT REFERENCES goods_receipts(id) ON DELETE CASCADE, line_no INT,
+                        product_id BIGINT REFERENCES products(id), unit_id BIGINT REFERENCES units(id),
+                        quantity DECIMAL(15,4), factor DECIMAL(12,4), base_quantity DECIMAL(15,4),
+                        lot_no VARCHAR(50), expiry_date DATE, UNIQUE (receipt_id, line_no))
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
