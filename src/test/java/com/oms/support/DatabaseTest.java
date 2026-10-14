@@ -290,6 +290,15 @@ public abstract class DatabaseTest {
                         UNIQUE(recipient_user_id, invoice_id, reminder_date)
                     )
                     """);
+            statement.execute("ALTER TABLE invoices ADD issued_by BIGINT REFERENCES users(id)");
+            statement.execute("ALTER TABLE shipments ADD invoice_id BIGINT REFERENCES invoices(id)");
+            statement.execute("CREATE TABLE document_sequences (name VARCHAR(30) PRIMARY KEY, last_number BIGINT DEFAULT 0)");
+            statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0)");
+            statement.execute("""
+                    CREATE TABLE invoice_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY, invoice_id BIGINT REFERENCES invoices(id),
+                        shipment_id BIGINT REFERENCES shipments(id), product_id BIGINT REFERENCES products(id),
+                        quantity DECIMAL(14,4), unit_price DECIMAL(15,2), amount DECIMAL(15,2))
+                    """);
         }
     }
 

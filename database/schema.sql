@@ -599,12 +599,13 @@ CREATE TABLE invoices (
   id                 BIGINT        NOT NULL AUTO_INCREMENT,
   code               VARCHAR(30)   NOT NULL,
   customer_id        BIGINT        NOT NULL,
-  recipient_user_id  BIGINT        NOT NULL,
+  recipient_user_id  BIGINT        NULL,
   total_amount       DECIMAL(15,2) NOT NULL,
   issued_at          DATETIME      NOT NULL,
   due_date           DATE          NOT NULL,
   status             ENUM('ISSUED','PAID','CANCELLED') NOT NULL DEFAULT 'ISSUED',
   paid_at            DATETIME      NULL,
+  issued_by          BIGINT        NULL,
   created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -613,7 +614,8 @@ CREATE TABLE invoices (
   KEY idx_invoices_customer (customer_id),
   KEY idx_invoices_recipient (recipient_user_id),
   CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
-  CONSTRAINT fk_invoices_recipient FOREIGN KEY (recipient_user_id) REFERENCES users (id)
+  CONSTRAINT fk_invoices_recipient FOREIGN KEY (recipient_user_id) REFERENCES users (id),
+  CONSTRAINT fk_invoices_issued_by FOREIGN KEY (issued_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE invoice_reminder_logs (
@@ -757,3 +759,33 @@ CREATE TABLE order_backorders (
   CONSTRAINT fk_order_backorders_shipment FOREIGN KEY (shipment_id) REFERENCES shipments (id),
   CONSTRAINT chk_order_backorders_quantity CHECK (quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S7-01: phát hành hoá đơn từ phiếu xuất đã giao
+-- Bộ đếm số chứng từ: khoá dòng trong transaction phát hành nên số liên tục, không trùng, không nhảy cóc
+CREATE TABLE document_sequences (
+  name        VARCHAR(30) NOT NULL,
+  last_number  BIGINT      NOT NULL DEFAULT 0,
+  PRIMARY KEY (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dòng hoá đơn theo số thực giao trên phiếu xuất; đơn giá là giá đã chốt trên đơn sau chiết khấu, theo đơn vị cơ sở
+CREATE TABLE invoice_lines (
+  id           BIGINT        NOT NULL AUTO_INCREMENT,
+  invoice_id   BIGINT        NOT NULL,
+  shipment_id  BIGINT        NOT NULL,
+  product_id   BIGINT        NOT NULL,
+  quantity     DECIMAL(14,4) NOT NULL,
+  unit_price   DECIMAL(15,2) NOT NULL,
+  amount       DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_invoice_lines_invoice (invoice_id),
+  CONSTRAINT fk_invoice_lines_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id),
+  CONSTRAINT fk_invoice_lines_shipment FOREIGN KEY (shipment_id) REFERENCES shipments (id),
+  CONSTRAINT fk_invoice_lines_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT chk_invoice_lines_quantity CHECK (quantity > 0 AND unit_price >= 0 AND amount >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO document_sequences (name, last_number) VALUES ('INVOICE', 0);
+
+ALTER TABLE shipments ADD invoice_id BIGINT NULL AFTER order_id, ADD KEY idx_shipments_invoice (invoice_id),
+  ADD CONSTRAINT fk_shipments_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id);
