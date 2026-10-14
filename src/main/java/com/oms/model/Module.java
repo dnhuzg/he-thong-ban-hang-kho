@@ -1,32 +1,26 @@
 package com.oms.model;
 
-/** Module nghiệp vụ trong ma trận phân quyền. url = null nghĩa là chưa làm (hiện "Sắp có" trên menu). */
+/** Module nghiệp vụ trong ma trận phân quyền. */
 public enum Module {
-    PRODUCT("Sản phẩm & bảng giá", "/products"),
-    CUSTOMER_CREDIT("Đại lý & hạn mức công nợ", "/customers"),
-    ORDER("Đơn hàng", null),
-    ORDER_APPROVAL("Duyệt đơn & giá đặc biệt", null),
-    INVENTORY("Tồn kho & nhập kho", "/suppliers"),
-    SHIPMENT("Phiếu xuất & giao hàng", null),
-    INVOICE("Hoá đơn & công nợ", null),
-    RETURN("Trả hàng & điều chỉnh", null),
-    REPORT("Báo cáo & dashboard", null),
-    USER_AUDIT("Người dùng & nhật ký", "/admin/users");
+    PRODUCT("Sản phẩm & bảng giá"),
+    CUSTOMER_CREDIT("Đại lý & hạn mức công nợ"),
+    ORDER("Đơn hàng"),
+    ORDER_APPROVAL("Duyệt đơn & giá đặc biệt"),
+    INVENTORY("Tồn kho & nhập kho"),
+    SHIPMENT("Phiếu xuất & giao hàng"),
+    INVOICE("Hoá đơn & công nợ"),
+    RETURN("Trả hàng & điều chỉnh"),
+    REPORT("Báo cáo & dashboard"),
+    USER_AUDIT("Người dùng & nhật ký");
 
     private final String label;
-    private final String url;
 
-    Module(String label, String url) {
+    Module(String label) {
         this.label = label;
-        this.url = url;
     }
 
     public String getLabel() {
         return label;
-    }
-
-    public String getUrl() {
-        return url;
     }
 
     public String getCode() {

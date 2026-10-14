@@ -28,7 +28,7 @@ class InventoryTracePageAccessTest {
             assertTrue(Menu.build(user, denied, path).stream().flatMap(group -> group.items().stream())
                     .noneMatch(item -> path.equals(item.url())));
             assertTrue(Menu.build(user, allowed, path).stream().flatMap(group -> group.items().stream())
-                    .anyMatch(item -> path.equals(item.url()) && item.active() && !item.comingSoon()));
+                    .anyMatch(item -> path.equals(item.url()) && item.active()));
             assertNull(AccessRules.find(path + "/save"));
             assertNull(AccessRules.find(path + "/export"));
         }

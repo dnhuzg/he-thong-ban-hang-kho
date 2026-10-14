@@ -11,13 +11,12 @@ import java.util.List;
 /** Dựng menu chỉ gồm các mục thuộc quyền của người dùng (S1-06), nhóm theo thiết kế giao diện. */
 public final class Menu {
 
-    /** icon là tên biểu tượng trong assets/css/icons.css (class "icon--" + icon), rỗng nếu chưa có thiết kế. */
-    public record Item(String label, String url, String icon, boolean active, boolean comingSoon, boolean shortcut) {
+    /** icon là tên biểu tượng trong assets/css/icons.css (class "icon--" + icon). */
+    public record Item(String label, String url, String icon, boolean active, boolean shortcut) {
         public String getLabel() { return label; }
         public String getUrl() { return url; }
         public String getIcon() { return icon; }
         public boolean isActive() { return active; }
-        public boolean isComingSoon() { return comingSoon; }
         /** Hiện thêm ở thanh điều hướng nhanh phía dưới trên điện thoại. */
         public boolean isShortcut() { return shortcut; }
     }
@@ -32,23 +31,6 @@ public final class Menu {
 
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
-        if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
-                || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
-            groups.add(new Group("S\u1ED5 c\u00F4ng n\u1EE3",
-                    List.of(item("Chi ti\u1EBFt c\u00F4ng n\u1EE3 \u0111\u1EA1i l\u00FD", "/finance/debt-ledger",
-                            "history", path.equals("/finance/debt-ledger"), false))));
-        }
-        if (user.getRoles().contains(com.oms.model.Role.ACCOUNTANT)
-                || user.getRoles().contains(com.oms.model.Role.ADMIN)) {
-            groups.add(new Group("C\u00F4ng n\u1EE3 tr\u1EA3 h\u00E0ng",
-                    List.of(item("Gi\u1EA3m tr\u1EEB c\u00F4ng n\u1EE3", "/finance/return-credits",
-                            "clipboard-list", path.equals("/finance/return-credits"), false))));
-        }
-        if (PermissionPolicy.canTakeOrders(user.getRoles())
-                || user.getRoles().contains(com.oms.model.Role.WH_MANAGER)) {
-            groups.add(new Group("Tr\u1EA3 h\u00E0ng", List.of(item("Tr\u1EA3 h\u00E0ng t\u1EEB \u0111\u1EA1i l\u00FD", "/sales/returns",
-                    "clipboard-list", path.equals("/sales/returns"), false))));
-        }
         groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.SALES_MANAGER)
@@ -86,11 +68,17 @@ public final class Menu {
         }
 
         boolean takesOrders = PermissionPolicy.canTakeOrders(user.getRoles()) && policy.canWrite(user.getRoles(), Module.ORDER);
+        List<Item> salesItems = new ArrayList<>();
         if (takesOrders) {
             boolean approvals = path.equals("/orders/approvals");
-            groups.add(new Group("Bán hàng", List.of(
-                    item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders") && !approvals, true),
-                    item("Duyệt đơn", "/orders/approvals", "circle-check", approvals, false))));
+            salesItems.add(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders") && !approvals, true));
+            salesItems.add(item("Duyệt đơn", "/orders/approvals", "circle-check", approvals, false));
+        }
+        if (PermissionPolicy.canTakeOrders(user.getRoles()) || user.getRoles().contains(Role.WH_MANAGER)) {
+            salesItems.add(item("Trả hàng từ đại lý", "/sales/returns", "clipboard-list", path.equals("/sales/returns"), false));
+        }
+        if (!salesItems.isEmpty()) {
+            groups.add(new Group("Bán hàng", salesItems));
         }
 
         if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
@@ -108,13 +96,20 @@ public final class Menu {
                     customerItems));
         }
 
+        List<Item> financeItems = new ArrayList<>();
+        boolean accountant = user.getRoles().contains(Role.ACCOUNTANT) || user.getRoles().contains(Role.ADMIN);
         if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
-            List<Item> financeItems = new ArrayList<>();
             financeItems.add(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false));
-            if (user.getRoles().contains(Role.ACCOUNTANT) || user.getRoles().contains(Role.ADMIN)) {
+            if (accountant) {
                 financeItems.add(item("Biên bản đối chiếu", "/finance/reconciliations", "clipboard-list", path.equals("/finance/reconciliations"), false));
                 financeItems.add(item("Sổ chi tiết công nợ", "/finance/customer-ledger", "history", path.equals("/finance/customer-ledger"), false));
             }
+        }
+        if (accountant) {
+            financeItems.add(item("Chi tiết công nợ đại lý", "/finance/debt-ledger", "history", path.equals("/finance/debt-ledger"), false));
+            financeItems.add(item("Giảm trừ công nợ", "/finance/return-credits", "clipboard-list", path.equals("/finance/return-credits"), false));
+        }
+        if (!financeItems.isEmpty()) {
             groups.add(new Group("Hoá đơn & công nợ", financeItems));
         }
 
@@ -144,20 +139,10 @@ public final class Menu {
             groups.add(new Group("Quản trị", admin));
         }
 
-        // Các module chưa làm: chưa có thiết kế nên giữ dạng "Sắp có" như trước
-        List<Item> upcoming = new ArrayList<>();
-        for (Module m : Module.values()) {
-            if (m.getUrl() == null && policy.canRead(user.getRoles(), m) && !(m == Module.ORDER && takesOrders)) {
-                upcoming.add(new Item(m.getLabel(), null, "", false, true, false));
-            }
-        }
-        if (!upcoming.isEmpty()) {
-            groups.add(new Group("Sắp có", upcoming));
-        }
         return groups;
     }
 
     private static Item item(String label, String url, String icon, boolean active, boolean shortcut) {
-        return new Item(label, url, icon, active, false, shortcut);
+        return new Item(label, url, icon, active, shortcut);
     }
 }
