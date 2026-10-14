@@ -40,6 +40,11 @@ public final class Menu {
                             "/reports/management-dashboard",
                             "boxes",
                             path.equals("/reports/management-dashboard"),
+                            false),
+                    item("Báo cáo doanh số",
+                            "/reports/sales",
+                            "clipboard-list",
+                            path.equals("/reports/sales"),
                             false))));
         }
 
