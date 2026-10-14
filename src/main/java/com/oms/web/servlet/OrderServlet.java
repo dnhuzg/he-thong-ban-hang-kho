@@ -1,6 +1,7 @@
 package com.oms.web.servlet;
 
 import com.oms.model.Order;
+import com.oms.model.Role;
 import com.oms.service.CustomerService;
 import com.oms.service.ForbiddenException;
 import com.oms.service.OrderService;
@@ -14,11 +15,13 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 
 @WebServlet({
         "/orders",
         "/orders/new",
         "/orders/create",
+        "/orders/reorder",
         "/orders/edit",
         "/orders/save",
         "/orders/delete",
@@ -55,11 +58,13 @@ public class OrderServlet extends BaseServlet {
 
                     req.setAttribute("q", q);
 
-                    render(
-                            req,
-                            resp,
-                            "orders/list"
+                    req.setAttribute(
+                            "canReorderOrders",
+                            currentUser(req).getRoles().contains(Role.CUSTOMER)
+                                    && currentUser(req).getCustomerId() != null
                     );
+
+                    render(req, resp, "orders/list");
                 }
 
                 case "/orders/new" -> {
@@ -88,11 +93,20 @@ public class OrderServlet extends BaseServlet {
                                     )
                     );
 
-                    render(
-                            req,
-                            resp,
-                            "orders/new"
+                    render(req, resp, "orders/new");
+                }
+
+                case "/orders/reorder" -> {
+                    Order order = orderService.get(
+                            longParam(req, "id"),
+                            currentUser(req)
                     );
+
+                    req.setAttribute("order", order);
+
+                    resp.setHeader("Cache-Control", "no-store");
+
+                    render(req, resp, "orders/reorder");
                 }
 
                 case "/orders/edit" -> showEdit(req, resp);
@@ -110,40 +124,22 @@ public class OrderServlet extends BaseServlet {
 
                     req.setAttribute(
                             "choices",
-                            orderService.searchProducts(
-                                    order,
-                                    q
-                            )
+                            orderService.searchProducts(order, q)
                     );
 
-                    resp.setHeader(
-                            "Cache-Control",
-                            "no-store"
-                    );
+                    resp.setHeader("Cache-Control", "no-store");
 
-                    render(
-                            req,
-                            resp,
-                            "orders/product-results"
-                    );
+                    render(req, resp, "orders/product-results");
                 }
 
-                default -> redirect(
-                        req,
-                        resp,
-                        "/orders"
-                );
+                default -> redirect(req, resp, "/orders");
             }
 
         } catch (ForbiddenException e) {
-            resp.sendError(
-                    HttpServletResponse.SC_FORBIDDEN
-            );
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 
         } catch (OrderService.NotFoundException e) {
-            resp.sendError(
-                    HttpServletResponse.SC_NOT_FOUND
-            );
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 
         } catch (SQLException e) {
             throw new ServletException(e);
@@ -174,38 +170,56 @@ public class OrderServlet extends BaseServlet {
                             "Đã tạo đơn nháp. Chọn điểm giao và thêm hàng bên dưới."
                     );
 
+                    redirect(req, resp, "/orders/edit?id=" + newId);
+                    return;
+                }
+
+                case "/orders/reorder" -> {
+                    String[] values = req.getParameterValues("lineId");
+
+                    long[] lineIds = values == null
+                            ? new long[0]
+                            : Arrays.stream(values)
+                                    .mapToLong(value -> {
+                                        try {
+                                            return Long.parseLong(value);
+                                        } catch (NumberFormatException e) {
+                                            return 0L;
+                                        }
+                                    })
+                                    .filter(value -> value > 0)
+                                    .toArray();
+
+                    OrderService.ReorderResult result =
+                            orderService.reorder(
+                                    id,
+                                    lineIds,
+                                    currentUser(req)
+                            );
+
+                    flash(req, result.message());
+
                     redirect(
                             req,
                             resp,
-                            "/orders/edit?id=" + newId
+                            "/orders/edit?id=" + result.newOrderId()
                     );
 
                     return;
                 }
 
                 case "/orders/save" -> {
-                    long point = longParam(
-                            req,
-                            "deliveryPointId"
-                    );
+                    long point = longParam(req, "deliveryPointId");
 
                     orderService.saveHeader(
                             id,
                             point > 0 ? point : null,
-                            date(
-                                    param(
-                                            req,
-                                            "deliveryDate"
-                                    )
-                            ),
+                            date(param(req, "deliveryDate")),
                             param(req, "note"),
                             currentUser(req)
                     );
 
-                    flash(
-                            req,
-                            "Đã lưu nháp."
-                    );
+                    flash(req, "Đã lưu nháp.");
                 }
 
                 case "/orders/lines/add" -> {
@@ -217,11 +231,7 @@ public class OrderServlet extends BaseServlet {
                             currentUser(req)
                     );
 
-                    flash(
-                            req,
-                            "Đã thêm dòng hàng."
-                    );
-
+                    flash(req, "Đã thêm dòng hàng.");
                     back += "#dong-hang";
                 }
 
@@ -234,11 +244,7 @@ public class OrderServlet extends BaseServlet {
                             currentUser(req)
                     );
 
-                    flash(
-                            req,
-                            "Đã cập nhật dòng hàng."
-                    );
-
+                    flash(req, "Đã cập nhật dòng hàng.");
                     back += "#dong-hang";
                 }
 
@@ -249,11 +255,7 @@ public class OrderServlet extends BaseServlet {
                             currentUser(req)
                     );
 
-                    flash(
-                            req,
-                            "Đã xoá dòng hàng."
-                    );
-
+                    flash(req, "Đã xoá dòng hàng.");
                     back += "#dong-hang";
                 }
 
@@ -263,57 +265,37 @@ public class OrderServlet extends BaseServlet {
                             currentUser(req)
                     );
 
-                    flash(
-                            req,
-                            "Đã xoá đơn nháp."
-                    );
+                    flash(req, "Đã xoá đơn nháp.");
 
-                    redirect(
-                            req,
-                            resp,
-                            "/orders"
-                    );
-
+                    redirect(req, resp, "/orders");
                     return;
                 }
 
                 default -> {
-                    resp.sendError(
-                            HttpServletResponse.SC_NOT_FOUND
-                    );
-
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                     return;
                 }
             }
 
-            redirect(
-                    req,
-                    resp,
-                    back
-            );
+            redirect(req, resp, back);
 
         } catch (ForbiddenException e) {
-            resp.sendError(
-                    HttpServletResponse.SC_FORBIDDEN
-            );
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 
         } catch (OrderService.NotFoundException e) {
-            resp.sendError(
-                    HttpServletResponse.SC_NOT_FOUND
-            );
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 
         } catch (ServiceException e) {
-            flash(
-                    req,
-                    e.getMessage()
-            );
+            flash(req, e.getMessage());
 
             redirect(
                     req,
                     resp,
                     path.equals("/orders/create")
                             ? "/orders/new"
-                            : back
+                            : path.equals("/orders/reorder")
+                                    ? "/orders"
+                                    : back
             );
 
         } catch (SQLException e) {
@@ -331,64 +313,39 @@ public class OrderServlet extends BaseServlet {
                 currentUser(req)
         );
 
-        String q = param(
-                req,
-                "q"
-        );
+        String q = param(req, "q");
 
-        req.setAttribute(
-                "order",
-                order
-        );
+        req.setAttribute("order", order);
 
         req.setAttribute(
                 "points",
-                orderService.deliveryPoints(
-                        order.getCustomerId()
-                )
+                orderService.deliveryPoints(order.getCustomerId())
         );
 
         req.setAttribute(
                 "unitOptions",
-                orderService.unitOptions(
-                        order
-                )
+                orderService.unitOptions(order)
         );
 
-        req.setAttribute(
-                "q",
-                q
-        );
+        req.setAttribute("q", q);
 
         req.setAttribute(
                 "choices",
-                orderService.searchProducts(
-                        order,
-                        q
-                )
+                orderService.searchProducts(order, q)
         );
 
-        req.setAttribute(
-                "today",
-                LocalDate.now()
-        );
+        req.setAttribute("today", LocalDate.now());
 
-        render(
-                req,
-                resp,
-                "orders/edit"
-        );
+        render(req, resp, "orders/edit");
     }
 
     private static LocalDate date(String text) {
-
         if (text.isEmpty()) {
             return null;
         }
 
         try {
             return LocalDate.parse(text);
-
         } catch (DateTimeParseException e) {
             throw new ServiceException(
                     "Ngày giao không hợp lệ: " + text

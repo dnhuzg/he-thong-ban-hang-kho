@@ -73,6 +73,12 @@ public class OrderService {
         }
     }
 
+    public record ReorderResult(
+            long newOrderId,
+            String message
+    ) {
+    }
+
     private final OrderDao orderDao = new OrderDao();
     private final CustomerDao customerDao = new CustomerDao();
     private final DeliveryPointDao pointDao = new DeliveryPointDao();
@@ -334,6 +340,233 @@ public class OrderService {
             );
 
             return id;
+        });
+    }
+
+    public ReorderResult reorder(
+            long oldOrderId,
+            long[] selectedLineIds,
+            User actor
+    ) throws SQLException {
+
+        requireReorder(actor);
+
+        if (selectedLineIds == null || selectedLineIds.length == 0) {
+            throw new ServiceException(
+                    "Vui lòng chọn ít nhất một dòng hàng để đặt lại."
+            );
+        }
+
+        return Db.inTransaction(conn -> {
+
+            Order oldOrder = lockVisible(
+                    conn,
+                    oldOrderId,
+                    actor
+            );
+
+            Customer customer = customerDao.findById(
+                    conn,
+                    oldOrder.getCustomerId()
+            );
+
+            if (customer == null) {
+                throw new NotFoundException();
+            }
+
+            CustomerLockService.requireTradable(customer);
+
+            List<OrderLine> oldLines = orderDao.lines(
+                    conn,
+                    oldOrderId
+            );
+
+            List<Long> selectedIds = new ArrayList<>();
+
+            for (long lineId : selectedLineIds) {
+
+                if (lineId <= 0 || selectedIds.contains(lineId)) {
+                    continue;
+                }
+
+                boolean belongsToOldOrder = false;
+
+                for (OrderLine line : oldLines) {
+                    if (line.getId() == lineId) {
+                        belongsToOldOrder = true;
+                        break;
+                    }
+                }
+
+                if (!belongsToOldOrder) {
+                    throw new NotFoundException();
+                }
+
+                selectedIds.add(lineId);
+            }
+
+            if (selectedIds.isEmpty()) {
+                throw new ServiceException(
+                        "Không có dòng hàng hợp lệ được chọn."
+                );
+            }
+
+            Long point = null;
+
+            for (DeliveryPoint p :
+                    pointDao.listByCustomer(conn, oldOrder.getCustomerId())) {
+
+                if (point == null || p.isDefaultPoint()) {
+                    point = p.getId();
+                }
+            }
+
+            long newOrderId = orderDao.insert(
+                    conn,
+                    oldOrder.getCustomerId(),
+                    point,
+                    actor.getId()
+            );
+
+            String newCode = String.format(
+                    "DH%06d",
+                    newOrderId
+            );
+
+            orderDao.setCode(
+                    conn,
+                    newOrderId,
+                    newCode
+            );
+
+            int added = 0;
+            List<String> skipped = new ArrayList<>();
+
+            for (long lineId : selectedIds) {
+
+                OrderLine oldLine = null;
+
+                for (OrderLine line : oldLines) {
+                    if (line.getId() == lineId) {
+                        oldLine = line;
+                        break;
+                    }
+                }
+
+                if (oldLine == null) {
+                    continue;
+                }
+
+                Product product = productDao.findById(
+                        conn,
+                        oldLine.getProductId(),
+                        false
+                );
+
+                if (product == null) {
+                    skipped.add(
+                            "Dòng " + oldLine.getSku() + " không còn tồn tại."
+                    );
+                    continue;
+                }
+
+                if (product.getStatus() != Product.Status.ACTIVE) {
+                    skipped.add(
+                            oldLine.getSku()
+                                    + " - "
+                                    + oldLine.getProductName()
+                                    + " đã ngừng kinh doanh."
+                    );
+                    continue;
+                }
+
+                PriceListItem currentPrice =
+                        priceListService.effectivePrice(
+                                conn,
+                                oldOrder.getCustomerGroupId(),
+                                oldLine.getProductId(),
+                                LocalDate.now()
+                        );
+
+                if (currentPrice == null) {
+                    skipped.add(
+                            oldLine.getSku()
+                                    + " - "
+                                    + oldLine.getProductName()
+                                    + " chưa có giá trong bảng giá hiện hành."
+                    );
+                    continue;
+                }
+
+                if (added >= MAX_LINES) {
+                    throw new ServiceException(
+                            "Một đơn có tối đa "
+                                    + MAX_LINES
+                                    + " dòng hàng."
+                    );
+                }
+
+                UnitConversionService.Converted converted =
+                        unitService.toBase(
+                                conn,
+                                oldLine.getProductId(),
+                                oldLine.getUnitId(),
+                                BigDecimal.valueOf(oldLine.getQuantity())
+                        );
+
+                orderDao.insertLine(
+                        conn,
+                        newOrderId,
+                        oldLine.getProductId(),
+                        oldLine.getUnitId(),
+                        oldLine.getQuantity(),
+                        converted.factor(),
+                        converted.baseQuantity()
+                );
+
+                added++;
+            }
+
+            if (added == 0) {
+                throw new ServiceException(
+                        "Không có mặt hàng nào có thể đặt lại trong đơn này."
+                );
+            }
+
+            auditDao.log(
+                    conn,
+                    actor.getId(),
+                    "ORDER_CREATE",
+                    "ORDER",
+                    newOrderId,
+                    newCode,
+                    null,
+                    "Đặt lại từ đơn "
+                            + oldOrder.getCode()
+                            + ". Đã thêm "
+                            + added
+                            + " dòng hàng."
+            );
+
+            String message;
+
+            if (skipped.isEmpty()) {
+                message = "Đã tạo đơn mới "
+                        + newCode
+                        + " từ đơn "
+                        + oldOrder.getCode()
+                        + ". Giá được áp dụng theo bảng giá hiện hành.";
+            } else {
+                message = "Đã tạo đơn mới "
+                        + newCode
+                        + ". Một số mặt hàng không được thêm: "
+                        + String.join("; ", skipped);
+            }
+
+            return new ReorderResult(
+                    newOrderId,
+                    message
+            );
         });
     }
 
@@ -739,6 +972,7 @@ public class OrderService {
         if (PermissionPolicy.canSeeAllOrders(viewer.getRoles())) {
             return;
         }
+
         if (viewer.getRoles().contains(Role.CUSTOMER)) {
             if (viewer.getCustomerId() != null
                     && order.getCustomerId() == viewer.getCustomerId()) {
@@ -766,6 +1000,15 @@ public class OrderService {
                 customer.getSalesRepId() != null
                         && customer.getSalesRepId() == viewer.getId()
         );
+    }
+
+    private static void requireReorder(User user) {
+        if (!user.getRoles().contains(Role.CUSTOMER)
+                || user.getCustomerId() == null) {
+            throw new ForbiddenException(
+                    "Chỉ Đại lý được phép đặt lại đơn hàng của chính mình."
+            );
+        }
     }
 
     private static void requireOrders(User user) {
