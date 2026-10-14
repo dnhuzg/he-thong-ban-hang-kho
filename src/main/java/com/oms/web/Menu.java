@@ -46,6 +46,7 @@ public final class Menu {
         if (user.getRoles().contains(Role.CUSTOMER)) {
             groups.add(new Group("Cổng đại lý", List.of(
                     item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),
+                    item("Đơn hàng của tôi", "/portal/orders", "clipboard-list", path.startsWith("/portal/orders"), true),
                     item("Công nợ của tôi", "/portal/my-debt", "wallet", path.equals("/portal/my-debt"), false),
                     item("Đối chiếu công nợ", "/portal/reconciliations", "clipboard-list", path.equals("/portal/reconciliations"), false))));
         }
@@ -106,6 +107,8 @@ public final class Menu {
             }
         }
         if (accountant) {
+            financeItems.add(0, item("Hoá đơn", "/finance/invoices", "clipboard-list", path.startsWith("/finance/invoices"), false));
+            financeItems.add(1, item("Ghi nhận thanh toán", "/finance/payments", "wallet", path.startsWith("/finance/payments"), false));
             financeItems.add(item("Chi tiết công nợ đại lý", "/finance/debt-ledger", "history", path.equals("/finance/debt-ledger"), false));
             financeItems.add(item("Giảm trừ công nợ", "/finance/return-credits", "clipboard-list", path.equals("/finance/return-credits"), false));
         }
@@ -123,6 +126,13 @@ public final class Menu {
                             item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
                             item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
+        }
+
+        if (policy.canWrite(user.getRoles(), Module.SHIPMENT)
+                && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
+            groups.add(new Group("Xuất kho & giao hàng", List.of(
+                    item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
+                    item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 
         List<Item> admin = new ArrayList<>();

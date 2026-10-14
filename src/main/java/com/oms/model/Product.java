@@ -67,4 +67,15 @@ public class Product {
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+
+    private BigDecimal stockOnHand = BigDecimal.ZERO;
+    private BigDecimal stockAvailable = BigDecimal.ZERO;
+
+    /** Tổng tồn thực tế ở mọi kho, theo đơn vị cơ sở. */
+    public BigDecimal getStockOnHand() { return stockOnHand; }
+    public void setStockOnHand(BigDecimal value) { this.stockOnHand = value == null ? BigDecimal.ZERO : new BigDecimal(value.stripTrailingZeros().toPlainString()); }
+
+    /** Tồn khả dụng (thực tế trừ đang giữ chỗ cho đơn đã duyệt) ở mọi kho. */
+    public BigDecimal getStockAvailable() { return stockAvailable; }
+    public void setStockAvailable(BigDecimal value) { this.stockAvailable = value == null ? BigDecimal.ZERO : new BigDecimal(value.stripTrailingZeros().toPlainString()); }
 }

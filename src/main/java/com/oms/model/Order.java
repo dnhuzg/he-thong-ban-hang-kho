@@ -126,6 +126,7 @@ public class Order {
     public String getCreatedByName() { return createdByName; }
     public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getCreatedAtText() { return createdAt == null ? "" : createdAt.format(TIME); }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

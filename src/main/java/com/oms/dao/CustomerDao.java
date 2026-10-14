@@ -23,7 +23,8 @@ import java.util.Map;
 public class CustomerDao {
 
     private static final String SELECT = "SELECT c.id, c.code, c.name, c.phone, c.tax_code, c.group_id, g.name AS group_name, "
-            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.credit_limit, c.credit_days, c.lock_reason, c.locked_at, lb.full_name AS locked_by_name, c.created_at "
+            + "c.area_id, a.name AS area_name, c.sales_rep_id, u.full_name AS rep_name, c.status, c.credit_limit, c.credit_days, c.lock_reason, c.locked_at, lb.full_name AS locked_by_name, c.created_at, "
+            + "(SELECT COALESCE(SUM(r.outstanding), 0) FROM customer_receivables r WHERE r.customer_id = c.id) AS debt "
             + "FROM customers c LEFT JOIN customer_groups g ON g.id = c.group_id LEFT JOIN areas a ON a.id = c.area_id "
             + "LEFT JOIN users u ON u.id = c.sales_rep_id LEFT JOIN users lb ON lb.id = c.locked_by";
 
@@ -71,7 +72,11 @@ public class CustomerDao {
                 + "COALESCE(SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END), 0), "
                 + "COALESCE(SUM(CASE WHEN sales_rep_id IS NULL THEN 1 ELSE 0 END), 0), "
                 + "COALESCE(SUM(CASE WHEN credit_limit > 0 THEN 1 ELSE 0 END), 0), "
-                + "COALESCE(SUM(credit_limit), 0) FROM customers" + (ownRepId == null ? "" : " WHERE sales_rep_id = ?");
+                + "COALESCE(SUM(credit_limit), 0), "
+                + "COALESCE(SUM((SELECT COALESCE(SUM(r.outstanding), 0) FROM customer_receivables r WHERE r.customer_id = customers.id)), 0), "
+                + "COALESCE(SUM(CASE WHEN credit_limit > 0 AND (SELECT COALESCE(SUM(r.outstanding), 0) FROM customer_receivables r "
+                + "WHERE r.customer_id = customers.id) >= credit_limit * 0.9 THEN 1 ELSE 0 END), 0) "
+                + "FROM customers" + (ownRepId == null ? "" : " WHERE sales_rep_id = ?");
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             if (ownRepId != null) {
                 ps.setLong(1, ownRepId);
@@ -84,6 +89,8 @@ public class CustomerDao {
                 s.setUnassigned(rs.getLong(3));
                 s.setWithCredit(rs.getLong(4));
                 s.setTotalCreditLimit(rs.getBigDecimal(5));
+                s.setTotalDebt(rs.getBigDecimal(6));
+                s.setNearLimit(rs.getLong(7));
                 return s;
             }
         }
@@ -328,6 +335,7 @@ public class CustomerDao {
         c.setSalesRepName(rs.getString("rep_name"));
         c.setStatus(Customer.Status.valueOf(rs.getString("status")));
         c.setCreditLimit(rs.getBigDecimal("credit_limit"));
+        c.setDebt(rs.getBigDecimal("debt"));
         c.setCreditDays(rs.getInt("credit_days"));
         c.setLockReason(rs.getString("lock_reason"));
         Timestamp locked = rs.getTimestamp("locked_at");
