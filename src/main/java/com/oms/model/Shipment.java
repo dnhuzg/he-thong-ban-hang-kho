@@ -20,6 +20,11 @@ public class Shipment {
         public String getLabel() {
             return label;
         }
+
+        /** confirm.jsp so trạng thái qua status.code; EL không gọi được name() của enum. */
+        public String getCode() {
+            return name();
+        }
     }
 
     private long id;
