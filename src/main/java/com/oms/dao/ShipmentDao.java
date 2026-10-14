@@ -2,7 +2,9 @@ package com.oms.dao;
 
 import com.oms.model.Shipment;
 import com.oms.model.ShipmentItem;
+import com.oms.service.ServiceException;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -109,6 +111,35 @@ public class ShipmentDao {
             ps.setTimestamp(2, Timestamp.valueOf(returnedAt));
             ps.setLong(3, shipmentId);
             return ps.executeUpdate();
+        }
+    }
+
+    /** Cộng lại tồn thực tế của kho khi hàng giao không thành công quay về; quy về đơn vị cơ sở của sản phẩm. */
+    public void returnToStock(Connection conn, long warehouseId, ShipmentItem item) throws SQLException {
+        BigDecimal factor = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT CASE WHEN p.base_unit_id = ? THEN 1 ELSE "
+                        + "(SELECT pu.factor FROM product_units pu WHERE pu.product_id = p.id AND pu.unit_id = ?) END "
+                        + "FROM products p WHERE p.id = ?")) {
+            ps.setLong(1, item.getUnitId());
+            ps.setLong(2, item.getUnitId());
+            ps.setLong(3, item.getProductId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    factor = rs.getBigDecimal(1);
+                }
+            }
+        }
+        if (factor == null) {
+            throw new ServiceException("Sản phẩm " + item.getProductSku() + " chưa khai báo quy đổi cho đơn vị trên phiếu giao.");
+        }
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO warehouse_inventory (warehouse_id, product_id, on_hand, reserved) VALUES (?, ?, ?, 0) "
+                        + "ON DUPLICATE KEY UPDATE on_hand = on_hand + VALUES(on_hand)")) {
+            ps.setLong(1, warehouseId);
+            ps.setLong(2, item.getProductId());
+            ps.setBigDecimal(3, item.getQuantity().multiply(factor));
+            ps.executeUpdate();
         }
     }
 
