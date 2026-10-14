@@ -19,6 +19,12 @@
           </div>
         </div>
 
+        <ol class="steps steps--5" aria-label="Các mốc giao hàng">
+          <c:forEach var="m" items="${detail.milestones}" varStatus="st">
+            <li class="steps__item${m.done ? ' is-done' : ''}"><span class="steps__num">${st.count}</span><span><strong><c:out value="${m.label}"/></strong><small><c:out value="${m.done ? m.time : 'Chưa tới'}"/></small></span></li>
+          </c:forEach>
+        </ol>
+
         <section class="card list-card">
           <div class="list-summary">
             <span class="list-summary__title">Dòng hàng</span>

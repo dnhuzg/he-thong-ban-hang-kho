@@ -11,6 +11,8 @@ import com.oms.model.User;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,8 +48,20 @@ public class OrderTrackingService {
         public BigDecimal getMissing() { return plain(line.getBaseQuantity().subtract(shipped).max(BigDecimal.ZERO)); }
     }
 
-    public record Detail(Order order, List<LineStatus> lines, boolean exported) {
+    /** Một mốc trên dòng thời gian giao hàng (S6-09); time rỗng là chưa tới mốc này. */
+    public record Milestone(String label, String time) {
+        public String getLabel() { return label; }
+        public String getTime() { return time; }
+        public boolean isDone() { return !time.isEmpty(); }
+    }
+
+    private static final String[][] STEPS = {{"APPROVED", "Đã duyệt"}, {"PICKING", "Đang soạn hàng"},
+            {"SHIPPED", "Đã xuất kho"}, {"IN_TRANSIT", "Đang giao"}, {"DELIVERED", "Đã giao"}};
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    public record Detail(Order order, List<LineStatus> lines, boolean exported, List<Milestone> milestones) {
         public Order getOrder() { return order; }
+        public List<Milestone> getMilestones() { return milestones; }
         public List<LineStatus> getLines() { return lines; }
         public boolean isExported() { return exported; }
         public boolean isShortShipped() { return lines.stream().anyMatch(LineStatus::isShortShipped); }
@@ -70,8 +84,16 @@ public class OrderTrackingService {
             throw new OrderService.NotFoundException();
         }
         Map<Long, BigDecimal[]> byProduct;
+        Map<String, LocalDateTime> times;
         try (Connection conn = Db.getConnection()) {
-            byProduct = new OrderTrackingDao().shipped(conn, orderId);
+            OrderTrackingDao dao = new OrderTrackingDao();
+            byProduct = dao.shipped(conn, orderId);
+            times = dao.milestones(conn, orderId);
+        }
+        List<Milestone> milestones = new ArrayList<>();
+        for (String[] step : STEPS) {
+            LocalDateTime at = times.get(step[0]);
+            milestones.add(new Milestone(step[1], at == null ? "" : at.format(TIME)));
         }
         boolean exported = !byProduct.isEmpty();
         // Cùng sản phẩm có thể nằm ở nhiều dòng (khác đơn vị): chia số đã xuất / đã giao lần lượt theo dòng
@@ -86,7 +108,7 @@ public class OrderTrackingService {
             remain[1] = remain[1].subtract(delivered);
             lines.add(new LineStatus(line, shipped, delivered, exported));
         }
-        return new Detail(order, lines, exported);
+        return new Detail(order, lines, exported, milestones);
     }
 
     private static BigDecimal plain(BigDecimal value) {

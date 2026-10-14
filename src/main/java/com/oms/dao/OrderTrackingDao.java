@@ -5,11 +5,50 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Số lượng đã xuất / đã giao của một đơn, cộng từ phiếu xuất gắn với đơn (S5-01, S6-09). */
 public class OrderTrackingDao {
+
+    /**
+     * Mốc thời gian giao hàng của đơn: lần đầu đạt APPROVED / PICKING / SHIPPED theo lịch sử trạng thái;
+     * IN_TRANSIT là lúc lập phiếu xuất đầu tiên (hàng rời kho); DELIVERED là lúc phiếu cuối cùng giao xong
+     * khi mọi phiếu đã giao thành công.
+     */
+    public Map<String, LocalDateTime> milestones(Connection conn, long orderId) throws SQLException {
+        Map<String, LocalDateTime> map = new HashMap<>();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT to_status, MIN(created_at) FROM order_status_history WHERE order_id = ? "
+                        + "AND to_status IN ('APPROVED', 'PICKING', 'SHIPPED') GROUP BY to_status")) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getString(1), rs.getTimestamp(2).toLocalDateTime());
+                }
+            }
+        }
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT MIN(created_at), MAX(delivered_at), COUNT(*), "
+                        + "SUM(CASE WHEN status = 'DELIVERED' THEN 1 ELSE 0 END) FROM shipments WHERE order_id = ?")) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getLong(3) > 0) {
+                    Timestamp out = rs.getTimestamp(1);
+                    if (out != null) {
+                        map.put("IN_TRANSIT", out.toLocalDateTime());
+                    }
+                    Timestamp delivered = rs.getTimestamp(2);
+                    if (delivered != null && rs.getLong(3) == rs.getLong(4)) {
+                        map.put("DELIVERED", delivered.toLocalDateTime());
+                    }
+                }
+            }
+        }
+        return map;
+    }
 
     /** Theo sản phẩm, đơn vị cơ sở: [0] đã xuất (phiếu chưa giao thất bại), [1] đã giao thành công. */
     public Map<Long, BigDecimal[]> shipped(Connection conn, long orderId) throws SQLException {
