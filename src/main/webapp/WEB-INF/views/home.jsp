@@ -420,7 +420,7 @@
             <section class="home-shortcuts mt-4" aria-label="Lối tắt">
               <c:forEach var="group" items="${menu}">
                 <c:forEach var="item" items="${group.items}">
-                  <c:if test="${not item.comingSoon and not empty item.url and item.url ne '/home'}">
+                  <c:if test="${not empty item.url and item.url ne '/home'}">
                     <a class="card home-shortcut" href="${ctx}${item.url}">
                       <span class="home-shortcut__icon"><span class="icon icon--md icon--${item.icon}" aria-hidden="true"></span></span>
                       <span class="home-shortcut__label"><c:out value="${item.label}"/></span>

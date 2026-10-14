@@ -139,11 +139,6 @@
   color: var(--color-primary);
 }
 
-.sidebar__link.is-disabled {
-  color: var(--color-text-muted);
-  pointer-events: none;
-}
-
 .sidebar__scope {
   margin-top: auto;
   padding: var(--space-3);

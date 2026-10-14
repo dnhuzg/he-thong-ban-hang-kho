@@ -31,7 +31,7 @@ class WarehousePageAccessTest {
         assertTrue(AccessRules.isAllowed(AccessRules.find(PATH), user, allowed));
         assertFalse(allowed.canWrite(user.getRoles(), Module.INVENTORY));
         var items = Menu.build(user, allowed, PATH).stream().flatMap(g -> g.items().stream()).toList();
-        assertTrue(items.stream().anyMatch(i -> PATH.equals(i.url()) && i.active() && !i.comingSoon()));
+        assertTrue(items.stream().anyMatch(i -> PATH.equals(i.url()) && i.active()));
         assertTrue(items.stream().anyMatch(i -> "/suppliers".equals(i.url()) && !i.active()));
     }
 
