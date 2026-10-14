@@ -1,6 +1,5 @@
 package com.oms.service;
 
-import com.oms.config.Db;
 import com.oms.model.InventoryReport;
 import com.oms.model.InventorySkuAgeRow;
 import com.oms.model.InventoryValueRow;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
