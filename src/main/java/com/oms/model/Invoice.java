@@ -66,6 +66,8 @@ public class Invoice {
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public String getDueDateText() { return dueDate == null ? "" : dueDate.format(DATE); }
+    /** Còn nợ và đã qua hạn thanh toán tính tới hôm nay. */
+    public boolean isOverdue() { return getOutstanding().signum() > 0 && dueDate != null && dueDate.isBefore(LocalDate.now()); }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getIssuedByName() { return issuedByName; }

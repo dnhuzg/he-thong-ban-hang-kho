@@ -272,6 +272,11 @@ public class InvoiceDao {
         return select(conn, "", null, limit);
     }
 
+    /** Hoá đơn chưa huỷ của một đại lý, mới nhất trước. */
+    public List<Invoice> forCustomer(Connection conn, long customerId) throws SQLException {
+        return select(conn, " WHERE i.customer_id = ? AND i.status <> 'CANCELLED'", customerId, 500);
+    }
+
     private List<Invoice> select(Connection conn, String where, Long id, int limit) throws SQLException {
         List<Invoice> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(

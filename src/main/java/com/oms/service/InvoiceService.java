@@ -16,6 +16,7 @@ import com.oms.dao.AuditLogDao;
 import com.oms.dao.CustomerDao;
 import com.oms.dao.InvoiceDao;
 import com.oms.dao.OrderCreditDao;
+import com.oms.dao.PortalAccountDao;
 import com.oms.model.Customer;
 import com.oms.model.Invoice;
 import com.oms.model.Role;
@@ -167,7 +168,26 @@ public class InvoiceService {
     }
 
     public byte[] pdf(long id, User viewer) throws SQLException, IOException {
-        Invoice invoice = get(id, viewer);
+        return render(get(id, viewer));
+    }
+
+    /** Đại lý tải lại hoá đơn của chính mình trên cổng; hoá đơn của đại lý khác coi như không tồn tại. */
+    public Invoice getForCustomer(long id, User customer) throws SQLException {
+        try (Connection conn = Db.getConnection()) {
+            Long own = new PortalAccountDao().customerId(conn, customer.getId());
+            Invoice invoice = dao.find(conn, id);
+            if (own == null || invoice == null || invoice.getCustomerId() != own || invoice.getStatus() == Invoice.Status.CANCELLED) {
+                throw new NotFoundException();
+            }
+            return invoice;
+        }
+    }
+
+    public byte[] pdfForCustomer(long id, User customer) throws SQLException, IOException {
+        return render(getForCustomer(id, customer));
+    }
+
+    private byte[] render(Invoice invoice) throws IOException {
         Font normal = new Font(BaseFont.createFont("liberation/LiberationSans-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED), 10);
         Font bold = new Font(BaseFont.createFont("liberation/LiberationSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED), 10);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
