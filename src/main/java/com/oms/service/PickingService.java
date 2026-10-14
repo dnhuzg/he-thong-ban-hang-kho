@@ -162,8 +162,8 @@ public class PickingService {
         }
     }
 
-    /** null = mọi kho (Admin); nhân viên / quản lý kho chỉ thấy kho được gắn; vai trò khác không được vào. */
-    private static Set<Long> scope(User user) {
+    /** null = mọi kho (Admin); nhân viên / quản lý kho chỉ thấy kho được gắn; vai trò khác không được vào. Dùng chung cho xuất kho. */
+    static Set<Long> scope(User user) {
         if (user.isAdmin()) {
             return null;
         }
@@ -173,7 +173,7 @@ public class PickingService {
         return user.getWarehouses().stream().map(NamedItem::getId).collect(Collectors.toSet());
     }
 
-    private static boolean inScope(Set<Long> scope, long warehouseId) {
+    static boolean inScope(Set<Long> scope, long warehouseId) {
         return scope == null || scope.contains(warehouseId);
     }
 }

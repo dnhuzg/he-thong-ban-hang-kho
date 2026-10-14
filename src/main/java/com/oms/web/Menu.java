@@ -128,7 +128,8 @@ public final class Menu {
         if (policy.canWrite(user.getRoles(), Module.SHIPMENT)
                 && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
             groups.add(new Group("Xuất kho & giao hàng", List.of(
-                    item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true))));
+                    item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
+                    item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 
         List<Item> admin = new ArrayList<>();

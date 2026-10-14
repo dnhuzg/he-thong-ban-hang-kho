@@ -65,6 +65,7 @@ public class AuditEntry {
             Map.entry("GOODS_RECEIPT_CONFIRM", "Xác nhận phiếu nhập kho"),
             Map.entry("PICKING_LIST_CREATE", "Lập phiếu soạn hàng"),
             Map.entry("PICKING_LIST_DONE", "Hoàn tất phiếu soạn hàng"),
+            Map.entry("SHIPMENT_EXPORT", "Xác nhận xuất kho"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
             Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
             Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),

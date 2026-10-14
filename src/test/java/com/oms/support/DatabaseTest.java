@@ -233,6 +233,13 @@ public abstract class DatabaseTest {
                         picked_quantity DECIMAL(14,4), short_reason VARCHAR(500), picked_by BIGINT REFERENCES users(id),
                         picked_at TIMESTAMP)
                     """);
+            statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
+            statement.execute("""
+                    CREATE TABLE order_backorders (id BIGINT AUTO_INCREMENT PRIMARY KEY, order_id BIGINT REFERENCES orders(id),
+                        order_line_id BIGINT UNIQUE REFERENCES order_lines(id), product_id BIGINT REFERENCES products(id),
+                        quantity DECIMAL(14,4), reason VARCHAR(500), shipment_id BIGINT REFERENCES shipments(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");

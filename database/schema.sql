@@ -387,6 +387,7 @@ CREATE TABLE shipments (
   code                VARCHAR(30)  NOT NULL,
   warehouse_id        BIGINT       NOT NULL,
   customer_id         BIGINT       NOT NULL,
+  order_id            BIGINT       NULL,
   status              ENUM('READY','DELIVERED','FAILED_RETURNED') NOT NULL DEFAULT 'READY',
   recipient_name      VARCHAR(200) NULL,
   delivered_at        DATETIME     NULL,
@@ -401,8 +402,10 @@ CREATE TABLE shipments (
   KEY idx_shipments_warehouse_status (warehouse_id, status),
   KEY idx_shipments_customer (customer_id),
   KEY idx_shipments_invoice_eligible (invoice_eligible_at),
+  KEY idx_shipments_order (order_id),
   CONSTRAINT fk_shipments_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
-  CONSTRAINT fk_shipments_customer FOREIGN KEY (customer_id) REFERENCES customers (id)
+  CONSTRAINT fk_shipments_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_shipments_order FOREIGN KEY (order_id) REFERENCES orders (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE shipment_items (
@@ -428,7 +431,7 @@ CREATE TABLE inventory_movements (
   product_id     BIGINT        NOT NULL,
   unit_id        BIGINT        NOT NULL,
   quantity       DECIMAL(15,4) NOT NULL,
-  movement_type  ENUM('SHIPMENT_RETURN','GOODS_RECEIPT') NOT NULL,
+  movement_type  ENUM('SHIPMENT_RETURN','GOODS_RECEIPT','SHIPMENT_OUT') NOT NULL,
   reference_type VARCHAR(50)   NOT NULL,
   reference_id   BIGINT        NOT NULL,
   created_by     BIGINT        NOT NULL,
@@ -733,4 +736,24 @@ CREATE TABLE picking_list_lines (
   CONSTRAINT fk_picking_list_lines_product FOREIGN KEY (product_id) REFERENCES products (id),
   CONSTRAINT fk_picking_list_lines_picked_by FOREIGN KEY (picked_by) REFERENCES users (id),
   CONSTRAINT chk_picking_list_lines_quantity CHECK (required_quantity > 0 AND (picked_quantity IS NULL OR (picked_quantity >= 0 AND picked_quantity <= required_quantity)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S6-05: phần đơn còn nợ hàng sau khi xuất thiếu
+CREATE TABLE order_backorders (
+  id             BIGINT        NOT NULL AUTO_INCREMENT,
+  order_id       BIGINT        NOT NULL,
+  order_line_id  BIGINT        NOT NULL,
+  product_id     BIGINT        NOT NULL,
+  quantity       DECIMAL(14,4) NOT NULL,
+  reason         VARCHAR(500)  NULL,
+  shipment_id    BIGINT        NOT NULL,
+  created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_order_backorders_line (order_line_id),
+  KEY idx_order_backorders_order (order_id),
+  CONSTRAINT fk_order_backorders_order FOREIGN KEY (order_id) REFERENCES orders (id),
+  CONSTRAINT fk_order_backorders_line FOREIGN KEY (order_line_id) REFERENCES order_lines (id),
+  CONSTRAINT fk_order_backorders_product FOREIGN KEY (product_id) REFERENCES products (id),
+  CONSTRAINT fk_order_backorders_shipment FOREIGN KEY (shipment_id) REFERENCES shipments (id),
+  CONSTRAINT chk_order_backorders_quantity CHECK (quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -19,13 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PickingServiceTest extends DatabaseTest {
 
-    private final OrderService orders = new OrderService();
-    private final OrderWorkflowService workflow = new OrderWorkflowService();
-    private final PickingService picking = new PickingService();
-    private User rep;
-    private User keeper;
-    private long first;
-    private long second;
+    protected final OrderService orders = new OrderService();
+    protected final OrderWorkflowService workflow = new OrderWorkflowService();
+    protected final PickingService picking = new PickingService();
+    protected User rep;
+    protected User keeper;
+    protected long first;
+    protected long second;
 
     @BeforeEach
     void fixture() throws Exception {

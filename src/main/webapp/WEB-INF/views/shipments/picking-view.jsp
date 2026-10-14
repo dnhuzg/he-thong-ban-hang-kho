@@ -23,6 +23,9 @@
                 <button class="btn btn--primary btn--sm" type="submit">Hoàn tất phiếu soạn</button>
               </form>
             </c:if>
+            <c:if test="${not list.open}">
+              <a class="btn btn--secondary btn--sm" href="${ctx}/shipments/export">Sang xuất kho</a>
+            </c:if>
           </div>
 
           <div class="pick-list">
