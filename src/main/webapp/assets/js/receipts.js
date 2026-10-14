@@ -2,85 +2,92 @@
   'use strict';
 
   const screen = document.getElementById('receipt-screen');
-  if (!screen) return;
+  const source = document.getElementById('receipt-data');
+  if (!screen || !source) return;
 
   const writable = screen.dataset.canWrite === 'true';
-  const storageKey = `oms-ghtk52-demo-${screen.dataset.userId || 'guest'}`;
-  const products = {
-    'SP-001': { base: 'chai', lot: true, units: [{ name: 'chai', factor: 1 }, { name: 'thùng', factor: 24 }] },
-    'SP-002': { base: 'gói', lot: true, units: [{ name: 'gói', factor: 1 }, { name: 'thùng', factor: 20 }] },
-    'SP-003': { base: 'cuộn', lot: false, units: [{ name: 'cuộn', factor: 1 }, { name: 'lốc', factor: 10 }] }
-  };
+  const data = JSON.parse(source.textContent);
+  const current = data.current;
+  const products = new Map(data.products.map(item => [String(item.id), item]));
   const form = document.getElementById('receipt-form');
   const lines = document.getElementById('receipt-lines');
   const template = document.getElementById('receipt-line-template');
   const error = document.getElementById('receipt-error');
   const dialog = document.getElementById('confirm-dialog');
-  const toast = document.getElementById('receipt-toast');
+  const supplier = document.getElementById('supplier');
+  const warehouse = document.getElementById('warehouse');
+  const field = (row, key) => row.querySelector(`[data-field="${key}"]`);
+  const confirmed = Boolean(current && current.status === 'CONFIRMED');
+  const statusText = status => (status === 'CONFIRMED' ? 'Đã xác nhận' : 'Bản nháp');
+  const format = number => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(number);
+  let busy = false;
+
   const today = () => {
     const date = new Date();
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
   };
-  const field = (row, key) => row.querySelector(`[data-field="${key}"]`);
-  let saved = [];
-  let currentId = null;
-  let toastTimer;
 
-  try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (Array.isArray(parsed)) saved = parsed.filter(item => item && typeof item === 'object');
-  } catch (_) { /* Trình duyệt có thể tắt lưu trữ cục bộ. */ }
-
-  function notice(message) {
-    toast.textContent = message;
-    toast.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.hidden = true; }, 4000);
-  }
-
-  function persist() {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(saved.slice(0, 30)));
-      return true;
-    } catch (_) {
-      notice('Trình duyệt không cho lưu dữ liệu mẫu.');
-      return false;
+  // Phiếu cũ có thể tham chiếu nhà cung cấp / sản phẩm đã ngừng: vẫn hiện để xem lại phiếu
+  if (current) {
+    if (!data.suppliers.some(item => item.id === current.supplierId)) {
+      data.suppliers.push({ id: current.supplierId, label: current.supplierName });
     }
+    if (!data.warehouses.some(item => item.id === current.warehouseId)) {
+      data.warehouses.push({ id: current.warehouseId, label: current.warehouseName });
+    }
+    current.lines.forEach(line => {
+      if (!products.has(String(line.productId))) {
+        products.set(String(line.productId), {
+          id: line.productId,
+          label: `Sản phẩm #${line.productId} (ngừng kinh doanh)`,
+          baseUnit: '',
+          units: [{ id: line.unitId, name: `đơn vị #${line.unitId}`, factor: line.factor }]
+        });
+      }
+    });
   }
+
+  data.suppliers.forEach(item => supplier.add(new Option(item.label, item.id)));
+  data.warehouses.forEach(item => warehouse.add(new Option(item.label, item.id)));
+  const productSelect = template.content.querySelector('[data-field="product"]');
+  products.forEach(item => productSelect.add(new Option(item.label, item.id)));
 
   function updateUnits(row, selectedUnit = '') {
-    const product = products[field(row, 'product').value];
+    const product = products.get(field(row, 'product').value);
     const unit = field(row, 'unit');
     unit.replaceChildren(new Option(product ? '— Chọn đơn vị —' : 'Chọn sản phẩm trước', ''));
-    if (product) product.units.forEach(item => unit.add(new Option(`${item.name} (1 ${item.name} = ${item.factor} ${product.base})`, item.name)));
-    unit.value = selectedUnit;
-    field(row, 'lot').required = Boolean(product?.lot);
-    field(row, 'expiry').required = Boolean(product?.lot);
-    row.querySelector('[data-lot-required]').hidden = !product?.lot;
-    row.querySelector('[data-expiry-required]').hidden = !product?.lot;
+    if (product) {
+      product.units.forEach(item => unit.add(new Option(
+        item.factor === 1 ? `${item.name} (đơn vị cơ sở)` : `${item.name} (1 ${item.name} = ${format(item.factor)} ${product.baseUnit})`,
+        item.id)));
+    }
+    unit.value = String(selectedUnit);
     updateConverted(row);
   }
 
+  function selectedUnit(row) {
+    const product = products.get(field(row, 'product').value);
+    return product?.units.find(item => String(item.id) === field(row, 'unit').value);
+  }
+
   function updateConverted(row) {
-    const product = products[field(row, 'product').value];
-    const selected = product?.units.find(item => item.name === field(row, 'unit').value);
+    const product = products.get(field(row, 'product').value);
+    const unit = selectedUnit(row);
     const quantity = Number(field(row, 'quantity').value);
-    row.querySelector('[data-converted]').textContent = selected && quantity > 0 && Number.isFinite(quantity)
-      ? `Quy đổi: ${format(quantity * selected.factor)} ${product.base} (${format(quantity)} × ${selected.factor})`
+    row.querySelector('[data-converted]').textContent = unit && quantity > 0 && Number.isFinite(quantity)
+      ? `Quy đổi: ${format(quantity * unit.factor)} ${product.baseUnit} (${format(quantity)} × ${format(unit.factor)})`
       : 'Quy đổi: —';
     updateSummary();
   }
 
-  const format = number => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(number);
-
   function addLine(item = {}) {
     const row = template.content.firstElementChild.cloneNode(true);
     lines.append(row);
-    field(row, 'product').value = item.product || '';
-    updateUnits(row, item.unit || '');
+    field(row, 'product').value = item.productId ? String(item.productId) : '';
+    updateUnits(row, item.unitId || '');
     field(row, 'quantity').value = item.quantity ?? '';
-    field(row, 'lot').value = item.lot || '';
-    field(row, 'expiry').value = item.expiry || '';
+    field(row, 'lot').value = item.lotNo || '';
+    field(row, 'expiry').value = item.expiryDate || '';
     updateConverted(row);
     renumber();
   }
@@ -88,145 +95,134 @@
   function renumber() {
     [...lines.children].forEach((row, index) => {
       row.querySelector('[data-line-number]').textContent = index + 1;
-      row.querySelector('[data-remove]').disabled = !writable || lines.children.length === 1 || Boolean(confirmed());
+      row.querySelector('[data-remove]').disabled = !writable || confirmed || lines.children.length === 1;
     });
     updateSummary();
   }
 
-  function confirmed() { return saved.find(item => item.id === currentId)?.status === 'CONFIRMED'; }
-
   function updateSummary() {
-    const supplier = document.getElementById('supplier');
-    const warehouse = document.getElementById('warehouse');
-    document.getElementById('summary-supplier').textContent = supplier.selectedOptions[0]?.textContent || 'Chưa chọn';
-    if (!supplier.value) document.getElementById('summary-supplier').textContent = 'Chưa chọn';
+    document.getElementById('summary-supplier').textContent = supplier.value ? supplier.selectedOptions[0].textContent : 'Chưa chọn';
     document.getElementById('summary-warehouse').textContent = warehouse.value ? warehouse.selectedOptions[0].textContent : 'Chưa chọn';
-    let converted = 0;
     let count = 0;
+    let converted = 0;
     for (const row of lines.children) {
-      const product = products[field(row, 'product').value];
-      const selected = product?.units.find(item => item.name === field(row, 'unit').value);
       const quantity = Number(field(row, 'quantity').value);
-      if (product) count++;
-      if (selected && Number.isFinite(quantity) && quantity > 0) converted++;
+      if (field(row, 'product').value) count++;
+      if (selectedUnit(row) && Number.isFinite(quantity) && quantity > 0) converted++;
     }
     document.getElementById('summary-items').textContent = count;
     document.getElementById('summary-units').textContent = converted;
-    document.getElementById('summary-status').textContent = confirmed() ? 'Đã xác nhận' : currentId ? 'Bản nháp' : 'Đang lập';
+    document.getElementById('summary-status').textContent = current ? statusText(current.status) : 'Đang lập';
   }
 
-  function readForm(status) {
-    return {
-      id: currentId || String(Date.now()),
-      status,
-      supplier: document.getElementById('supplier').value,
-      document: document.getElementById('document').value.trim(),
-      date: document.getElementById('received-date').value,
-      warehouse: document.getElementById('warehouse').value,
-      note: document.getElementById('note').value.trim(),
-      items: [...lines.children].map(row => ({
-        product: field(row, 'product').value,
-        quantity: field(row, 'quantity').value,
-        unit: field(row, 'unit').value,
-        factor: products[field(row, 'product').value]?.units.find(unit => unit.name === field(row, 'unit').value)?.factor || 0,
-        lot: field(row, 'lot').value.trim(),
-        expiry: field(row, 'expiry').value
-      }))
-    };
+  function showError(message) {
+    error.textContent = message;
+    error.hidden = false;
+    error.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function validate() {
     error.hidden = true;
     if (!form.reportValidity()) return false;
-    const entry = readForm('CONFIRMED');
-    if (!entry.items.length || entry.items.some(item => !item.product || !item.unit || !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0 || Number(item.quantity) * item.factor > 1e9)) {
-      error.textContent = 'Chọn sản phẩm, đơn vị và số lượng hợp lệ cho từng dòng.';
-    } else if (entry.items.some(item => products[item.product]?.lot && (!item.lot || !item.expiry))) {
-      error.textContent = 'Điền số lô và hạn dùng cho các sản phẩm quản lý theo lô.';
-    } else if (entry.items.some(item => item.expiry && item.expiry < entry.date)) {
-      error.textContent = 'Hạn dùng không được trước ngày nhập.';
-    } else if (saved.some(item => item.id !== entry.id && item.status === 'CONFIRMED' && item.supplier === entry.supplier && item.document.toLowerCase() === entry.document.toLowerCase())) {
-      error.textContent = 'Số chứng từ này đã có phiếu xác nhận cho nhà cung cấp đã chọn.';
-    } else {
-      return true;
+    const date = document.getElementById('received-date').value;
+    const rows = [...lines.children];
+    if (!rows.length || rows.some(row => {
+      const quantity = Number(field(row, 'quantity').value);
+      return !selectedUnit(row) || !Number.isFinite(quantity) || quantity <= 0;
+    })) {
+      showError('Chọn sản phẩm, đơn vị và số lượng hợp lệ cho từng dòng.');
+      return false;
     }
-    error.hidden = false;
-    error.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    return false;
+    if (rows.some(row => field(row, 'expiry').value && field(row, 'expiry').value < date)) {
+      showError('Hạn dùng không được trước ngày nhập.');
+      return false;
+    }
+    return true;
+  }
+
+  async function save(confirm) {
+    if (!writable || confirmed || busy) return;
+    const body = new URLSearchParams();
+    body.set('_csrf', screen.dataset.csrf || '');
+    if (current) body.set('id', current.id);
+    body.set('supplierId', supplier.value);
+    body.set('documentNo', document.getElementById('document').value.trim());
+    body.set('receivedDate', document.getElementById('received-date').value);
+    body.set('warehouseId', warehouse.value);
+    body.set('note', document.getElementById('note').value.trim());
+    body.set('confirm', String(confirm));
+    for (const row of lines.children) {
+      body.append('productId', field(row, 'product').value);
+      body.append('unitId', field(row, 'unit').value);
+      body.append('quantity', field(row, 'quantity').value);
+      body.append('lotNo', field(row, 'lot').value.trim());
+      body.append('expiryDate', field(row, 'expiry').value);
+    }
+    busy = true;
+    error.hidden = true;
+    try {
+      const response = await fetch(screen.dataset.saveUrl, { method: 'POST', body, credentials: 'same-origin' });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        window.location.href = `${screen.dataset.pageUrl}?id=${encodeURIComponent(result.id)}`;
+        return;
+      }
+      showError(result.error || (response.status === 401
+        ? 'Phiên đăng nhập đã hết hạn. Đăng nhập lại ở tab khác rồi lưu lại.'
+        : 'Không thể lưu phiếu nhập. Vui lòng thử lại.'));
+    } catch (_) {
+      showError('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');
+    } finally {
+      busy = false;
+    }
   }
 
   function renderHistory() {
     const container = document.getElementById('receipt-history');
     container.replaceChildren();
-    if (!saved.length) {
+    if (!data.recent.length) {
       const empty = document.createElement('p');
       empty.className = 'text-muted';
       empty.textContent = 'Chưa có phiếu nào.';
       container.append(empty);
       return;
     }
-    saved.slice().reverse().forEach(entry => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `receipt-history__item${entry.id === currentId ? ' is-selected' : ''}`;
+    data.recent.forEach(entry => {
+      const link = document.createElement('a');
+      link.href = `${screen.dataset.pageUrl}?id=${encodeURIComponent(entry.id)}`;
+      link.className = `receipt-history__item${current && entry.id === current.id ? ' is-selected' : ''}`;
       const title = document.createElement('strong');
-      title.textContent = entry.document || 'Bản nháp chưa có chứng từ';
+      title.textContent = `${entry.code} · ${entry.documentNo}`;
       const meta = document.createElement('span');
-      meta.textContent = `${entry.date || 'Chưa chọn ngày'} · ${entry.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Bản nháp'}`;
-      button.append(title, meta);
-      button.addEventListener('click', () => loadEntry(entry));
-      container.append(button);
+      meta.textContent = `${entry.receivedDate} · ${entry.warehouseName} · ${statusText(entry.status)}`;
+      link.append(title, meta);
+      container.append(link);
     });
   }
 
   function lockForm() {
-    const locked = !writable || Boolean(confirmed());
+    const locked = !writable || confirmed;
     form.querySelectorAll('input, select, textarea').forEach(input => { input.disabled = locked; });
     document.getElementById('add-line').hidden = locked;
     document.getElementById('save-draft').hidden = locked;
     form.querySelector('[type="submit"]').hidden = locked;
-    document.getElementById('receipt-status').textContent = confirmed() ? 'Đã xác nhận' : currentId ? 'Bản nháp' : 'Phiếu mới';
-    document.getElementById('reset-form').textContent = locked && writable ? 'Lập phiếu mới' : 'Làm mới';
-    document.getElementById('reset-form').hidden = !writable;
+    document.getElementById('receipt-status').textContent = current ? `${current.code} · ${statusText(current.status)}` : 'Phiếu mới';
+    const reset = document.getElementById('reset-form');
+    reset.textContent = current ? 'Lập phiếu mới' : 'Làm mới';
+    reset.hidden = !writable;
     renumber();
   }
 
-  function loadEntry(entry) {
-    currentId = entry.id;
-    document.getElementById('supplier').value = entry.supplier || '';
-    document.getElementById('document').value = entry.document || '';
-    document.getElementById('received-date').value = entry.date || today();
-    document.getElementById('warehouse').value = entry.warehouse || '';
-    document.getElementById('note').value = entry.note || '';
+  function fill() {
+    supplier.value = current ? String(current.supplierId) : '';
+    document.getElementById('document').value = current ? current.documentNo : '';
+    document.getElementById('received-date').value = current ? current.receivedDate : today();
+    warehouse.value = current ? String(current.warehouseId) : (data.warehouses.length === 1 ? String(data.warehouses[0].id) : '');
+    document.getElementById('note').value = current?.note || '';
     lines.replaceChildren();
-    (Array.isArray(entry.items) && entry.items.length ? entry.items : [{}]).forEach(addLine);
+    (current && current.lines.length ? current.lines : [{}]).forEach(addLine);
     error.hidden = true;
     lockForm();
-    renderHistory();
-    updateSummary();
-  }
-
-  function newEntry() {
-    currentId = null;
-    form.reset();
-    document.getElementById('received-date').value = today();
-    lines.replaceChildren();
-    addLine();
-    error.hidden = true;
-    lockForm();
-    renderHistory();
-    updateSummary();
-  }
-
-  function save(status) {
-    if (!writable || confirmed()) return;
-    const entry = readForm(status);
-    saved = saved.filter(item => item.id !== entry.id);
-    saved.push(entry);
-    currentId = entry.id;
-    if (persist()) notice(status === 'CONFIRMED' ? 'Đã xác nhận phiếu mẫu; tồn kho thật chưa thay đổi.' : 'Đã lưu bản nháp trên trình duyệt.');
-    lockForm();
-    renderHistory();
     updateSummary();
   }
 
@@ -241,19 +237,29 @@
     if (row) updateConverted(row);
   });
   lines.addEventListener('click', event => {
-    if (!event.target.matches('[data-remove]') || !writable || confirmed() || lines.children.length === 1) return;
+    if (!event.target.matches('[data-remove]') || !writable || confirmed || lines.children.length === 1) return;
     event.target.closest('.receipt-line').remove();
     renumber();
   });
   form.addEventListener('change', updateSummary);
   document.getElementById('add-line').addEventListener('click', () => addLine());
-  document.getElementById('reset-form').addEventListener('click', newEntry);
-  document.getElementById('save-draft').addEventListener('click', () => save('DRAFT'));
+  document.getElementById('reset-form').addEventListener('click', () => {
+    if (current) window.location.href = screen.dataset.pageUrl;
+    else fill();
+  });
+  document.getElementById('save-draft').addEventListener('click', () => {
+    error.hidden = true;
+    if (form.reportValidity()) save(false);
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
-    if (writable && !confirmed() && validate()) dialog.showModal();
+    if (writable && !confirmed && validate()) dialog.showModal();
   });
-  dialog.addEventListener('close', () => { if (dialog.returnValue === 'confirm' && validate()) save('CONFIRMED'); });
+  dialog.addEventListener('close', () => { if (dialog.returnValue === 'confirm' && validate()) save(true); });
 
-  newEntry();
+  renderHistory();
+  fill();
+  if (writable && !data.warehouses.length) {
+    showError('Tài khoản chưa được gắn kho nào nên chưa lập được phiếu nhập. Nhờ Admin gắn kho cho tài khoản.');
+  }
 })();
