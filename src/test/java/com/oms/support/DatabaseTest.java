@@ -219,6 +219,20 @@ public abstract class DatabaseTest {
                         quantity DECIMAL(15,4), factor DECIMAL(12,4), base_quantity DECIMAL(15,4),
                         lot_no VARCHAR(50), expiry_date DATE, UNIQUE (receipt_id, line_no))
                     """);
+            statement.execute("""
+                    CREATE TABLE picking_lists (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        warehouse_id BIGINT REFERENCES warehouses(id), status VARCHAR(10) DEFAULT 'OPEN',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        completed_by BIGINT REFERENCES users(id), completed_at TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE picking_list_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        picking_list_id BIGINT REFERENCES picking_lists(id) ON DELETE CASCADE,
+                        order_id BIGINT REFERENCES orders(id), order_line_id BIGINT UNIQUE REFERENCES order_lines(id),
+                        product_id BIGINT REFERENCES products(id), required_quantity DECIMAL(14,4),
+                        picked_quantity DECIMAL(14,4), short_reason VARCHAR(500), picked_by BIGINT REFERENCES users(id),
+                        picked_at TIMESTAMP)
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");

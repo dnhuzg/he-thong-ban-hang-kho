@@ -125,6 +125,12 @@ public final class Menu {
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 
+        if (policy.canWrite(user.getRoles(), Module.SHIPMENT)
+                && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
+            groups.add(new Group("Xuất kho & giao hàng", List.of(
+                    item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true))));
+        }
+
         List<Item> admin = new ArrayList<>();
         if (policy.canRead(user.getRoles(), Module.USER_AUDIT)) {
             admin.add(item("Người dùng", "/admin/users", "users", path.startsWith("/admin/users"), true));
