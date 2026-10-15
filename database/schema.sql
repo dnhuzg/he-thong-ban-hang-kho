@@ -218,6 +218,9 @@ CREATE TABLE products (
   status        ENUM('ACTIVE','DISCONTINUED') NOT NULL DEFAULT 'ACTIVE',
   created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  track_lots          BOOLEAN NOT NULL DEFAULT FALSE,
+  expiry_warning_days INT NOT NULL DEFAULT 30,
+  CONSTRAINT chk_product_expiry_warning CHECK (expiry_warning_days BETWEEN 0 AND 365),
   PRIMARY KEY (id),
   UNIQUE KEY uk_products_sku (sku),
   KEY idx_products_category (category_id),
@@ -450,6 +453,9 @@ CREATE TABLE inventory_lots (
   id                  BIGINT        NOT NULL AUTO_INCREMENT,
   warehouse_id        BIGINT        NOT NULL,
   product_id          BIGINT        NOT NULL,
+  lot_no              VARCHAR(50)   NULL,
+  manufactured_date   DATE          NULL,
+  expiry_date         DATE          NULL,
   remaining_quantity  DECIMAL(14,4) NOT NULL,
   unit_cost           DECIMAL(15,2) NOT NULL,
   received_at         DATETIME      NOT NULL,
@@ -462,7 +468,7 @@ CREATE TABLE inventory_lots (
   KEY idx_inventory_lots_product_received (product_id, received_at),
   CONSTRAINT fk_inventory_lots_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
   CONSTRAINT fk_inventory_lots_product FOREIGN KEY (product_id) REFERENCES products (id),
-  CONSTRAINT chk_inventory_lots_quantity CHECK (remaining_quantity > 0),
+  CONSTRAINT chk_inventory_lots_quantity CHECK (remaining_quantity >= 0),
   CONSTRAINT chk_inventory_lots_cost CHECK (unit_cost >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE user_warehouses (
@@ -688,6 +694,7 @@ CREATE TABLE goods_receipt_lines (
   quantity       DECIMAL(15,4) NOT NULL,
   factor         DECIMAL(12,4) NOT NULL,
   base_quantity  DECIMAL(15,4) NOT NULL,
+  manufactured_date DATE       NULL,
   lot_no         VARCHAR(50)   NULL,
   expiry_date    DATE          NULL,
   PRIMARY KEY (id),
@@ -825,4 +832,21 @@ CREATE TABLE payment_allocations (
   CONSTRAINT fk_payment_allocations_payment FOREIGN KEY (payment_id) REFERENCES payments (id),
   CONSTRAINT fk_payment_allocations_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id),
   CONSTRAINT chk_payment_allocations_amount CHECK (amount > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- S6-01: lưu lô thực xuất và người xác nhận ghi đè hạn dùng.
+CREATE TABLE IF NOT EXISTS shipment_lot_allocations (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  shipment_id BIGINT NOT NULL,
+  lot_id BIGINT NOT NULL,
+  quantity DECIMAL(14,4) NOT NULL,
+  override_reason VARCHAR(500) NULL,
+  override_by BIGINT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_shipment_lot (shipment_id,lot_id),
+  CONSTRAINT fk_shipment_lot_shipment FOREIGN KEY (shipment_id) REFERENCES shipments(id),
+  CONSTRAINT fk_shipment_lot_lot FOREIGN KEY (lot_id) REFERENCES inventory_lots(id),
+  CONSTRAINT fk_shipment_lot_actor FOREIGN KEY (override_by) REFERENCES users(id),
+  CONSTRAINT chk_shipment_lot_quantity CHECK (quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

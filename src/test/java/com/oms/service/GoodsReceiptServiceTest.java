@@ -92,6 +92,18 @@ class GoodsReceiptServiceTest extends DatabaseTest {
     }
 
     @Test
+    void trackedSkuRequiresAllMetadataAndReceiptStoresItOnTheRealLot() throws SQLException {
+        sql("UPDATE products SET track_lots=TRUE WHERE id=1");
+        assertThrows(ServiceException.class,()->service.save(form(null,"LO-MISSING",true,thung("2")),keeper));
+        assertEquals(0,count("warehouse_inventory","1=1"));
+        LocalDate made=LocalDate.now().minusMonths(2), expiry=LocalDate.now().plusMonths(6);
+        var input=new GoodsReceiptService.LineInput(1L,2L,new BigDecimal("2"),"LO-THAT",expiry,made);
+        var saved=service.save(form(null,"LO-COMPLETE",true,input),keeper);
+        assertEquals(1,count("inventory_lots","lot_no='LO-THAT' AND remaining_quantity=48 AND manufactured_date='"+made+"' AND expiry_date='"+expiry+"'"));
+        assertEquals(made,service.page(saved.id(),keeper).current().lines().get(0).manufacturedDate());
+    }
+
+    @Test
     void sameSupplierDocumentIsRejected() throws SQLException {
         service.save(form(null, "HD-04", false, thung("1")), keeper);
 

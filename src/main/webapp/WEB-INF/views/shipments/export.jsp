@@ -44,6 +44,7 @@
                         <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                         <input type="hidden" name="orderId" value="${r.orderId}">
                         <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
+                        <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
                       </form>
                     </td>
                   </tr>
@@ -68,6 +69,7 @@
                   <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                   <input type="hidden" name="orderId" value="${r.orderId}">
                   <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
+                  <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
                 </form>
               </article>
             </c:forEach>
@@ -143,4 +145,14 @@
           </div>
         </section>
 
+<c:if test="${canOverrideExpiry}"><c:forEach var="r" items="${export.ready}">
+  <dialog class="dialog" id="expiry-${r.orderId}" aria-labelledby="expiry-title-${r.orderId}"><form method="post" action="${ctx}/shipments/export/confirm">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>"><input type="hidden" name="orderId" value="${r.orderId}">
+    <header class="dialog__header"><h2 id="expiry-title-${r.orderId}">Ghi đè hạn dùng · <c:out value="${r.orderCode}"/></h2></header>
+    <div class="dialog__body"><p class="alert alert--warning">Chỉ dùng khi cần xuất lô đã quá hạn. Hệ thống ưu tiên lô còn hạn, ghi người xác nhận và lý do cho từng lô quá hạn thực xuất.</p>
+      <div class="form-field"><label class="form-label" for="expiry-reason-${r.orderId}">Lý do ghi đè *</label><textarea class="textarea" id="expiry-reason-${r.orderId}" name="overrideReason" rows="3" maxlength="500" required></textarea></div>
+      <label><input type="checkbox" name="overrideExpiry" value="true" required> Tôi xác nhận xuất lô quá hạn cho đơn này</label>
+    </div><footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-dialog-close>Hủy</button><button class="btn btn--primary" type="submit">Xác nhận xuất có ghi đè</button></footer>
+  </form></dialog>
+</c:forEach></c:if>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

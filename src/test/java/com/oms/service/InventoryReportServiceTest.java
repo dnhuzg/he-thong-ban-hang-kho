@@ -23,7 +23,7 @@ class InventoryReportServiceTest extends DatabaseTest {
     @BeforeEach
     void prepareInventoryFixture() throws Exception {
         sql("""
-                CREATE TABLE inventory_lots (
+                CREATE TABLE IF NOT EXISTS inventory_lots (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
                     warehouse_id BIGINT NOT NULL,
                     product_id BIGINT NOT NULL,

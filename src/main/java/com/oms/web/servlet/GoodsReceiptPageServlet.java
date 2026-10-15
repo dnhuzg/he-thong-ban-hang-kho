@@ -83,8 +83,11 @@ public class GoodsReceiptPageServlet extends BaseServlet {
         String[] quantities = values(req, "quantity");
         String[] lots = values(req, "lotNo");
         String[] expiries = values(req, "expiryDate");
+        String[] manufactured = values(req, "manufacturedDate");
+        // Client cũ chưa có ô ngày sản xuất vẫn gửi được SKU không quản lý lô.
+        if (manufactured.length==0) manufactured=new String[products.length];
         if (units.length != products.length || quantities.length != products.length
-                || lots.length != products.length || expiries.length != products.length) {
+                || lots.length != products.length || expiries.length != products.length || manufactured.length != products.length) {
             throw new ServiceException("Dữ liệu dòng hàng không hợp lệ.");
         }
         List<GoodsReceiptService.LineInput> lines = new ArrayList<>();
@@ -92,7 +95,7 @@ public class GoodsReceiptPageServlet extends BaseServlet {
             String at = "Dòng " + (i + 1) + ": ";
             lines.add(new GoodsReceiptService.LineInput(id(products[i], at + "sản phẩm không hợp lệ."),
                     id(units[i], at + "đơn vị không hợp lệ."), quantity(quantities[i], at),
-                    lots[i], date(expiries[i], at + "hạn dùng không hợp lệ.")));
+                    lots[i], date(expiries[i], at + "hạn dùng không hợp lệ."),date(manufactured[i],at+"ngày sản xuất không hợp lệ.")));
         }
         long id = longParam(req, "id");
         return new GoodsReceiptService.Form(id > 0 ? id : null,

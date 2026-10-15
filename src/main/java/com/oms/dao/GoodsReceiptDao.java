@@ -27,7 +27,7 @@ public class GoodsReceiptDao {
     public record UnitOption(long id, String name, BigDecimal factor) {
     }
 
-    public record ProductOption(long id, String label, String baseUnit, List<UnitOption> units) {
+    public record ProductOption(long id, String label, String baseUnit, List<UnitOption> units, boolean tracked) {
     }
 
     /** Phần đầu phiếu đọc kèm khoá để kiểm trạng thái trước khi sửa hoặc xác nhận. */
@@ -58,12 +58,14 @@ public class GoodsReceiptDao {
     public List<ProductOption> activeProducts(Connection conn) throws SQLException {
         Map<Long, String[]> products = new LinkedHashMap<>();
         Map<Long, List<UnitOption>> units = new LinkedHashMap<>();
+        Map<Long, Boolean> tracked = new LinkedHashMap<>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT p.id, p.sku, p.name, p.base_unit_id, u.name FROM products p "
+                "SELECT p.id, p.sku, p.name, p.base_unit_id, u.name, p.track_lots FROM products p "
                         + "JOIN units u ON u.id = p.base_unit_id WHERE p.status = 'ACTIVE' ORDER BY p.sku");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 long id = rs.getLong(1);
+                tracked.put(id,rs.getBoolean(6));
                 products.put(id, new String[] {rs.getString(2) + " · " + rs.getString(3), rs.getString(5)});
                 List<UnitOption> list = new ArrayList<>();
                 list.add(new UnitOption(rs.getLong(4), rs.getString(5), BigDecimal.ONE));
@@ -83,7 +85,7 @@ public class GoodsReceiptDao {
             }
         }
         List<ProductOption> list = new ArrayList<>();
-        products.forEach((id, p) -> list.add(new ProductOption(id, p[0], p[1], units.get(id))));
+        products.forEach((id, p) -> list.add(new ProductOption(id, p[0], p[1], units.get(id), tracked.get(id))));
         return list;
     }
 
@@ -138,7 +140,7 @@ public class GoodsReceiptDao {
         }
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO goods_receipt_lines (receipt_id, line_no, product_id, unit_id, quantity, factor, "
-                        + "base_quantity, lot_no, expiry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                        + "base_quantity, lot_no, expiry_date, manufactured_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             int no = 1;
             for (GoodsReceipt.Line line : lines) {
                 ps.setLong(1, receiptId);
@@ -154,6 +156,7 @@ public class GoodsReceiptDao {
                 } else {
                     ps.setDate(9, Date.valueOf(line.expiryDate()));
                 }
+                ps.setDate(10,line.manufacturedDate()==null?null:Date.valueOf(line.manufacturedDate()));
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -201,7 +204,7 @@ public class GoodsReceiptDao {
         }
         List<GoodsReceipt.Line> lines = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT product_id, unit_id, quantity, factor, base_quantity, lot_no, expiry_date "
+                "SELECT product_id, unit_id, quantity, factor, base_quantity, lot_no, expiry_date, manufactured_date "
                         + "FROM goods_receipt_lines WHERE receipt_id = ? ORDER BY line_no")) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -210,7 +213,7 @@ public class GoodsReceiptDao {
                     lines.add(new GoodsReceipt.Line(rs.getLong(1), rs.getLong(2),
                             plain(rs.getBigDecimal(3)), plain(rs.getBigDecimal(4)),
                             plain(rs.getBigDecimal(5)), rs.getString(6),
-                            expiry == null ? null : expiry.toLocalDate()));
+                            expiry == null ? null : expiry.toLocalDate(), date(rs.getDate(8))));
                 }
             }
         }
@@ -276,16 +279,19 @@ public class GoodsReceiptDao {
 
     /** Lô tồn cho báo cáo giá trị và tuổi tồn (S8-07); đơn giá lô lấy theo giá vốn hiện tại của sản phẩm. */
     public void insertLot(Connection conn, long warehouseId, long productId, BigDecimal quantity,
-                          LocalDate receivedDate, long receiptId) throws SQLException {
+                          LocalDate receivedDate, long receiptId, String lotNo, LocalDate manufactured, LocalDate expiry) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO inventory_lots (warehouse_id, product_id, remaining_quantity, unit_cost, received_at, "
-                        + "source_type, source_id) SELECT ?, id, ?, COALESCE(cost_price, 0), ?, 'GOODS_RECEIPT', ? "
+                        + "source_type, source_id,lot_no,manufactured_date,expiry_date) SELECT ?, id, ?, COALESCE(cost_price, 0), ?, 'GOODS_RECEIPT', ?,?,?,? "
                         + "FROM products WHERE id = ?")) {
             ps.setLong(1, warehouseId);
             ps.setBigDecimal(2, quantity);
             ps.setTimestamp(3, Timestamp.valueOf(receivedDate.atStartOfDay()));
             ps.setLong(4, receiptId);
-            ps.setLong(5, productId);
+            ps.setString(5,lotNo);
+            ps.setDate(6,manufactured==null?null:Date.valueOf(manufactured));
+            ps.setDate(7,expiry==null?null:Date.valueOf(expiry));
+            ps.setLong(8, productId);
             ps.executeUpdate();
         }
     }
@@ -319,6 +325,8 @@ public class GoodsReceiptDao {
     private static BigDecimal plain(BigDecimal value) {
         return new BigDecimal(value.stripTrailingZeros().toPlainString());
     }
+
+    private static LocalDate date(Date value) { return value==null?null:value.toLocalDate(); }
 
     private static void setNullable(PreparedStatement ps, int index, String value) throws SQLException {
         if (value == null || value.isBlank()) {

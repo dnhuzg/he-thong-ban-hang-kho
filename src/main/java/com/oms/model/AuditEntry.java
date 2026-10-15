@@ -66,6 +66,9 @@ public class AuditEntry {
             Map.entry("PICKING_LIST_CREATE", "Lập phiếu soạn hàng"),
             Map.entry("PICKING_LIST_DONE", "Hoàn tất phiếu soạn hàng"),
             Map.entry("SHIPMENT_EXPORT", "Xác nhận xuất kho"),
+            Map.entry("LOT_CONFIG_UPDATE", "Cấu hình quản lý lô theo SKU"),
+            Map.entry("LOT_METADATA_UPDATE", "Bổ sung thông tin lô"),
+            Map.entry("LOT_EXPIRY_OVERRIDE", "Ghi đè hạn dùng khi xuất kho"),
             Map.entry("INVOICE_ISSUE", "Phát hành hoá đơn"),
             Map.entry("PAYMENT_RECORD", "Ghi nhận thanh toán"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
@@ -96,6 +99,7 @@ public class AuditEntry {
         TARGET_LABELS.put("ORDER", "Đơn hàng");
         TARGET_LABELS.put("DISCOUNT_POLICY", "Chính sách chiết khấu");
         TARGET_LABELS.put("SHIPMENT", "Phiếu giao hàng");
+        TARGET_LABELS.put("INVENTORY_LOT", "Lô tồn kho");
         TARGET_LABELS.put("GOODS_RECEIPT", "Phiếu nhập kho");
         TARGET_LABELS.put("PICKING_LIST", "Phiếu soạn hàng");
         TARGET_LABELS.put("INVOICE", "Hoá đơn");

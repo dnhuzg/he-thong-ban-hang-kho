@@ -33,6 +33,7 @@ public class OrderPdfService {
             document.add(new Paragraph("Điểm giao: "+text(order.getDeliveryPointText()),normal));
             document.add(new Paragraph("Ngày giao mong muốn: "+text(order.getDeliveryDateText()),normal));
             document.add(new Paragraph("Người lập: "+text(order.getCreatedByName()),normal));
+            document.add(new Paragraph("Trạng thái: "+order.getStatus().getLabel(),normal));
             if(order.getStatus()==Order.Status.DRAFT) document.add(new Paragraph("BẢN NHÁP — giá được tính theo bảng giá hiện hành.",bold));
             if(order.getNote()!=null) document.add(new Paragraph("Ghi chú: "+order.getNote(),normal));
             Barcode128 barcode=new Barcode128(); barcode.setCodeType(Barcode.CODE128); barcode.setCode(order.getCode()); barcode.setBarHeight(32);
