@@ -31,7 +31,12 @@
         </span>
       </a>
       <nav class="sidebar__nav" aria-label="Menu chính">
+        <c:set var="lastSection" value=""/>
         <c:forEach var="group" items="${menu}">
+          <c:if test="${group.section != lastSection}">
+            <p class="sidebar__section"><c:out value="${group.section}"/></p>
+            <c:set var="lastSection" value="${group.section}"/>
+          </c:if>
           <%-- Nhóm có từ hai mục trở lên thành mục cha gập / mở được; nhóm chứa trang đang mở tự mở sẵn --%>
           <c:set var="groupOpen" value="${false}"/>
           <c:forEach var="item" items="${group.items}"><c:if test="${item.active}"><c:set var="groupOpen" value="${true}"/></c:if></c:forEach>

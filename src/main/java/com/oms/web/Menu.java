@@ -21,7 +21,13 @@ public final class Menu {
         public boolean isShortcut() { return shortcut; }
     }
 
-    public record Group(String title, List<Item> items) {
+    /** Vùng lớn của menu trái (Chung / Nghiệp vụ / Quản trị); tiêu đề vùng in ra ở nhóm đầu tiên của mỗi vùng. */
+    static final String GENERAL = "Chung";
+    static final String BUSINESS = "Nghiệp vụ";
+    static final String ADMIN = "Quản trị";
+
+    public record Group(String section, String title, List<Item> items) {
+        public String getSection() { return section; }
         public String getTitle() { return title; }
         public List<Item> getItems() { return items; }
     }
@@ -31,11 +37,11 @@ public final class Menu {
 
     public static List<Group> build(User user, PermissionPolicy policy, String path) {
         List<Group> groups = new ArrayList<>();
-        groups.add(new Group("", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
+        groups.add(new Group(GENERAL, "", List.of(item("Trang chủ", "/home", "house", path.equals("/home") || path.equals("/"), false))));
 
         if (user.getRoles().contains(Role.SALES_MANAGER)
                 || user.getRoles().contains(Role.ADMIN)) {
-            groups.add(new Group("Điều hành", List.of(
+            groups.add(new Group(GENERAL, "Điều hành", List.of(
                     item("Dashboard bán hàng & kho",
                             "/reports/management-dashboard",
                             "boxes",
@@ -49,7 +55,7 @@ public final class Menu {
         }
 
         if (user.getRoles().contains(Role.CUSTOMER)) {
-            groups.add(new Group("Cổng đại lý", List.of(
+            groups.add(new Group(BUSINESS, "Cổng đại lý", List.of(
                     item("Đặt hàng", "/portal", "package", path.equals("/portal"), true),
                     item("Đơn hàng của tôi", "/portal/orders", "clipboard-list", path.startsWith("/portal/orders"), true),
                     item("Công nợ của tôi", "/portal/my-debt", "wallet", path.equals("/portal/my-debt"), false),
@@ -70,7 +76,7 @@ public final class Menu {
             if (PermissionPolicy.canManageDiscounts(user.getRoles())) {
                 items.add(item("Chiết khấu", "/products/discounts", "percent", discounts, false));
             }
-            groups.add(new Group("Sản phẩm & bảng giá", items));
+            groups.add(new Group(BUSINESS, "Sản phẩm & bảng giá", items));
         }
 
         boolean takesOrders = PermissionPolicy.canTakeOrders(user.getRoles()) && policy.canWrite(user.getRoles(), Module.ORDER);
@@ -84,11 +90,11 @@ public final class Menu {
             salesItems.add(item("Trả hàng từ đại lý", "/sales/returns", "clipboard-list", path.equals("/sales/returns"), false));
         }
         if (!salesItems.isEmpty()) {
-            groups.add(new Group("Bán hàng", salesItems));
+            groups.add(new Group(BUSINESS, "Bán hàng", salesItems));
         }
 
         if (PermissionPolicy.canTakeOrders(user.getRoles()) || PermissionPolicy.canManageCredit(user.getRoles())) {
-            groups.add(new Group("Thu tiền theo tuyến", List.of(
+            groups.add(new Group(BUSINESS, "Thu tiền theo tuyến", List.of(
                     item("Thu tiền & nộp công ty", "/finance/route-collections", "wallet", path.equals("/finance/route-collections"), false))));
         }
 
@@ -98,7 +104,7 @@ public final class Menu {
             if (policy.canRead(user.getRoles(), Module.INVOICE) && PermissionPolicy.canManageCredit(user.getRoles())) {
                 customerItems.add(item("Cảnh báo hạn mức", "/finance/credit-alerts", "shield-check", path.equals("/finance/credit-alerts"), false));
             }
-            groups.add(new Group("Đại lý & hạn mức công nợ",
+            groups.add(new Group(BUSINESS, "Đại lý & hạn mức công nợ",
                     customerItems));
         }
 
@@ -118,11 +124,11 @@ public final class Menu {
             financeItems.add(item("Giảm trừ công nợ", "/finance/return-credits", "clipboard-list", path.equals("/finance/return-credits"), false));
         }
         if (!financeItems.isEmpty()) {
-            groups.add(new Group("Hoá đơn & công nợ", financeItems));
+            groups.add(new Group(BUSINESS, "Hoá đơn & công nợ", financeItems));
         }
 
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
-            groups.add(new Group("Tồn kho & nhập kho",
+            groups.add(new Group(BUSINESS, "Tồn kho & nhập kho",
                     List.of(
                             item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
                             item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
@@ -135,7 +141,7 @@ public final class Menu {
 
         if (policy.canWrite(user.getRoles(), Module.SHIPMENT)
                 && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
-            groups.add(new Group("Xuất kho & giao hàng", List.of(
+            groups.add(new Group(BUSINESS, "Xuất kho & giao hàng", List.of(
                     item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
                     item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
@@ -151,7 +157,7 @@ public final class Menu {
             admin.add(item("Nhật ký thao tác", "/admin/audit-logs", "history", path.equals("/admin/audit-logs"), false));
         }
         if (!admin.isEmpty()) {
-            groups.add(new Group("Quản trị", admin));
+            groups.add(new Group(ADMIN, "Quản trị", admin));
         }
 
         return groups;
