@@ -92,6 +92,8 @@ public class ShipmentService {
             if (items.isEmpty()) {
                 throw new ServiceException("Phiếu giao hàng chưa có mặt hàng nên không thể ghi nhận hàng quay về kho.");
             }
+            for (long productId : items.stream().map(com.oms.model.ShipmentItem::getProductId).distinct().sorted().toList())
+                new com.oms.dao.InventoryLotDao().product(conn,productId,true);
 
             int updated = shipmentDao.markFailedReturned(conn, shipmentId, reason, now);
             if (updated != 1) {
@@ -102,6 +104,7 @@ public class ShipmentService {
                 shipmentDao.insertReturnMovement(conn, shipment.getWarehouseId(), item, actor.getId(), shipmentId);
                 shipmentDao.returnToStock(conn, shipment.getWarehouseId(), item);
             }
+            new com.oms.dao.InventoryLotDao().returnShipment(conn,shipmentId);
 
             auditDao.log(conn, actor.getId(), "SHIPMENT_FAILED_RETURNED", "SHIPMENT", shipmentId,
                     shipment.getCode() + " / lý do: " + reason,

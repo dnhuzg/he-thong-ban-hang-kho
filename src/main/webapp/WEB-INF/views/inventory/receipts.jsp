@@ -56,6 +56,7 @@
       <div class="form-field"><label class="form-label">Số lượng <span class="required">*</span><input class="input" data-field="quantity" type="number" min="0.001" step="any" inputmode="decimal" placeholder="0" required></label></div>
       <div class="form-field"><label class="form-label">Đơn vị nhập <span class="required">*</span><select class="select" data-field="unit" required><option value="">Chọn sản phẩm trước</option></select></label></div>
       <div class="form-field"><label class="form-label">Số lô<input class="input" data-field="lot" type="text" maxlength="50" placeholder="VD: LO-1026"></label></div>
+      <div class="form-field"><label class="form-label">Ngày sản xuất<input class="input" data-field="manufactured" type="date"></label></div>
       <div class="form-field"><label class="form-label">Hạn sử dụng<input class="input" data-field="expiry" type="date"></label></div>
       <p class="receipt-line__converted" data-converted>Quy đổi: —</p>
     </div>

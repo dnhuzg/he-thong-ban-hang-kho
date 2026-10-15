@@ -39,4 +39,20 @@ class OrderBackendServletTest extends DatabaseTest {
         new CsrfFilter().doFilter(http.request,http.response,(req,resp)->called[0]=true);
         assertTrue(called[0]);
     }
+    @Test void copyFromPageRedirectsToNewDraftAndDoesNotExposeForeignSource() throws Exception {
+        User rep=user("sales",Role.SALES_REP), foreign=user("foreign",Role.SALES_REP);
+        sql("INSERT INTO customers(id,code,name,group_id,sales_rep_id) VALUES(900,'DL','Đại lý',1,"+rep.getId()+")");
+        long source=new com.oms.service.OrderService().create(900,rep);
+        var http=new HttpFixture(); http.path="/orders/copy"; http.method="POST";
+        http.parameters.put("id",Long.toString(source)); http.attributes.put(SessionKeys.CURRENT_USER,rep);
+        new OrderCopyServlet().doPost(http.request,http.response);
+        assertEquals(302,http.status);
+        assertTrue(http.redirect.startsWith("/oms/orders/edit?id="));
+        assertNotEquals("/oms/orders/edit?id="+source,http.redirect);
+        assertEquals(2,count("orders","1=1"));
+        http.attributes.put(SessionKeys.CURRENT_USER,foreign); http.status=200;
+        new OrderCopyServlet().doPost(http.request,http.response);
+        assertEquals(404,http.status);
+        assertEquals(2,count("orders","1=1"));
+    }
 }

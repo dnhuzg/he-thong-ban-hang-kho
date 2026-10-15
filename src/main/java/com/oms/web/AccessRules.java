@@ -35,6 +35,8 @@ public final class AccessRules {
             Map.entry("/api/portal/submit", new Rule(Kind.WRITE, Module.ORDER)),
 
             Map.entry("/api/orders/copy", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/copy", new Rule(Kind.WRITE, Module.ORDER)),
+            Map.entry("/orders/pdf", new Rule(Kind.READ, Module.ORDER)),
 
             Map.entry("/api/orders/pdf", new Rule(Kind.READ, Module.ORDER)),
 
@@ -106,6 +108,8 @@ public final class AccessRules {
             Map.entry("/inventory/stock", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/stock/export", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/lots", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/lots/configure", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/inventory/lots/metadata", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/stock-card", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/counts", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/counts/create", new Rule(Kind.WRITE, Module.INVENTORY)),

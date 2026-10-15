@@ -18,7 +18,7 @@ public record GoodsReceipt(long id, String code, long supplierId, String supplie
 
     /** Một dòng hàng: số lượng theo đơn vị trên chứng từ kèm bản chụp hệ số và số lượng quy đổi. */
     public record Line(long productId, long unitId, BigDecimal quantity, BigDecimal factor,
-                       BigDecimal baseQuantity, String lotNo, LocalDate expiryDate) {
+                       BigDecimal baseQuantity, String lotNo, LocalDate expiryDate, LocalDate manufacturedDate) {
     }
 
     /** Dòng trong danh sách phiếu gần đây. */

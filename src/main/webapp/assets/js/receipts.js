@@ -54,6 +54,7 @@
 
   function updateUnits(row, selectedUnit = '') {
     const product = products.get(field(row, 'product').value);
+    ['lot', 'manufactured', 'expiry'].forEach(key => { field(row, key).required = Boolean(product?.tracked); });
     const unit = field(row, 'unit');
     unit.replaceChildren(new Option(product ? '— Chọn đơn vị —' : 'Chọn sản phẩm trước', ''));
     if (product) {
@@ -88,6 +89,7 @@
     field(row, 'quantity').value = item.quantity ?? '';
     field(row, 'lot').value = item.lotNo || '';
     field(row, 'expiry').value = item.expiryDate || '';
+    field(row, 'manufactured').value = item.manufacturedDate || '';
     updateConverted(row);
     renumber();
   }
@@ -157,6 +159,7 @@
       body.append('quantity', field(row, 'quantity').value);
       body.append('lotNo', field(row, 'lot').value.trim());
       body.append('expiryDate', field(row, 'expiry').value);
+      body.append('manufacturedDate', field(row, 'manufactured').value);
     }
     busy = true;
     error.hidden = true;

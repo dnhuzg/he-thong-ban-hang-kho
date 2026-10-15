@@ -37,4 +37,12 @@ class OrderPdfServiceTest extends OrderWorkflowServiceTest {
             assertTrue(new PdfTextExtractor(reader).getTextFromPage(2).contains("Thành tiền"));
         } finally { reader.close(); }
     }
+    @Test void approvedPdfKeepsSnapshotWhenPriceListChanges() throws Exception {
+        workflow.submit(id,rep); sql("UPDATE price_list_items SET sale_price=12000");
+        var reader=new PdfReader(new OrderPdfService().export(id,rep));
+        try {
+            String text=new PdfTextExtractor(reader).getTextFromPage(1);
+            assertTrue(text.contains("50.000")); assertFalse(text.contains("60.000"));
+        } finally { reader.close(); }
+    }
 }

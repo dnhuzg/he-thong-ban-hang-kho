@@ -27,7 +27,10 @@ public class GoodsReceiptService {
     private static final int RECENT = 30;
     private static final BigDecimal MAX_BASE_QUANTITY = new BigDecimal("1000000000");
 
-    public record LineInput(Long productId, Long unitId, BigDecimal quantity, String lotNo, LocalDate expiryDate) {
+    public record LineInput(Long productId, Long unitId, BigDecimal quantity, String lotNo, LocalDate expiryDate, LocalDate manufacturedDate) {
+        public LineInput(Long productId, Long unitId, BigDecimal quantity, String lotNo, LocalDate expiryDate) {
+            this(productId,unitId,quantity,lotNo,expiryDate,null);
+        }
     }
 
     public record Form(Long id, Long supplierId, String documentNo, LocalDate receivedDate, Long warehouseId,
@@ -118,6 +121,8 @@ public class GoodsReceiptService {
                 throw new ServiceException("Kho nhập không tồn tại.");
             }
             List<GoodsReceipt.Line> lines = new ArrayList<>();
+            for (long productId : form.lines().stream().map(LineInput::productId).filter(java.util.Objects::nonNull).distinct().sorted().toList())
+                new com.oms.dao.InventoryLotDao().product(conn,productId,true);
             int no = 1;
             for (LineInput input : form.lines()) {
                 lines.add(line(conn, input, form.receivedDate(), no++));
@@ -152,7 +157,7 @@ public class GoodsReceiptService {
                 for (GoodsReceipt.Line line : lines) {
                     dao.addOnHand(conn, form.warehouseId(), line.productId(), line.baseQuantity());
                     dao.insertLot(conn, form.warehouseId(), line.productId(), line.baseQuantity(),
-                            form.receivedDate(), id);
+                            form.receivedDate(), id, line.lotNo(), line.manufacturedDate(), line.expiryDate());
                     dao.insertMovement(conn, form.warehouseId(), line.productId(), line.baseQuantity(), id,
                             actor.getId());
                 }
@@ -174,6 +179,7 @@ public class GoodsReceiptService {
         if (!dao.isActiveProduct(conn, input.productId())) {
             throw new ServiceException(at + "sản phẩm không tồn tại hoặc đã ngừng kinh doanh.");
         }
+        var config = new com.oms.dao.InventoryLotDao().product(conn,input.productId(),true);
         String lotNo = trim(input.lotNo());
         if (lotNo != null && lotNo.length() > 50) {
             throw new ServiceException(at + "số lô tối đa 50 ký tự.");
@@ -181,6 +187,11 @@ public class GoodsReceiptService {
         if (input.expiryDate() != null && input.expiryDate().isBefore(receivedDate)) {
             throw new ServiceException(at + "hạn dùng không được trước ngày nhập.");
         }
+        if (config.tracked() && (lotNo==null || input.manufacturedDate()==null || input.expiryDate()==null))
+            throw new ServiceException(at+"SKU quản lý lô phải có số lô, ngày sản xuất và hạn dùng.");
+        if (input.manufacturedDate()!=null && (input.manufacturedDate().isAfter(receivedDate)
+                || (input.expiryDate()!=null && input.manufacturedDate().isAfter(input.expiryDate()))))
+            throw new ServiceException(at+"Ngày sản xuất không được sau ngày nhập hoặc hạn dùng.");
         if (input.quantity().stripTrailingZeros().scale() > 4) {
             throw new ServiceException(at + "số lượng tối đa 4 chữ số thập phân.");
         }
@@ -194,7 +205,7 @@ public class GoodsReceiptService {
             throw new ServiceException(at + "số lượng quy đổi không hợp lệ.");
         }
         return new GoodsReceipt.Line(input.productId(), input.unitId(), input.quantity(), converted.factor(),
-                converted.baseQuantity(), lotNo, input.expiryDate());
+                converted.baseQuantity(), lotNo, input.expiryDate(), input.manufacturedDate());
     }
 
     /** null = mọi kho (Admin); người khác chỉ thao tác trên kho được gắn. */

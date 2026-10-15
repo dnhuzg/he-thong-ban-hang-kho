@@ -49,6 +49,12 @@ public class OrderLifecycleService {
             };
             if(!valid) throw new ServiceException("Không được bỏ qua bước hoặc chuyển ngược vòng đời đơn.");
             if(next==Order.Status.SHIPPED) {
+                try (var ps = conn.prepareStatement("SELECT p.id,p.track_lots FROM order_lines l JOIN products p ON p.id=l.product_id WHERE l.order_id=? ORDER BY p.id FOR UPDATE")) {
+                    ps.setLong(1,id);
+                    try (var rs = ps.executeQuery()) {
+                        while (rs.next()) if (rs.getBoolean(2)) throw new ServiceException("Đơn có SKU quản lý lô; xác nhận tại màn Xuất kho để kiểm tra lô và hạn dùng.");
+                    }
+                }
                 new CustomerDao().findByIdForUpdate(conn,order.getCustomerId());
                 new OrderStockDao().release(conn,id,true);
                 // Cam kết hạn mức còn giữ đến khi module hoá đơn chuyển sang công nợ phải thu.

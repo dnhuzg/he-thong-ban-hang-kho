@@ -46,6 +46,10 @@ public class ShipmentExportService {
 
     /** Trả về ID phiếu xuất vừa lập. */
     public long export(long orderId, User actor) throws SQLException {
+        return export(orderId,actor,false,null);
+    }
+
+    public long export(long orderId, User actor, boolean overrideExpiry, String overrideReason) throws SQLException {
         Set<Long> scope = PickingService.scope(actor);
         return Db.inTransaction(conn -> {
             Order order = new OrderDao().findByIdForUpdate(conn, orderId);
@@ -67,9 +71,12 @@ public class ShipmentExportService {
                 throw new ServiceException("Đơn " + order.getCode()
                         + " không soạn được mặt hàng nào; huỷ đơn hoặc soạn lại thay vì xuất kho.");
             }
+            for (long productId : new java.util.TreeSet<>(shipped.keySet()))
+                new com.oms.dao.InventoryLotDao().product(conn,productId,true);
             dao.consumeReservations(conn, orderId, shipped);
 
             long shipmentId = dao.insertShipment(conn, order.getWarehouseId(), order.getCustomerId(), orderId);
+            new InventoryLotService().consume(conn,shipmentId,order.getWarehouseId(),shipped,overrideExpiry,overrideReason,actor);
             int shortLines = 0;
             for (ShipmentExportDao.PickedLine line : lines) {
                 if (line.picked().signum() > 0) {

@@ -26,6 +26,7 @@ public class ShipmentExportServlet extends BaseServlet {
         }
         try {
             req.setAttribute("export", exportService.page(currentUser(req)));
+            req.setAttribute("canOverrideExpiry", currentUser(req).hasRole(com.oms.model.Role.WH_MANAGER));
             render(req, resp, "shipments/export");
         } catch (ForbiddenException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -41,7 +42,8 @@ public class ShipmentExportServlet extends BaseServlet {
             return;
         }
         try {
-            long shipmentId = exportService.export(longParam(req, "orderId"), currentUser(req));
+            long shipmentId = exportService.export(longParam(req, "orderId"), currentUser(req),
+                    "true".equals(param(req,"overrideExpiry")),param(req,"overrideReason"));
             flash(req, String.format("Đã xuất kho, lập phiếu xuất PX%06d; phiếu chờ xác nhận giao hàng.", shipmentId));
         } catch (OrderService.NotFoundException e) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
