@@ -1,8 +1,18 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<fmt:setLocale value="vi_VN"/>
 <c:set var="pageTitle" value="Báo cáo doanh số đa chiều"/>
 <c:set var="pageStylesheet" value="sales-report.css"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
+
+<c:set var="f" value="${sales.filter}"/>
+<c:set var="t" value="${sales.total}"/>
+<c:url var="exportUrl" value="/reports/sales/export">
+    <c:param name="dimension" value="${f.dimension}"/>
+    <c:param name="from" value="${f.from}"/>
+    <c:param name="to" value="${f.to}"/>
+</c:url>
 
 <main class="sales-report">
 
@@ -11,27 +21,12 @@
             <p class="sales-report__eyebrow">BÁO CÁO KINH DOANH</p>
             <h1>Báo cáo doanh số đa chiều</h1>
             <p class="sales-report__subtitle">
-                Phân tích doanh số theo nhân viên, khu vực, đại lý,
-                nhóm hàng và SKU.
+                Doanh số theo hoá đơn đã phát hành (số lượng thực giao),
+                so với kỳ liền trước cùng độ dài.
             </p>
         </div>
-        <button class="sales-report__export"
-                type="button"
-                disabled
-                title="Chưa có API xuất báo cáo doanh số">
-            Xuất Excel
-        </button>
+        <a class="sales-report__export" href="${exportUrl}">Xuất Excel</a>
     </header>
-
-    <section class="sales-report__notice" role="status">
-        <strong>Chờ tích hợp dữ liệu thực tế</strong>
-        <p>
-            Giao diện đã được chuẩn bị. Doanh số, sản lượng,
-            biên lợi nhuận và so sánh cùng kỳ sẽ xuất hiện khi
-            backend cung cấp dữ liệu báo cáo hợp lệ.
-            Hiện chưa có số liệu để xuất Excel.
-        </p>
-    </section>
 
     <section class="sales-report__panel" aria-labelledby="sales-filter-title">
         <div class="sales-report__section-title">
@@ -39,125 +34,109 @@
             <p>Lựa chọn chiều phân tích và khoảng thời gian cần xem.</p>
         </div>
 
-        <div class="sales-report__filters">
-
+        <form class="sales-report__filters" method="get" action="${ctx}/reports/sales">
             <div class="sales-report__field">
                 <label for="sales-group">Nhóm theo</label>
-                <select id="sales-group">
-                    <option value="employee">Nhân viên</option>
-                    <option value="region">Khu vực</option>
-                    <option value="agency">Đại lý</option>
-                    <option value="category">Nhóm hàng</option>
-                    <option value="sku">SKU</option>
+                <select id="sales-group" name="dimension" data-autosubmit>
+                    <c:forEach var="d" items="${dimensions}">
+                        <option value="${d.code}" ${d == f.dimension ? 'selected' : ''}><c:out value="${d.label}"/></option>
+                    </c:forEach>
                 </select>
             </div>
 
             <div class="sales-report__field">
                 <label for="sales-start">Từ ngày</label>
-                <input id="sales-start" type="date"/>
+                <input id="sales-start" name="from" type="date" value="<c:out value='${f.from}'/>"/>
             </div>
 
             <div class="sales-report__field">
                 <label for="sales-end">Đến ngày</label>
-                <input id="sales-end" type="date"/>
+                <input id="sales-end" name="to" type="date" value="<c:out value='${f.to}'/>"/>
             </div>
 
             <div class="sales-report__field sales-report__field--action">
-                <button id="sales-apply" type="button">
-                    Áp dụng bộ lọc
-                </button>
+                <button type="submit">Áp dụng bộ lọc</button>
             </div>
-        </div>
-
-        <p id="sales-filter-message"
-           class="sales-report__filter-message"
-           aria-live="polite"></p>
+        </form>
     </section>
 
-    <section class="sales-report__metrics"
-             aria-label="Tổng quan báo cáo">
+    <section class="sales-report__metrics" aria-label="Tổng quan báo cáo">
 
         <article class="sales-report__metric">
             <span>Doanh số kỳ này</span>
-            <strong>—</strong>
-            <small>Chưa có dữ liệu</small>
+            <strong><fmt:formatNumber value="${t.revenue}" maxFractionDigits="0"/> ₫</strong>
+            <small><c:out value="${f.from}"/> → <c:out value="${f.to}"/></small>
         </article>
 
         <article class="sales-report__metric">
             <span>Sản lượng kỳ này</span>
-            <strong>—</strong>
+            <strong><fmt:formatNumber value="${t.quantity}" maxFractionDigits="0"/></strong>
             <small>Theo đơn vị cơ sở</small>
         </article>
 
         <article class="sales-report__metric">
             <span>So với cùng kỳ trước</span>
-            <strong>—</strong>
-            <small>Chưa thể tính chênh lệch</small>
+            <strong><c:choose><c:when test="${t.changePercent == null}">—</c:when><c:otherwise>${t.changePercent.signum() > 0 ? '+' : ''}<fmt:formatNumber value="${t.changePercent}" maxFractionDigits="1"/>%</c:otherwise></c:choose></strong>
+            <small>Kỳ trước: <fmt:formatNumber value="${t.previousRevenue}" maxFractionDigits="0"/> ₫ (<c:out value="${sales.previousFrom}"/> → <c:out value="${sales.previousTo}"/>)</small>
         </article>
 
-        <c:if test="${canViewGrossMargin}">
+        <c:if test="${sales.showMargin}">
             <article class="sales-report__metric">
                 <span>Biên lợi nhuận gộp</span>
-                <strong>—</strong>
-                <small>Chờ xác minh giá vốn lịch sử</small>
+                <strong><c:choose><c:when test="${t.marginPercent == null}">—</c:when><c:otherwise><fmt:formatNumber value="${t.marginPercent}" maxFractionDigits="1"/>%</c:otherwise></c:choose></strong>
+                <small>Theo giá vốn hiện tại của sản phẩm</small>
             </article>
         </c:if>
 
     </section>
 
-    <section class="sales-report__panel"
-             aria-labelledby="sales-table-title">
+    <section class="sales-report__panel" aria-labelledby="sales-table-title">
 
         <div class="sales-report__section-title">
             <h2 id="sales-table-title">Chi tiết doanh số</h2>
-            <p id="sales-dimension-description">
-                Chiều phân tích: Nhân viên
-            </p>
+            <p>Chiều phân tích: <c:out value="${f.dimension.label}"/></p>
         </div>
 
         <div class="sales-report__table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th scope="col" id="sales-group-heading">Nhân viên</th>
+                        <th scope="col"><c:out value="${f.dimension.label}"/></th>
                         <th scope="col">Doanh số</th>
                         <th scope="col">Sản lượng</th>
                         <th scope="col">Doanh số cùng kỳ</th>
                         <th scope="col">Chênh lệch (%)</th>
-                        <c:if test="${canViewGrossMargin}">
+                        <c:if test="${sales.showMargin}">
                             <th scope="col">Biên LN gộp (%)</th>
                         </c:if>
                     </tr>
                 </thead>
 
                 <tbody>
-                    <tr>
-                        <td class="sales-report__empty"
-                            colspan="${canViewGrossMargin ? 6 : 5}">
-                            Chưa có dữ liệu báo cáo từ backend.
-                            Vui lòng tích hợp API tổng hợp doanh số
-                            trước khi sử dụng báo cáo.
-                        </td>
-                    </tr>
+                    <c:if test="${empty sales.rows}">
+                        <tr>
+                            <td class="sales-report__empty" colspan="${sales.showMargin ? 6 : 5}">
+                                Không có hoá đơn nào trong kỳ này và kỳ trước.
+                            </td>
+                        </tr>
+                    </c:if>
+                    <c:forEach var="r" items="${sales.rows}">
+                        <tr>
+                            <td><c:out value="${r.label}"/></td>
+                            <td><fmt:formatNumber value="${r.revenue}" maxFractionDigits="0"/></td>
+                            <td><fmt:formatNumber value="${r.quantity}" maxFractionDigits="0"/></td>
+                            <td><fmt:formatNumber value="${r.previousRevenue}" maxFractionDigits="0"/></td>
+                            <td><c:choose><c:when test="${r.changePercent == null}">—</c:when><c:otherwise><fmt:formatNumber value="${r.changePercent}" maxFractionDigits="1"/></c:otherwise></c:choose></td>
+                            <c:if test="${sales.showMargin}">
+                                <td><c:choose><c:when test="${r.marginPercent == null}">—</c:when><c:otherwise><fmt:formatNumber value="${r.marginPercent}" maxFractionDigits="1"/></c:otherwise></c:choose></td>
+                            </c:if>
+                        </tr>
+                    </c:forEach>
                 </tbody>
             </table>
         </div>
     </section>
 
-    <section class="sales-report__panel sales-report__integration"
-             aria-labelledby="sales-integration-title">
-        <h2 id="sales-integration-title">Thông tin tích hợp</h2>
-        <p>
-            Báo cáo cần dữ liệu đơn hàng đã được ghi nhận doanh số,
-            sản lượng quy đổi, chiều phân tích và giá vốn tại thời điểm
-            giao dịch. Backend phải kiểm tra quyền khi trả biên lợi
-            nhuận và khi xuất Excel.
-        </p>
-    </section>
-
 </main>
-
-<script defer
-        src="${ctx}/assets/js/sales-report.js?v=${assetVersion}"></script>
 
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>
