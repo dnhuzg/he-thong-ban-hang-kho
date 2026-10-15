@@ -52,7 +52,7 @@ public class DebtAgingDao {
     public List<InvoiceLine> lines(Connection conn, LocalDate asOf) throws SQLException {
         List<InvoiceLine> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT i.id, c.id, c.code, c.name, i.code, i.total_amount, i.paid_amount, i.issued_at, i.due_date, "
+                "SELECT i.id, c.id, c.code, c.name, i.code, i.total_amount, i.paid_amount + i.credited_amount, i.issued_at, i.due_date, "
                         + "c.sales_rep_id, u.full_name "
                         + "FROM invoices i JOIN customers c ON c.id = i.customer_id "
                         + "LEFT JOIN users u ON u.id = c.sales_rep_id "

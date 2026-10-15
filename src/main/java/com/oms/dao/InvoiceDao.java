@@ -235,8 +235,8 @@ public class InvoiceDao {
 
     public Summary summary(Connection conn, LocalDate today) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT COUNT(*), COALESCE(SUM(total_amount), 0), COALESCE(SUM(paid_amount), 0), "
-                        + "COALESCE(SUM(total_amount - paid_amount), 0), "
+                "SELECT COUNT(*), COALESCE(SUM(total_amount), 0), COALESCE(SUM(paid_amount + credited_amount), 0), "
+                        + "COALESCE(SUM(total_amount - paid_amount - credited_amount), 0), "
                         + "COALESCE(SUM(CASE WHEN status IN ('ISSUED', 'PARTIAL') AND due_date < ? THEN 1 ELSE 0 END), 0) "
                         + "FROM invoices WHERE status <> 'CANCELLED'")) {
             ps.setDate(1, Date.valueOf(today));
@@ -250,8 +250,8 @@ public class InvoiceDao {
     public List<Debtor> debtors(Connection conn, LocalDate today) throws SQLException {
         List<Debtor> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT c.code, c.name, SUM(i.total_amount - i.paid_amount), "
-                        + "SUM(CASE WHEN i.due_date < ? THEN i.total_amount - i.paid_amount ELSE 0 END), "
+                "SELECT c.code, c.name, SUM(i.total_amount - i.paid_amount - i.credited_amount), "
+                        + "SUM(CASE WHEN i.due_date < ? THEN i.total_amount - i.paid_amount - i.credited_amount ELSE 0 END), "
                         + "MIN(CASE WHEN i.due_date < ? THEN i.due_date END) "
                         + "FROM invoices i JOIN customers c ON c.id = i.customer_id WHERE i.status IN ('ISSUED', 'PARTIAL') "
                         + "GROUP BY c.id, c.code, c.name ORDER BY 4 DESC, 3 DESC")) {
@@ -281,7 +281,7 @@ public class InvoiceDao {
         List<Invoice> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT i.id, i.code, i.customer_id, c.code, c.name, i.total_amount, i.issued_at, i.due_date, i.status, "
-                        + "u.full_name, i.paid_amount FROM invoices i JOIN customers c ON c.id = i.customer_id "
+                        + "u.full_name, i.paid_amount, i.credited_amount FROM invoices i JOIN customers c ON c.id = i.customer_id "
                         + "LEFT JOIN users u ON u.id = i.issued_by" + where + " ORDER BY i.id DESC LIMIT ?")) {
             int index = 1;
             if (id != null) {
@@ -303,6 +303,7 @@ public class InvoiceDao {
                     invoice.setStatus(Invoice.Status.valueOf(rs.getString(9)));
                     invoice.setIssuedByName(rs.getString(10));
                     invoice.setPaidAmount(rs.getBigDecimal(11));
+                    invoice.setCreditedAmount(rs.getBigDecimal(12));
                     list.add(invoice);
                 }
             }

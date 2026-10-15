@@ -114,13 +114,12 @@ public final class Menu {
             financeItems.add(item("Phân tích tuổi nợ", "/finance/debt-aging", "history", path.equals("/finance/debt-aging"), false));
             if (accountant) {
                 financeItems.add(item("Biên bản đối chiếu", "/finance/reconciliations", "clipboard-list", path.equals("/finance/reconciliations"), false));
-                financeItems.add(item("Sổ chi tiết công nợ", "/finance/customer-ledger", "history", path.equals("/finance/customer-ledger"), false));
+                financeItems.add(item("Sổ chi tiết công nợ", "/finance/debt-ledger", "history", path.equals("/finance/debt-ledger") || path.equals("/finance/customer-ledger"), false));
             }
         }
         if (accountant) {
             financeItems.add(0, item("Hoá đơn", "/finance/invoices", "clipboard-list", path.startsWith("/finance/invoices"), false));
             financeItems.add(1, item("Ghi nhận thanh toán", "/finance/payments", "wallet", path.startsWith("/finance/payments"), false));
-            financeItems.add(item("Chi tiết công nợ đại lý", "/finance/debt-ledger", "history", path.equals("/finance/debt-ledger"), false));
             financeItems.add(item("Giảm trừ công nợ", "/finance/return-credits", "clipboard-list", path.equals("/finance/return-credits"), false));
         }
         if (!financeItems.isEmpty()) {
@@ -136,6 +135,7 @@ public final class Menu {
                             item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false),
                             item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
                             item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
+                            item("Kiểm kê kho", "/inventory/counts", "clipboard-list", path.equals("/inventory/counts"), false),
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 

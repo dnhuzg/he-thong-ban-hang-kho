@@ -24,7 +24,7 @@ public class PaymentDao {
     public List<Payment.OpenInvoice> openInvoices(Connection conn, Long customerId, boolean lock) throws SQLException {
         List<Payment.OpenInvoice> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT i.id, i.code, i.customer_id, c.name, i.total_amount - i.paid_amount, i.due_date "
+                "SELECT i.id, i.code, i.customer_id, c.name, i.total_amount - i.paid_amount - i.credited_amount, i.due_date "
                         + "FROM invoices i JOIN customers c ON c.id = i.customer_id "
                         + "WHERE i.status IN ('ISSUED', 'PARTIAL')" + (customerId == null ? "" : " AND i.customer_id = ?")
                         + " ORDER BY " + (customerId == null ? "c.name, " : "") + "i.issued_at, i.id"
@@ -99,10 +99,10 @@ public class PaymentDao {
     public void applyToInvoice(Connection conn, long invoiceId, BigDecimal amount) throws SQLException {
         // Gán trạng thái trước paid_amount: MySQL tính các phép gán lần lượt bằng giá trị mới
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE invoices SET status = CASE WHEN paid_amount + ? >= total_amount THEN 'PAID' ELSE 'PARTIAL' END, "
-                        + "paid_at = CASE WHEN paid_amount + ? >= total_amount THEN CURRENT_TIMESTAMP ELSE paid_at END, "
+                "UPDATE invoices SET status = CASE WHEN paid_amount + credited_amount + ? >= total_amount THEN 'PAID' ELSE 'PARTIAL' END, "
+                        + "paid_at = CASE WHEN paid_amount + credited_amount + ? >= total_amount THEN CURRENT_TIMESTAMP ELSE paid_at END, "
                         + "paid_amount = paid_amount + ? "
-                        + "WHERE id = ? AND status IN ('ISSUED', 'PARTIAL') AND paid_amount + ? <= total_amount")) {
+                        + "WHERE id = ? AND status IN ('ISSUED', 'PARTIAL') AND paid_amount + credited_amount + ? <= total_amount")) {
             ps.setBigDecimal(1, amount);
             ps.setBigDecimal(2, amount);
             ps.setBigDecimal(3, amount);

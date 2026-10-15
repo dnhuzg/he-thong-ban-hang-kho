@@ -1,29 +1,13 @@
 package com.oms.web.servlet;
-
-import com.oms.model.Module;
-import com.oms.service.PermissionService;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.sql.SQLException;
-
-/** GHTK-55: giao diện mẫu chuyển kho, chưa cập nhật tồn kho trong cơ sở dữ liệu. */
-@WebServlet("/inventory/transfers")
-public class WarehouseTransferPageServlet extends BaseServlet {
-
-    private final PermissionService permissionService = new PermissionService();
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            req.setAttribute("canWrite", permissionService.policy()
-                    .canWrite(currentUser(req).getRoles(), Module.INVENTORY));
-        } catch (SQLException e) {
-            throw new ServletException(e);
-        }
-        render(req, resp, "inventory/transfers");
-    }
+import com.oms.model.Module;import com.oms.service.*;import com.oms.web.Json;import jakarta.servlet.*;import jakarta.servlet.annotation.WebServlet;import jakarta.servlet.http.*;import java.io.*;import java.math.BigDecimal;import java.sql.SQLException;import java.time.LocalDate;import java.time.format.DateTimeParseException;import java.util.*;
+/** GHTK-55: chuyển kho thực, cập nhật tồn trong transaction gửi/nhận. */
+@WebServlet({"/inventory/transfers","/inventory/transfers/save","/inventory/transfers/send","/inventory/transfers/receive"})
+public class WarehouseTransferPageServlet extends BaseServlet{
+ private final PermissionService permissions=new PermissionService();private final WarehouseTransferService service=new WarehouseTransferService();
+ @Override protected void doGet(HttpServletRequest q,HttpServletResponse p)throws ServletException,IOException{if(!"/inventory/transfers".equals(q.getServletPath())){p.sendError(405);return;}try{q.setAttribute("canWrite",permissions.policy().canWrite(currentUser(q).getRoles(),Module.INVENTORY));q.setAttribute("transferData",Json.encode(service.page()).replace("<","\\u003c"));render(q,p,"inventory/transfers");}catch(SQLException e){throw new ServletException(e);}}
+ @Override protected void doPost(HttpServletRequest q,HttpServletResponse p)throws IOException{p.setContentType("application/json;charset=UTF-8");try{WarehouseTransferService.Saved saved;switch(q.getServletPath()){case "/inventory/transfers/save"->saved=service.create(date(q),longParam(q,"source"),longParam(q,"destination"),param(q,"note"),lines(q),false,currentUser(q));case "/inventory/transfers/send"->{long id=longParam(q,"id");saved=id>0?service.send(id,currentUser(q)):service.create(date(q),longParam(q,"source"),longParam(q,"destination"),param(q,"note"),lines(q),true,currentUser(q));}case "/inventory/transfers/receive"->saved=service.receive(longParam(q,"id"),numbers(q,"received"),param(q,"reason"),currentUser(q));default->{error(p,405,"Thao tác không hợp lệ.");return;}}p.getWriter().write(Json.encode(saved));}catch(ServiceException|IllegalArgumentException e){error(p,400,e.getMessage());}catch(SQLException e){log("Không xử lý được phiếu chuyển kho",e);error(p,500,"Không thể xử lý phiếu chuyển kho.");}}
+ private static LocalDate date(HttpServletRequest q){try{return LocalDate.parse(param(q,"date"));}catch(DateTimeParseException e){throw new ServiceException("Ngày chuyển không hợp lệ.");}}
+ private static List<WarehouseTransferService.LineInput> lines(HttpServletRequest q){String[] ids=values(q,"productId"),qty=values(q,"quantity");if(ids.length!=qty.length)throw new ServiceException("Dòng hàng không hợp lệ.");List<WarehouseTransferService.LineInput>x=new ArrayList<>();for(int i=0;i<ids.length;i++)try{x.add(new WarehouseTransferService.LineInput(Long.parseLong(ids[i]),new BigDecimal(qty[i])));}catch(NumberFormatException e){throw new ServiceException("Dòng hàng không hợp lệ.");}return x;}
+ private static List<BigDecimal> numbers(HttpServletRequest q,String name){List<BigDecimal>x=new ArrayList<>();for(String v:values(q,name))try{x.add(new BigDecimal(v));}catch(NumberFormatException e){throw new ServiceException("Số thực nhận không hợp lệ.");}return x;}
+ private static String[] values(HttpServletRequest q,String n){String[]x=q.getParameterValues(n);return x==null?new String[0]:x;}private static void error(HttpServletResponse p,int s,String m)throws IOException{p.setStatus(s);p.getWriter().write(Json.encode(Map.of("error",m)));}
 }

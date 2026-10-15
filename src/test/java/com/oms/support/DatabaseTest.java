@@ -301,6 +301,7 @@ public abstract class DatabaseTest {
             statement.execute("CREATE TABLE document_sequences (name VARCHAR(30) PRIMARY KEY, last_number BIGINT DEFAULT 0)");
             statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0), ('PAYMENT', 0)");
             statement.execute("ALTER TABLE invoices ADD paid_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
+            statement.execute("ALTER TABLE invoices ADD credited_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
             statement.execute("""
                     CREATE TABLE payments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
                         customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2), method VARCHAR(20), paid_on DATE,
