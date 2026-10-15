@@ -19,7 +19,7 @@
           </c:if>
         </div>
 
-        <section class="card-grid mb-4" aria-label="Tổng quan đại lý">
+        <section class="card-grid card-grid--5 mb-4" aria-label="Tổng quan đại lý">
           <a class="card card__body home-stat home-stat--link" href="${ctx}/customers">
             <div class="home-stat__head">
               <p class="stat__label">Tổng số đại lý</p>
@@ -43,6 +43,14 @@
             </div>
             <p class="home-stat__value"><span class="stat__value stat__value--money"><fmt:formatNumber value="${stats.totalCreditLimit}" maxFractionDigits="0"/></span> ₫</p>
             <p class="home-stat__note">Cho nợ: <fmt:formatNumber value="${stats.withCredit}"/> đại lý · Thanh toán ngay: <fmt:formatNumber value="${stats.payNow}"/></p>
+          </div>
+          <div class="card card__body home-stat${stats.nearLimit > 0 ? ' home-stat--warning' : ''}">
+            <div class="home-stat__head">
+              <p class="stat__label">Dư nợ hiện tại</p>
+              <span class="home-stat__icon home-stat__icon--${stats.nearLimit > 0 ? 'warning' : 'primary'}"><span class="icon icon--sm icon--history" aria-hidden="true"></span></span>
+            </div>
+            <p class="home-stat__value"><span class="stat__value stat__value--money"><fmt:formatNumber value="${stats.totalDebt}" maxFractionDigits="0"/></span> ₫</p>
+            <p class="home-stat__note">Đã dùng <fmt:formatNumber value="${stats.usagePercent}"/>% tổng hạn mức · <fmt:formatNumber value="${stats.nearLimit}"/> đại lý từ 90% hạn mức</p>
           </div>
           <c:if test="${canManage}">
           <div class="card card__body home-stat${stats.unassigned > 0 ? ' home-stat--warning' : ''}">
@@ -173,7 +181,13 @@
                     <td class="text-muted"><c:out value="${empty cu.salesRepName ? 'Chưa phân công' : cu.salesRepName}"/></td>
                     <td class="num nowrap">
                       <c:choose>
-                        <c:when test="${cu.creditLimit.signum() > 0}"><span class="table__cell-main"><fmt:formatNumber value="${cu.creditLimit}" maxFractionDigits="0"/> ₫</span></c:when>
+                        <c:when test="${cu.creditLimit.signum() > 0}">
+                          <span class="table__cell-main"><fmt:formatNumber value="${cu.creditLimit}" maxFractionDigits="0"/> ₫</span>
+                          <div class="meter meter--${cu.usageTone}">
+                            <div class="meter__head"><span>Dư nợ <fmt:formatNumber value="${cu.debt}" maxFractionDigits="0"/> ₫</span><span class="meter__value">${cu.usagePercent}%</span></div>
+                            <div class="meter__track"><span class="meter__fill meter__fill--${cu.usageStep}"></span></div>
+                          </div>
+                        </c:when>
                         <c:otherwise><span class="text-muted">Không cho nợ</span></c:otherwise>
                       </c:choose>
                     </td>

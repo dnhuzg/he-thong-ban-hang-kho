@@ -1,9 +1,2 @@
 <%-- Một mục menu trái; dùng trong vòng lặp của app-top.jspf với biến item (và childClass cho mục con) --%>
-<c:choose>
-  <c:when test="${item.comingSoon}">
-    <span class="sidebar__link${childClass} is-disabled" aria-disabled="true"><span class="sidebar__link-main"><c:out value="${item.label}"/></span><span class="badge">Sắp có</span></span>
-  </c:when>
-  <c:otherwise>
-    <a class="sidebar__link${childClass}${item.active ? ' is-active' : ''}" href="${ctx}${item.url}"${item.active ? ' aria-current="page"' : ''}><span class="icon icon--${item.icon}" aria-hidden="true"></span><span class="sidebar__link-main"><c:out value="${item.label}"/></span></a>
-  </c:otherwise>
-</c:choose>
+<a class="sidebar__link${childClass}${item.active ? ' is-active' : ''}" href="${ctx}${item.url}"${item.active ? ' aria-current="page"' : ''}><span class="icon icon--${item.icon}" aria-hidden="true"></span><span class="sidebar__link-main"><c:out value="${item.label}"/></span></a>

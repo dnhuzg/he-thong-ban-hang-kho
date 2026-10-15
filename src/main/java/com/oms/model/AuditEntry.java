@@ -51,6 +51,23 @@ public class AuditEntry {
             Map.entry("ORDER_CREATE", "Tạo đơn nháp"),
             Map.entry("ORDER_UPDATE", "Sửa thông tin giao hàng của đơn"),
             Map.entry("ORDER_DELETE", "Xoá đơn nháp"),
+            Map.entry("ORDER_SUBMIT", "Chốt đơn"),
+            Map.entry("ORDER_APPROVE", "Duyệt đơn"),
+            Map.entry("ORDER_REJECT", "Từ chối đơn"),
+            Map.entry("ORDER_RETURN", "Trả đơn về sửa"),
+            Map.entry("ORDER_CANCEL", "Huỷ đơn"),
+            Map.entry("ORDER_ADVANCE", "Chuyển bước xử lý đơn"),
+            Map.entry("ORDER_COPY", "Sao chép đơn"),
+            Map.entry("ORDER_ADD_LAST_PURCHASE", "Thêm hàng từ lần mua trước"),
+            Map.entry("SHIPMENT_DELIVERED", "Xác nhận giao hàng"),
+            Map.entry("SHIPMENT_FAILED_RETURNED", "Giao không thành công, trả về kho"),
+            Map.entry("GOODS_RECEIPT_SAVE", "Lưu nháp phiếu nhập kho"),
+            Map.entry("GOODS_RECEIPT_CONFIRM", "Xác nhận phiếu nhập kho"),
+            Map.entry("PICKING_LIST_CREATE", "Lập phiếu soạn hàng"),
+            Map.entry("PICKING_LIST_DONE", "Hoàn tất phiếu soạn hàng"),
+            Map.entry("SHIPMENT_EXPORT", "Xác nhận xuất kho"),
+            Map.entry("INVOICE_ISSUE", "Phát hành hoá đơn"),
+            Map.entry("PAYMENT_RECORD", "Ghi nhận thanh toán"),
             Map.entry("CUSTOMER_CREATE", "Thêm đại lý"),
             Map.entry("CUSTOMER_UPDATE", "Sửa hồ sơ đại lý"),
             Map.entry("CUSTOMER_DELETE", "Xoá đại lý"),
@@ -78,6 +95,11 @@ public class AuditEntry {
         TARGET_LABELS.put("CUSTOMER", "Đại lý");
         TARGET_LABELS.put("ORDER", "Đơn hàng");
         TARGET_LABELS.put("DISCOUNT_POLICY", "Chính sách chiết khấu");
+        TARGET_LABELS.put("SHIPMENT", "Phiếu giao hàng");
+        TARGET_LABELS.put("GOODS_RECEIPT", "Phiếu nhập kho");
+        TARGET_LABELS.put("PICKING_LIST", "Phiếu soạn hàng");
+        TARGET_LABELS.put("INVOICE", "Hoá đơn");
+        TARGET_LABELS.put("PAYMENT", "Phiếu thu");
     }
 
     private long id;

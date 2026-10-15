@@ -34,6 +34,16 @@ public class CreditService {
         }
     }
 
+    /** Các lần đổi hạn mức mới nhất của mọi đại lý; chỉ người được sửa hạn mức mới xem toàn bộ. */
+    public List<CreditChange> recentChanges(User viewer, int limit) throws SQLException {
+        if (!PermissionPolicy.canManageCredit(viewer.getRoles())) {
+            throw new ForbiddenException("Chỉ Kế toán công nợ và Quản lý kinh doanh được xem lịch sử hạn mức.");
+        }
+        try (Connection conn = Db.getConnection()) {
+            return historyDao.recent(conn, limit);
+        }
+    }
+
     public void update(long customerId, String limitText, String daysText, String reason, User actor) throws SQLException {
         if (!PermissionPolicy.canManageCredit(actor.getRoles())) {
             throw new ForbiddenException("Chỉ Kế toán công nợ và Quản lý kinh doanh được sửa hạn mức công nợ.");

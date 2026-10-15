@@ -10,6 +10,9 @@ import java.util.Map;
 
 /** Request/response/session trong bộ nhớ để kiểm thử hành vi Servlet mà không chạy Tomcat. */
 public class HttpFixture {
+    public final Map<String,String> parameters = new HashMap<>();
+    public final java.io.StringWriter body = new java.io.StringWriter();
+    public String contentType;
     public final Map<String, Object> attributes = new HashMap<>();
     public final Map<String, Object> sessionAttributes = new HashMap<>();
     public final Map<String, String> headers = new HashMap<>();
@@ -37,6 +40,7 @@ public class HttpFixture {
             case "getRequestURI" -> "/oms" + path;
             case "getServletPath" -> path;
             case "getMethod" -> method;
+            case "getParameter" -> parameters.get(args[0]);
             case "getSession" -> sessionPresent ? session : null;
             case "getAttribute" -> attributes.get(args[0]);
             case "setAttribute" -> { attributes.put((String) args[0], args[1]); yield null; }
@@ -52,6 +56,8 @@ public class HttpFixture {
             case "sendRedirect" -> { redirect = (String) args[0]; status = 302; yield null; }
             case "sendError", "setStatus" -> { status = (Integer) args[0]; yield null; }
             case "getStatus" -> status;
+            case "getWriter" -> new java.io.PrintWriter(body);
+            case "setContentType" -> { contentType=(String)args[0]; yield null; }
             case "getHeader" -> headers.get(args[0]);
             default -> null;
         };

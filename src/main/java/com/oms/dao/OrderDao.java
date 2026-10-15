@@ -16,15 +16,18 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class OrderDao {
 
     private static final String SELECT = "SELECT o.id, o.code, o.customer_id, c.code, c.name, c.group_id, g.name, c.status, "
             + "c.lock_reason, c.sales_rep_id, o.delivery_point_id, CONCAT(dp.receiver_name, ' – ', dp.address), "
             + "o.delivery_date, o.note, u.full_name, o.created_at, o.updated_at, "
-            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id) "
-            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_groups g ON g.id = c.group_id "
+            + "(SELECT COUNT(*) FROM order_lines l WHERE l.order_id = o.id), o.status, o.warehouse_id, o.approval_reason, ca.user_id, o.customer_submitted "
+            + "FROM orders o JOIN customers c ON c.id = o.customer_id LEFT JOIN customer_accounts ca ON ca.customer_id = c.id LEFT JOIN customer_groups g ON g.id = c.group_id "
             + "LEFT JOIN customer_delivery_points dp ON dp.id = o.delivery_point_id JOIN users u ON u.id = o.created_by";
 
     public long insert(Connection conn, long customerId, Long deliveryPointId, long createdBy) throws SQLException {
@@ -123,6 +126,69 @@ public class OrderDao {
         return new PageResult<>(items, page, pageSize, total);
     }
 
+    public long countDraftsCreatedBy(Connection conn, long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM orders WHERE status = 'DRAFT' AND created_by = ?")) {
+            ps.setLong(1, userId);
+            return single(ps);
+        }
+    }
+
+    /** Khớp theo chuỗi lý do do OrderWorkflowService.submit ghi, vì đơn không lưu riêng cờ vượt hạn mức. */
+    public long countPendingOverCredit(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM orders WHERE status = 'PENDING_APPROVAL' AND approval_reason LIKE ?")) {
+            ps.setString(1, "%Vượt hạn mức%");
+            return single(ps);
+        }
+    }
+
+    public Map<Order.Status, Long> countByStatusForCustomer(Connection conn, long customerId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT status, COUNT(*) FROM orders WHERE customer_id = ? GROUP BY status")) {
+            ps.setLong(1, customerId);
+            return byStatus(ps);
+        }
+    }
+
+    /** Đơn đang chảy qua kho (đã duyệt → đã xuất) của các kho cho trước. */
+    public Map<Order.Status, Long> countByStatusInWarehouses(Connection conn, List<Long> warehouseIds) throws SQLException {
+        if (warehouseIds.isEmpty()) {
+            return new EnumMap<>(Order.Status.class);
+        }
+        try (PreparedStatement ps = conn.prepareStatement("SELECT status, COUNT(*) FROM orders "
+                + "WHERE status IN ('APPROVED', 'PICKING', 'SHIPPED') AND warehouse_id IN (" + placeholders(warehouseIds) + ") "
+                + "GROUP BY status")) {
+            bind(ps, new ArrayList<>(warehouseIds));
+            return byStatus(ps);
+        }
+    }
+
+    /** Đơn cần soạn của các kho: ngày giao sớm nhất trước, đơn chưa hẹn ngày xếp cuối. */
+    public List<Order> pickQueue(Connection conn, List<Long> warehouseIds, int limit) throws SQLException {
+        if (warehouseIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        String sql = SELECT + " WHERE o.status IN ('APPROVED', 'PICKING') AND o.warehouse_id IN (" + placeholders(warehouseIds) + ")"
+                + " ORDER BY CASE WHEN o.delivery_date IS NULL THEN 1 ELSE 0 END, o.delivery_date, o.id LIMIT ?";
+        List<Object> params = new ArrayList<>(warehouseIds);
+        params.add(limit);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            bind(ps, params);
+            return list(ps);
+        }
+    }
+
+    /** Đơn nháp là giỏ hàng đang gõ dở, chưa phải đơn đã gửi nên không đưa vào danh sách của đại lý. */
+    public List<Order> recentForCustomer(Connection conn, long customerId, int limit) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT + " WHERE o.customer_id = ? AND o.status <> 'DRAFT' "
+                + "ORDER BY o.updated_at DESC, o.id DESC LIMIT ?")) {
+            ps.setLong(1, customerId);
+            ps.setInt(2, limit);
+            return list(ps);
+        }
+    }
+
     public void updateHeader(Connection conn, long id, Long deliveryPointId, LocalDate deliveryDate, String note) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "UPDATE orders SET delivery_point_id = ?, delivery_date = ?, note = ? WHERE id = ?")) {
@@ -178,15 +244,16 @@ public class OrderDao {
         }
     }
 
-    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor, BigDecimal baseQuantity)
-            throws SQLException {
+    public void updateLine(Connection conn, long lineId, long unitId, int quantity, BigDecimal factor,
+                           BigDecimal baseQuantity, BigDecimal manualBasePrice) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ? WHERE id = ?")) {
+                "UPDATE order_lines SET unit_id = ?, quantity = ?, factor = ?, base_quantity = ?, manual_base_price = ? WHERE id = ?")) {
             ps.setLong(1, unitId);
             ps.setInt(2, quantity);
             ps.setBigDecimal(3, factor);
             ps.setBigDecimal(4, baseQuantity);
-            ps.setLong(5, lineId);
+            ps.setBigDecimal(5, manualBasePrice);
+            ps.setLong(6, lineId);
             ps.executeUpdate();
         }
     }
@@ -199,7 +266,7 @@ public class OrderDao {
     }
 
     private static final String LINES = "SELECT l.id, l.order_id, l.product_id, p.sku, p.name, l.unit_id, u.name, bu.name, "
-            + "l.quantity, l.factor, l.base_quantity FROM order_lines l JOIN products p ON p.id = l.product_id "
+            + "l.quantity, l.factor, l.base_quantity, l.unit_price, l.gross_amount, l.discount_amount, l.discount_note, l.manual_base_price FROM order_lines l JOIN products p ON p.id = l.product_id "
             + "JOIN units u ON u.id = l.unit_id JOIN units bu ON bu.id = p.base_unit_id";
 
     private List<OrderLine> queryLines(Connection conn, String sql, long... params) throws SQLException {
@@ -222,6 +289,11 @@ public class OrderDao {
                     l.setQuantity(rs.getInt(9));
                     l.setFactor(rs.getBigDecimal(10));
                     l.setBaseQuantity(rs.getBigDecimal(11));
+                    l.setUnitPrice(rs.getBigDecimal(12));
+                    l.setGrossAmount(rs.getBigDecimal(13));
+                    l.setDiscountAmount(rs.getBigDecimal(14));
+                    l.setDiscountNote(rs.getString(15));
+                    l.setManualBasePrice(rs.getBigDecimal(16));
                     lines.add(l);
                 }
             }
@@ -263,6 +335,13 @@ public class OrderDao {
         Timestamp updated = rs.getTimestamp(17);
         o.setUpdatedAt(updated == null ? null : updated.toLocalDateTime());
         o.setLineCount(rs.getLong(18));
+        o.setStatus(Order.Status.valueOf(rs.getString(19)));
+        long warehouse = rs.getLong(20);
+        o.setWarehouseId(rs.wasNull() ? null : warehouse);
+        o.setApprovalReason(rs.getString(21));
+        long account = rs.getLong(22);
+        o.setCustomerAccountUserId(rs.wasNull() ? null : account);
+        o.setCustomerSubmitted(rs.getBoolean(23));
         return o;
     }
 
@@ -272,6 +351,37 @@ public class OrderDao {
         } else {
             ps.setLong(index, value);
         }
+    }
+
+    private static String placeholders(List<?> values) {
+        return String.join(",", Collections.nCopies(values.size(), "?"));
+    }
+
+    private static long single(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getLong(1);
+        }
+    }
+
+    private static Map<Order.Status, Long> byStatus(PreparedStatement ps) throws SQLException {
+        Map<Order.Status, Long> counts = new EnumMap<>(Order.Status.class);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                counts.put(Order.Status.valueOf(rs.getString(1)), rs.getLong(2));
+            }
+        }
+        return counts;
+    }
+
+    private static List<Order> list(PreparedStatement ps) throws SQLException {
+        List<Order> items = new ArrayList<>();
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                items.add(map(rs));
+            }
+        }
+        return items;
     }
 
     private static void bind(PreparedStatement ps, List<Object> params) throws SQLException {

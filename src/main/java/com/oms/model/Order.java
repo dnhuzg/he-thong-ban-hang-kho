@@ -13,6 +13,51 @@ public class Order {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+    /** tone là hậu tố class badge (badge--tone) để màu trạng thái thống nhất ở mọi màn hình. */
+    public enum Status {
+        DRAFT("Nháp", ""),
+        PENDING_APPROVAL("Chờ duyệt", "warning"),
+        APPROVED("Đã duyệt", "primary"),
+        PICKING("Đang soạn hàng", "primary"),
+        SHIPPED("Đã xuất kho", "primary"),
+        DELIVERED("Đã giao", "success"),
+        CLOSED("Đã đóng", "success"),
+        CANCELLED("Đã huỷ", "danger"),
+        REJECTED("Bị từ chối", "danger");
+
+        private final String label;
+        private final String tone;
+
+        Status(String label, String tone) {
+            this.label = label;
+            this.tone = tone;
+        }
+
+        public String getLabel() { return label; }
+        public String getTone() { return tone; }
+        public String getCode() { return name(); }
+    }
+    private Status status = Status.DRAFT;
+    private Long warehouseId;
+    private String approvalReason;
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+    public boolean isDraft() { return status == Status.DRAFT; }
+    /** Hàng đã rời kho (Đã xuất trở đi) hoặc đơn đã kết thúc thì không huỷ được, phải đi đường trả hàng. */
+    public boolean isCancellable() {
+        return status == Status.DRAFT || status == Status.PENDING_APPROVAL || status == Status.APPROVED
+                || status == Status.PICKING || status == Status.REJECTED;
+    }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public String getApprovalReason() { return approvalReason; }
+    public void setApprovalReason(String approvalReason) { this.approvalReason = approvalReason; }
+    private Long customerAccountUserId;
+    private boolean customerSubmitted;
+    public Long getCustomerAccountUserId() { return customerAccountUserId; }
+    public void setCustomerAccountUserId(Long id) { customerAccountUserId = id; }
+    public boolean isCustomerSubmitted() { return customerSubmitted; }
+    public void setCustomerSubmitted(boolean value) { customerSubmitted = value; }
     private long id;
     private String code;
     private long customerId;
@@ -35,6 +80,7 @@ public class Order {
     private BigDecimal grossTotal = BigDecimal.ZERO;
     private BigDecimal discountTotal = BigDecimal.ZERO;
     private int unpricedLines;
+    private boolean requiresApproval;
 
     public BigDecimal getPayable() {
         return grossTotal.subtract(discountTotal);
@@ -80,6 +126,7 @@ public class Order {
     public String getCreatedByName() { return createdByName; }
     public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getCreatedAtText() { return createdAt == null ? "" : createdAt.format(TIME); }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
@@ -93,4 +140,6 @@ public class Order {
     public void setDiscountTotal(BigDecimal discountTotal) { this.discountTotal = discountTotal; }
     public int getUnpricedLines() { return unpricedLines; }
     public void setUnpricedLines(int unpricedLines) { this.unpricedLines = unpricedLines; }
+    public boolean isRequiresApproval() { return requiresApproval; }
+    public void setRequiresApproval(boolean requiresApproval) { this.requiresApproval = requiresApproval; }
 }

@@ -23,7 +23,9 @@ public class ProductDao {
 
     private static final String FROM = " FROM products p JOIN units u ON u.id = p.base_unit_id";
     private static final String COLUMNS = "p.id, p.sku, p.name, p.category_id, p.base_unit_id, u.name AS unit_name, "
-            + "p.packing_spec, p.cost_price, p.image_path, p.status";
+            + "p.packing_spec, p.cost_price, p.image_path, p.status, "
+            + "(SELECT COALESCE(SUM(i.on_hand), 0) FROM warehouse_inventory i WHERE i.product_id = p.id) AS stock_on_hand, "
+            + "(SELECT COALESCE(SUM(i.on_hand - i.reserved), 0) FROM warehouse_inventory i WHERE i.product_id = p.id) AS stock_available";
 
     /**
      * Tìm theo SKU / tên, lọc theo danh sách nhóm hàng (đã gồm nhóm con) và trạng thái.
@@ -231,6 +233,8 @@ public class ProductDao {
         p.setCostPrice(withCost ? rs.getBigDecimal("cost_price") : null);
         p.setImagePath(rs.getString("image_path"));
         p.setStatus(Product.Status.valueOf(rs.getString("status")));
+        p.setStockOnHand(rs.getBigDecimal("stock_on_hand"));
+        p.setStockAvailable(rs.getBigDecimal("stock_available"));
         return p;
     }
 
