@@ -31,6 +31,84 @@
     </c:forEach>
   </div>
 
+  <section class="aging-insights" aria-label="Phân tích công nợ quá hạn">
+    <section class="card aging-panel aging-overdue-panel" aria-labelledby="overdue-aging-title">
+      <div class="aging-panel__heading">
+        <div>
+          <h2 id="overdue-aging-title">Công nợ quá hạn theo tuổi nợ</h2>
+          <p>Chỉ tính số dư chưa thanh toán của hoá đơn đã quá hạn; nhóm tuổi tính từ ngày phát hành hoá đơn.</p>
+        </div>
+        <span class="badge badge--danger">Quá hạn: <fmt:formatNumber value="${aging.total.overdue}" maxFractionDigits="0"/> ₫</span>
+      </div>
+      <div class="aging-overdue-buckets">
+        <c:forEach var="label" items="${aging.bucketLabels}" varStatus="st">
+          <div class="aging-overdue-bucket${st.index == 3 ? ' aging-overdue-bucket--critical' : ''}">
+            <span><c:out value="${label}"/></span>
+            <strong><fmt:formatNumber value="${aging.overdueAgeBuckets[st.index]}" maxFractionDigits="0"/> ₫</strong>
+          </div>
+        </c:forEach>
+      </div>
+    </section>
+
+    <section class="card aging-panel aging-risk-panel" aria-labelledby="highest-risk-title">
+      <div class="aging-panel__heading">
+        <div>
+          <h2 id="highest-risk-title">Đại lý có rủi ro cao nhất</h2>
+          <p>Xếp hạng theo số dư quá hạn; nếu bằng nhau, ưu tiên nhóm tuổi nợ cũ hơn.</p>
+        </div>
+        <span class="badge badge--danger">Ưu tiên xử lý</span>
+      </div>
+      <c:choose>
+        <c:when test="${not empty aging.highestRiskCustomer}">
+          <div class="aging-risk-detail">
+            <div>
+              <span class="aging-table__meta"><c:out value="${aging.highestRiskCustomer.code}"/></span>
+              <strong class="aging-risk-detail__name"><c:out value="${aging.highestRiskCustomer.name}"/></strong>
+              <span class="aging-table__meta">Nhân viên phụ trách: <c:out value="${aging.highestRiskCustomer.salesRepName}"/></span>
+            </div>
+            <div class="aging-risk-detail__amount">
+              <span>Tổng quá hạn</span>
+              <strong><fmt:formatNumber value="${aging.highestRiskCustomer.overdueTotal}" maxFractionDigits="0"/> ₫</strong>
+              <small><c:out value="${aging.highestRiskCustomer.overdueInvoiceCount}"/> hoá đơn quá hạn · lâu nhất <c:out value="${aging.highestRiskCustomer.oldestOverdueDays}"/> ngày</small>
+            </div>
+          </div>
+          <div class="aging-risk-buckets">
+            <c:forEach var="label" items="${aging.bucketLabels}" varStatus="st">
+              <div><span><c:out value="${label}"/></span><strong><fmt:formatNumber value="${aging.highestRiskCustomer.ageBuckets[st.index]}" maxFractionDigits="0"/> ₫</strong></div>
+            </c:forEach>
+          </div>
+        </c:when>
+        <c:otherwise>
+          <p class="aging-empty">Không có đại lý có công nợ quá hạn phù hợp bộ lọc.</p>
+        </c:otherwise>
+      </c:choose>
+    </section>
+  </section>
+
+  <section class="card aging-panel aging-owner-panel" aria-labelledby="owner-aging-title">
+    <div class="aging-panel__heading">
+      <div><h2 id="owner-aging-title">Công nợ quá hạn theo nhân viên phụ trách</h2><p>Số liệu được tổng hợp từ hoá đơn quá hạn và phân công đại lý trên hệ thống.</p></div>
+      <span class="badge"><c:out value="${aging.ownerSummaries.size()}"/> nhân viên</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table aging-owner-table">
+        <caption class="visually-hidden">Công nợ quá hạn theo nhân viên phụ trách và nhóm tuổi nợ</caption>
+        <thead><tr><th scope="col">Nhân viên phụ trách</th><th scope="col" class="aging-number">Đại lý quá hạn</th><th scope="col" class="aging-number">0–30 ngày</th><th scope="col" class="aging-number">31–60 ngày</th><th scope="col" class="aging-number">61–90 ngày</th><th scope="col" class="aging-number">Trên 90 ngày</th><th scope="col" class="aging-number">Tổng quá hạn</th></tr></thead>
+        <tbody>
+          <c:if test="${empty aging.ownerSummaries}"><tr><td colspan="7" class="text-muted">Không có công nợ quá hạn phù hợp bộ lọc.</td></tr></c:if>
+          <c:forEach var="owner" items="${aging.ownerSummaries}">
+            <tr>
+              <td><strong><c:out value="${owner.salesRepName}"/></strong></td>
+              <td class="aging-number"><c:out value="${owner.overdueCustomerCount}"/></td>
+              <c:forEach var="amount" items="${owner.ageBuckets}"><td class="aging-number"><fmt:formatNumber value="${amount}" maxFractionDigits="0"/></td></c:forEach>
+              <td class="aging-number aging-table__late"><strong><fmt:formatNumber value="${owner.overdueTotal}" maxFractionDigits="0"/></strong></td>
+            </tr>
+          </c:forEach>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="card aging-panel" aria-labelledby="aging-list-title">
     <div class="aging-panel__heading"><div><h2 id="aging-list-title">Sổ công nợ theo đại lý</h2><p>Đối chiếu tới hết ngày <c:out value="${f.asOf}"/>.</p></div><span class="badge"><c:out value="${aging.rows.size()}"/> đại lý</span></div>
     <form class="aging-filters" method="get" action="${ctx}/finance/debt-aging" role="search">
