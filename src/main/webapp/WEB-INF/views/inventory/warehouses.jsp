@@ -3,14 +3,14 @@
 <c:set var="pageTitle" value="Kho & vị trí lưu trữ"/>
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 <link rel="stylesheet" href="${ctx}/assets/css/warehouses.css?v=${assetVersion}">
-<section id="warehouse-screen" data-can-write="<c:out value='${canWrite}'/>" data-user-id="<c:out value='${currentUser.id}'/>">
+<section id="warehouse-screen" data-can-write="<c:out value='${canWrite}'/>" data-csrf="<c:out value='${csrfToken}'/>"
+ data-warehouse-url="<c:out value='${ctx}/inventory/warehouses/save'/>" data-location-url="<c:out value='${ctx}/inventory/locations/save'/>" data-assign-url="<c:out value='${ctx}/inventory/warehouses/assign'/>">
 
-      <div class="wh-demo"><span><strong>Bản FE GHTK-51.</strong> Kho, vị trí và đại lý bên dưới là dữ liệu mẫu, chưa kết nối MySQL.</span><button type="button" class="wh-link" id="reset" hidden>Khôi phục mẫu</button></div>
       <div class="page-header">
         <div><p class="breadcrumb" id="breadcrumb">Kho & tồn kho / Danh sách kho</p><h1 id="page-title">Danh sách kho</h1><p class="wh-description" id="page-description">Khai báo thông tin và quản lý trạng thái các kho.</p></div>
         <button class="btn btn--primary" type="button" id="add" hidden>+ Thêm kho</button>
       </div>
-      <div class="wh-stats" id="stats" aria-label="Tổng quan dữ liệu mẫu"></div>
+      <div class="wh-stats" id="stats" aria-label="Tổng quan dữ liệu kho"></div>
       <nav class="wh-tabs" aria-label="Các phần của nhiệm vụ">
         <a href="#warehouses" data-page="warehouses">Danh sách kho</a>
         <a href="#locations" data-page="locations">Vị trí lưu trữ</a>
@@ -39,9 +39,8 @@
     <footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-close>Hủy</button><button class="btn btn--primary" type="submit" id="save">Lưu kho</button></footer>
   </form>
 </dialog>
-<dialog class="dialog" id="reset-dialog" aria-labelledby="reset-title"><form method="dialog"><header class="dialog__header"><h2 id="reset-title">Khôi phục dữ liệu mẫu?</h2></header><div class="dialog__body">Các thay đổi thử nghiệm của nhiệm vụ này trên trình duyệt sẽ được thay bằng dữ liệu ban đầu.</div><footer class="dialog__footer"><button class="btn btn--secondary" value="cancel">Hủy</button><button class="btn btn--primary" value="confirm">Khôi phục</button></footer></form></dialog>
-
 </section>
-<script src="${ctx}/assets/js/warehouse-demo.js?v=${assetVersion}" defer></script>
+<script type="application/json" id="warehouse-data"><c:out value="${warehouseData}" escapeXml="false"/></script>
+<script src="${ctx}/assets/js/warehouse-data.js?v=${assetVersion}" defer></script>
 <script src="${ctx}/assets/js/warehouses.js?v=${assetVersion}" defer></script>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

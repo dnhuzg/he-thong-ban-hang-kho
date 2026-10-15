@@ -38,6 +38,7 @@ public class Invoice {
     private String customerName;
     private BigDecimal totalAmount;
     private BigDecimal paidAmount = BigDecimal.ZERO;
+    private BigDecimal creditedAmount = BigDecimal.ZERO;
     private LocalDateTime issuedAt;
     private LocalDate dueDate;
     private Status status;
@@ -59,7 +60,9 @@ public class Invoice {
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public BigDecimal getPaidAmount() { return paidAmount; }
     public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
-    public BigDecimal getOutstanding() { return totalAmount == null ? BigDecimal.ZERO : totalAmount.subtract(paidAmount); }
+    public BigDecimal getCreditedAmount() { return creditedAmount; }
+    public void setCreditedAmount(BigDecimal creditedAmount) { this.creditedAmount = creditedAmount == null ? BigDecimal.ZERO : creditedAmount; }
+    public BigDecimal getOutstanding() { return totalAmount == null ? BigDecimal.ZERO : totalAmount.subtract(paidAmount).subtract(creditedAmount); }
     public LocalDateTime getIssuedAt() { return issuedAt; }
     public void setIssuedAt(LocalDateTime issuedAt) { this.issuedAt = issuedAt; }
     public String getIssuedAtText() { return issuedAt == null ? "" : issuedAt.format(DATE_TIME); }

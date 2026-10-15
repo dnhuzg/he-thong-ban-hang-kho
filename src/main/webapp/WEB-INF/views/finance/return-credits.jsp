@@ -4,9 +4,10 @@
 <%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
 <link rel="stylesheet" href="${ctx}/assets/css/return-credits.css?v=${assetVersion}">
 
-<section class="credit-screen" id="credit-screen" data-can-create="${canCreateReturnCredit}">
+<section class="credit-screen" id="credit-screen" data-can-create="${canCreateReturnCredit}"
+         data-csrf="<c:out value='${csrfToken}'/>" data-create-url="<c:out value='${ctx}/finance/return-credits/create'/>"
+         data-page-url="<c:out value='${ctx}/finance/return-credits'/>">
   <div class="page-header credit-header"><div><p class="breadcrumb">Tài chính &amp; công nợ / Trả hàng</p><h1>Chứng từ giảm trừ công nợ</h1><p class="page-header__desc">Sinh chứng từ từ phiếu trả đã nhận và giữ nguyên hóa đơn gốc.</p></div><span class="credit-role">Kế toán công nợ</span></div>
-  <div class="alert alert--info credit-demo"><strong>Bản FE GHTK-77.</strong> Số liệu bên dưới dùng để mô phỏng luồng nghiệp vụ và được lưu trong trình duyệt hiện tại.</div>
 
   <div class="credit-stats" aria-label="Tổng quan công nợ"><article class="card credit-stat"><span>Công nợ hiện tại</span><strong id="credit-debt">—</strong><small>Trước chứng từ đang chọn</small></article><article class="card credit-stat"><span>Hạn mức</span><strong id="credit-limit">—</strong><small>Hạn mức của đại lý</small></article><article class="card credit-stat credit-stat--good"><span>Hạn mức khả dụng sau giảm</span><strong id="credit-available">—</strong><small>Cập nhật ngay khi lập chứng từ</small></article></div>
 
@@ -26,5 +27,6 @@
   <section class="card credit-panel credit-history"><div class="credit-heading"><div><h2>Chứng từ đã lập</h2><p>Lịch sử giảm công nợ từ hàng trả.</p></div><span class="credit-count" id="document-count">0 chứng từ</span></div><div class="credit-table-wrap"><table class="table"><thead><tr><th>Mã chứng từ</th><th>Phiếu trả</th><th>Hóa đơn gốc</th><th>Đại lý</th><th>Số tiền giảm</th><th>Trạng thái</th></tr></thead><tbody id="credit-documents"></tbody></table></div><div class="credit-empty" id="document-empty"><strong>Chưa có chứng từ</strong><p>Chứng từ mới sẽ xuất hiện tại đây.</p></div></section>
   <p class="credit-footnote">GHTK-77 · S8-02 · Điều chỉnh giảm trừ công nợ khi trả hàng</p>
 </section>
+<script type="application/json" id="return-credit-data"><c:out value="${returnCreditData}" escapeXml="false"/></script>
 <script src="${ctx}/assets/js/return-credits.js?v=${assetVersion}" defer></script>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

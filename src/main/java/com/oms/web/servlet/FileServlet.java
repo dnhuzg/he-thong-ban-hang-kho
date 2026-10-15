@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class FileServlet extends BaseServlet {
 
     // Chỉ các thư mục ảnh và tên tệp do hệ thống sinh ra; mọi đường dẫn khác trả 404
-    private static final Pattern ALLOWED = Pattern.compile("^(avatars|products)/[0-9a-f-]{36}(-64)?\\.(png|jpg)$");
+    private static final Pattern ALLOWED = Pattern.compile("^(avatars|products|receipts)/[0-9a-f-]{36}(-64)?\\.(png|jpg)$");
 
     private final FileStorage storage = new FileStorage();
 

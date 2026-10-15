@@ -12,8 +12,8 @@
 
   <section class="card ledger-filter" aria-label="Bộ lọc sổ công nợ">
     <label><span>Đại lý</span><select id="ledger-customer"></select></label>
-    <label><span>Từ ngày</span><input type="date" id="ledger-from" value="2026-09-01"></label>
-    <label><span>Đến ngày</span><input type="date" id="ledger-to" value="2026-10-31"></label>
+    <label><span>Từ ngày</span><input type="date" id="ledger-from"></label>
+    <label><span>Đến ngày</span><input type="date" id="ledger-to"></label>
     <button class="btn btn--primary" type="button" id="ledger-apply">Xem sổ</button>
     <p class="ledger-error" id="ledger-error" role="alert" hidden></p>
   </section>
@@ -37,6 +37,6 @@
     <p class="ledger-note">Số dư = Dư đầu kỳ + Phát sinh tăng − Phát sinh giảm.</p>
   </section>
 </section>
-
+<script type="application/json" id="ledger-data"><c:out value="${ledgerData}" escapeXml="false"/></script>
 <script src="${ctx}/assets/js/debt-ledger.js?v=${assetVersion}" defer></script>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>
