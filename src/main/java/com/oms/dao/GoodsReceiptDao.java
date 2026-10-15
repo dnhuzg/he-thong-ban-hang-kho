@@ -1,3 +1,4 @@
+
 package com.oms.dao;
 
 import com.oms.model.GoodsReceipt;
@@ -274,18 +275,26 @@ public class GoodsReceiptDao {
         }
     }
 
-    /** Lô tồn cho báo cáo giá trị và tuổi tồn (S8-07); đơn giá lô lấy theo giá vốn hiện tại của sản phẩm. */
+    /** Lưu lô tồn kho kèm mã lô và hạn sử dụng để hỗ trợ FEFO (S6-04). */
     public void insertLot(Connection conn, long warehouseId, long productId, BigDecimal quantity,
-                          LocalDate receivedDate, long receiptId) throws SQLException {
+                          LocalDate receivedDate, long receiptId, String lotNo, LocalDate expiryDate)
+            throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO inventory_lots (warehouse_id, product_id, remaining_quantity, unit_cost, received_at, "
-                        + "source_type, source_id) SELECT ?, id, ?, COALESCE(cost_price, 0), ?, 'GOODS_RECEIPT', ? "
+                "INSERT INTO inventory_lots (warehouse_id, product_id, lot_no, expiry_date, "
+                        + "remaining_quantity, unit_cost, received_at, source_type, source_id) "
+                        + "SELECT ?, id, ?, ?, ?, COALESCE(cost_price, 0), ?, 'GOODS_RECEIPT', ? "
                         + "FROM products WHERE id = ?")) {
             ps.setLong(1, warehouseId);
-            ps.setBigDecimal(2, quantity);
-            ps.setTimestamp(3, Timestamp.valueOf(receivedDate.atStartOfDay()));
-            ps.setLong(4, receiptId);
-            ps.setLong(5, productId);
+            setNullable(ps, 2, lotNo);
+            if (expiryDate == null) {
+                ps.setNull(3, Types.DATE);
+            } else {
+                ps.setDate(3, Date.valueOf(expiryDate));
+            }
+            ps.setBigDecimal(4, quantity);
+            ps.setTimestamp(5, Timestamp.valueOf(receivedDate.atStartOfDay()));
+            ps.setLong(6, receiptId);
+            ps.setLong(7, productId);
             ps.executeUpdate();
         }
     }

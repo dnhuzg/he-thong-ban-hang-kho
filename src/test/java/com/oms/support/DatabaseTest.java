@@ -1,3 +1,4 @@
+
 package com.oms.support;
 
 import com.oms.config.Db;
@@ -233,6 +234,35 @@ public abstract class DatabaseTest {
                         picked_quantity DECIMAL(14,4), short_reason VARCHAR(500), picked_by BIGINT REFERENCES users(id),
                         picked_at TIMESTAMP)
                     """);
+
+            // S6-04: Cấu trúc lô tồn và lựa chọn lô FEFO trong H2 database kiểm thử.
+            statement.execute("""
+                    CREATE TABLE inventory_lots (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        warehouse_id BIGINT REFERENCES warehouses(id),
+                        product_id BIGINT REFERENCES products(id),
+                        lot_no VARCHAR(50),
+                        expiry_date DATE,
+                        remaining_quantity DECIMAL(14,4) NOT NULL,
+                        unit_cost DECIMAL(15,2) NOT NULL,
+                        received_at TIMESTAMP NOT NULL,
+                        source_type VARCHAR(30),
+                        source_id BIGINT,
+                        CHECK (remaining_quantity >= 0)
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE picking_line_lots (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        picking_line_id BIGINT REFERENCES picking_list_lines(id) ON DELETE CASCADE,
+                        inventory_lot_id BIGINT REFERENCES inventory_lots(id),
+                        quantity DECIMAL(14,4) NOT NULL,
+                        override_reason VARCHAR(500),
+                        UNIQUE (picking_line_id, inventory_lot_id),
+                        CHECK (quantity > 0)
+                    )
+                    """);
+
             statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
             statement.execute("""
                     CREATE TABLE order_backorders (id BIGINT AUTO_INCREMENT PRIMARY KEY, order_id BIGINT REFERENCES orders(id),

@@ -39,6 +39,9 @@ class PickingServiceTest extends DatabaseTest {
         sql("INSERT INTO price_lists(id,code,name,customer_group_id,valid_from) VALUES(100,'BG','Giá',1,'2020-01-01')");
         sql("INSERT INTO price_list_items VALUES(100,500,10000,9000),(100,501,5000,4000)");
         sql("INSERT INTO warehouse_inventory VALUES(10,500,100,0),(10,501,100,0)");
+        sql("INSERT INTO inventory_lots (warehouse_id, product_id, lot_no, expiry_date, remaining_quantity, unit_cost, received_at) " +
+                "VALUES (10,500,'LO-A','2027-12-31',100,1000,CURRENT_TIMESTAMP)," +
+                "(10,501,'LO-B','2027-12-31',100,1000,CURRENT_TIMESTAMP)");
         first = orders.create(900, rep);
         orders.addLine(first, 500, 1, "5", rep);
         orders.addLine(first, 501, 1, "2", rep);

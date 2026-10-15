@@ -22,23 +22,6 @@ class InventoryReportServiceTest extends DatabaseTest {
 
     @BeforeEach
     void prepareInventoryFixture() throws Exception {
-        sql("""
-                CREATE TABLE inventory_lots (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    warehouse_id BIGINT NOT NULL,
-                    product_id BIGINT NOT NULL,
-                    remaining_quantity DECIMAL(14,4) NOT NULL,
-                    unit_cost DECIMAL(15,2) NOT NULL,
-                    received_at TIMESTAMP NOT NULL,
-                    source_type VARCHAR(30),
-                    source_id BIGINT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
-                    FOREIGN KEY (product_id) REFERENCES products(id)
-                )
-                """);
-
         sql("INSERT INTO product_categories (id, parent_id, name) VALUES (9001, NULL, 'NhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³m test')");
         sql("INSERT INTO units (id, code, name) VALUES (9001, 'TESTU', 'ÃƒÆ’Ã¢â‚¬Å¾Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â Ãƒâ€šÃ‚Â¡n test')");
         sql("""

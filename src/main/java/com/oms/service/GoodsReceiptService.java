@@ -1,3 +1,4 @@
+
 package com.oms.service;
 
 import com.oms.config.Db;
@@ -152,7 +153,7 @@ public class GoodsReceiptService {
                 for (GoodsReceipt.Line line : lines) {
                     dao.addOnHand(conn, form.warehouseId(), line.productId(), line.baseQuantity());
                     dao.insertLot(conn, form.warehouseId(), line.productId(), line.baseQuantity(),
-                            form.receivedDate(), id);
+                            form.receivedDate(), id, line.lotNo(), line.expiryDate());
                     dao.insertMovement(conn, form.warehouseId(), line.productId(), line.baseQuantity(), id,
                             actor.getId());
                 }
