@@ -1,31 +1,12 @@
 (() => {
     "use strict";
 
-    // DỮ LIỆU MINH HỌA. Không kết nối cơ sở dữ liệu/API.
-    const demo = {
-        today: 18500000,
-        month: 486000000,
-        approval: 12,
-        dispatch: 8,
-        stock: 17,
-        daily: [11, 14, 12, 19, 16, 23, 18, 21, 26, 22, 29, 31],
-        regions: [
-            { name: "Miền Bắc", value: 186 },
-            { name: "Miền Trung", value: 112 },
-            { name: "Miền Nam", value: 188 }
-        ],
-        overdue: [
-            { agency: "Đại lý minh họa A", region: "Miền Bắc", days: 18, amount: 42000000 },
-            { agency: "Đại lý minh họa B", region: "Miền Nam", days: 12, amount: 26500000 },
-            { agency: "Đại lý minh họa C", region: "Miền Trung", days: 7, amount: 13700000 },
-            { agency: "Đại lý minh họa D", region: "Miền Bắc", days: 4, amount: 8200000 }
-        ]
-    };
-
-    const money = value => new Intl.NumberFormat("vi-VN").format(value);
-    const number = value => new Intl.NumberFormat("vi-VN").format(value);
-    const byId = id => document.getElementById(id);
+    // Số liệu do server gắn vào data-values / data-labels của từng biểu đồ (GHTK-80).
     const ns = "http://www.w3.org/2000/svg";
+    const byId = id => document.getElementById(id);
+    const values = root => (root.dataset.values || "").split(",").filter(v => v !== "").map(Number);
+    // Trục hiển thị theo triệu đồng cho gọn
+    const million = value => new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(value / 1e6);
 
     function svgNode(name, attributes = {}, text = null) {
         const element = document.createElementNS(ns, name);
@@ -36,9 +17,18 @@
         return element;
     }
 
+    function empty(root) {
+        const note = document.createElement("p");
+        note.className = "mdash-empty";
+        note.textContent = "Chưa có hoá đơn trong tháng.";
+        root.replaceChildren(note);
+    }
+
     function renderDailyChart() {
         const root = byId("mdash-daily-chart");
         if (!root) return;
+        const daily = values(root);
+        if (!daily.some(v => v > 0)) return empty(root);
 
         const svg = svgNode("svg", {
             viewBox: "0 0 620 270",
@@ -47,7 +37,7 @@
         });
 
         const left = 48, top = 22, width = 550, height = 195;
-        const max = 40;
+        const max = Math.max(...daily);
         for (let tick = 0; tick <= 4; tick++) {
             const y = top + height - tick * height / 4;
             svg.appendChild(svgNode("line", {
@@ -57,11 +47,12 @@
             svg.appendChild(svgNode("text", {
                 x: 38, y: y + 4, "text-anchor": "end",
                 class: "axis-label"
-            }, tick * 10));
+            }, million(max * tick / 4)));
         }
 
-        const points = demo.daily.map((value, index) => ({
-            x: left + index * width / (demo.daily.length - 1),
+        const step = daily.length > 1 ? width / (daily.length - 1) : 0;
+        const points = daily.map((value, index) => ({
+            x: left + index * step,
             y: top + height - value / max * height
         }));
 
@@ -70,12 +61,13 @@
             class: "chart-line"
         }));
 
+        const labelEvery = Math.ceil(points.length / 12);
         points.forEach((point, index) => {
             svg.appendChild(svgNode("circle", {
                 cx: point.x, cy: point.y, r: 4,
                 class: "chart-dot"
             }));
-            if (index % 2 === 0 || index === points.length - 1) {
+            if (index % labelEvery === 0 || index === points.length - 1) {
                 svg.appendChild(svgNode("text", {
                     x: point.x, y: 245,
                     "text-anchor": "middle", class: "axis-label"
@@ -89,6 +81,9 @@
     function renderRegionChart() {
         const root = byId("mdash-region-chart");
         if (!root) return;
+        const regions = values(root);
+        const names = (root.dataset.labels || "").split("|");
+        if (!regions.length) return empty(root);
 
         const svg = svgNode("svg", {
             viewBox: "0 0 430 270",
@@ -97,24 +92,26 @@
         });
 
         const baseline = 217;
-        const max = 220;
+        const max = Math.max(...regions);
+        const slot = 385 / regions.length;
+        const barWidth = Math.min(65, slot * 0.6);
 
-        demo.regions.forEach((region, index) => {
-            const x = 52 + index * 125;
-            const height = region.value / max * 175;
+        regions.forEach((value, index) => {
+            const x = 25 + index * slot + (slot - barWidth) / 2;
+            const height = value / max * 175;
             svg.appendChild(svgNode("rect", {
                 x, y: baseline - height,
-                width: 65, height,
+                width: barWidth, height,
                 rx: 5, class: "chart-bar"
             }));
             svg.appendChild(svgNode("text", {
-                x: x + 32.5, y: baseline - height - 10,
+                x: x + barWidth / 2, y: baseline - height - 10,
                 "text-anchor": "middle", class: "axis-label"
-            }, `${region.value} tr`));
+            }, `${million(value)} tr`));
             svg.appendChild(svgNode("text", {
-                x: x + 32.5, y: 242,
+                x: x + barWidth / 2, y: 242,
                 "text-anchor": "middle", class: "axis-label"
-            }, region.name));
+            }, names[index] || ""));
         });
 
         svg.appendChild(svgNode("line", {
@@ -124,49 +121,9 @@
         root.replaceChildren(svg);
     }
 
-    function renderOverdue() {
-        const tbody = byId("mdash-overdue-body");
-        if (!tbody) return;
-
-        const rows = [...demo.overdue].sort(
-            (a, b) => b.amount - a.amount
-        );
-        tbody.replaceChildren();
-
-        rows.forEach(item => {
-            const row = document.createElement("tr");
-            [item.agency, item.region, `${number(item.days)} ngày`,
-                `${money(item.amount)} ₫`].forEach(value => {
-                const cell = document.createElement("td");
-                cell.textContent = value;
-                row.appendChild(cell);
-            });
-            tbody.appendChild(row);
-        });
-    }
-
     function init() {
-        const totalDebt = demo.overdue.reduce(
-            (total, item) => total + item.amount, 0
-        );
-
-        const values = {
-            "mdash-today": `${money(demo.today)} ₫`,
-            "mdash-month": `${money(demo.month)} ₫`,
-            "mdash-approval": number(demo.approval),
-            "mdash-dispatch": number(demo.dispatch),
-            "mdash-debt": `${money(totalDebt)} ₫`,
-            "mdash-stock": number(demo.stock)
-        };
-
-        Object.entries(values).forEach(([id, value]) => {
-            const element = byId(id);
-            if (element) element.textContent = value;
-        });
-
         renderDailyChart();
         renderRegionChart();
-        renderOverdue();
     }
 
     if (document.readyState === "loading") {
