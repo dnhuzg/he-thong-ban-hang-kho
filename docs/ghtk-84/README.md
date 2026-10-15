@@ -1,19 +1,30 @@
-# GHTK-84 · S8-09 · Báo cáo công nợ quá hạn theo tuổi nợ (FE)
+# GHTK-84 — Xem báo cáo công nợ quá hạn theo tuổi nợ
 
 ## Phạm vi
 
-- Nâng cấp `/finance/debt-aging` để thể hiện đại lý có rủi ro công nợ cao nhất trong tập dữ liệu lọc hiện tại.
-- Tổng hợp dư nợ theo nhân viên phụ trách, đại lý và bốn nhóm tuổi nợ: 0–30, 31–60, 61–90, trên 90 ngày.
-- Bổ sung nhân viên phụ trách vào bảng chi tiết; phần tìm kiếm có thể tìm theo mã/tên nhân viên.
-- Xuất tệp Excel `.xlsx` theo bộ lọc hiện tại, gồm tổng hợp tuổi nợ, đại lý rủi ro cao nhất, tổng hợp theo nhân viên và chi tiết theo đại lý.
+GHTK-84 được tích hợp vào trang sổ công nợ hiện có tại `/finance/debt-aging` của GHTK-69. Không thay trang bằng dữ liệu mẫu và không tạo bộ dữ liệu hardcode ở trình duyệt.
 
-## Quy tắc trong bản mẫu
+- Giữ nguyên sổ công nợ, bộ lọc ngày đối chiếu, từ khoá, nhóm tuổi và chỉ xem quá hạn.
+- Tổng hợp số dư quá hạn theo nhóm tuổi của hoá đơn (0–30, 31–60, 61–90, trên 90 ngày tính từ ngày phát hành) từ dữ liệu SQL.
+- Tổng hợp số dư quá hạn và số đại lý quá hạn theo nhân viên đang được gán trong `customers.sales_rep_id`.
+- Xác định đại lý rủi ro cao nhất bằng SQL: số dư quá hạn lớn nhất; khi bằng nhau, ưu tiên khoản nợ thuộc nhóm tuổi cũ hơn, sau đó số ngày quá hạn dài hơn.
+- Mở rộng tệp Excel hiện có thành các sheet: `Tuổi nợ`, `Tổng hợp quá hạn`, `Theo nhân viên`, `Rủi ro cao nhất`.
+- Các phần tổng hợp và xếp hạng dùng cùng tập hoá đơn sau khi áp dụng bộ lọc hiện có; nếu đại lý chưa gán nhân viên, báo cáo hiển thị `Chưa phân công`.
 
-- Tuổi nợ = số ngày từ ngày phát sinh hoá đơn tới ngày đối chiếu (ngày phát sinh tính 0), giữ nguyên quy tắc của màn phân tích tuổi nợ hiện tại.
-- Quá hạn = ngày đến hạn nhỏ hơn ngày đối chiếu và còn dư nợ.
-- Xếp hạng đại lý rủi ro cao nhất: dư nợ quá hạn cao nhất; nếu bằng nhau thì xét dư nợ nhóm trên 90 ngày, số ngày quá hạn lâu nhất, rồi tổng còn nợ.
-- Các bộ tổng hợp dùng cùng các dòng hoá đơn sau bộ lọc từ khoá, nhóm tuổi nợ, ngày đối chiếu và chỉ xem quá hạn.
+## Thành phần sửa
 
-## Giới hạn cần lưu ý
+- `DebtAgingDao`: truy vấn nhân viên phụ trách, tổng hợp quá hạn theo tuổi hoá đơn, tổng hợp theo nhân viên và xếp hạng đại lý rủi ro nhất bằng SQL.
+- `DebtAgingService`: giữ nguyên nghiệp vụ sổ công nợ GHTK-69, kết hợp số liệu bổ sung vào report và xuất Excel nhiều sheet.
+- `debt-aging.jsp` / `debt-aging.css`: bổ sung các khối tổng hợp vào chính trang báo cáo hiện tại; không dùng JavaScript để tạo dữ liệu báo cáo.
+- `DebtAgingServiceTest`: kiểm tra nhóm tuổi nợ quá hạn, tổng hợp theo người phụ trách, đại lý rủi ro cao nhất, bộ lọc hoá đơn và các sheet Excel.
 
-Đây là phần giao diện FE mẫu, dữ liệu hoá đơn, khoản thu và phân công nhân viên đang hardcode trong JavaScript, chưa truy vấn MySQL và không đại diện công nợ thực. Bản này chỉ xuất đúng dữ liệu mẫu đang lọc. Backend cần thay nguồn dữ liệu bằng truy vấn công nợ thật, xác minh phân công đại lý theo dữ liệu hệ thống và thực hiện kiểm quyền/phạm vi ở phía server.
+## Quy ước nghiệp vụ
+
+- Số dư chưa thanh toán của hoá đơn là `total_amount - paid_amount`.
+- Một hoá đơn là quá hạn tại ngày đối chiếu khi `due_date < asOf`, còn số dư chưa thanh toán dương và trạng thái không phải `CANCELLED`.
+- Tuổi nhóm được tính theo số ngày từ `issued_at` đến ngày đối chiếu, giữ tương thích với sổ GHTK-69 hiện có.
+- Báo cáo chỉ đọc; quyền xem vẫn được kiểm tra bằng `DebtAgingService` hiện có.
+
+## Kiểm thử
+
+Chạy `mvn clean package`. Cần kiểm thử thêm trên MySQL local/DB dùng chung để xác nhận kết quả thực tế và quyền truy cập trước khi merge PR.
