@@ -1,3 +1,4 @@
+
 package com.oms.web;
 
 import com.oms.model.Module;
@@ -32,12 +33,10 @@ public final class AccessRules {
             Map.entry("/api/portal/submit", new Rule(Kind.WRITE, Module.ORDER)),
 
             Map.entry("/api/orders/copy", new Rule(Kind.WRITE, Module.ORDER)),
-
             Map.entry("/api/orders/pdf", new Rule(Kind.READ, Module.ORDER)),
-
             Map.entry("/api/orders/search", new Rule(Kind.READ, Module.ORDER)),
-
             Map.entry("/api/orders/cancel", new Rule(Kind.WRITE, Module.ORDER)),
+
             // Ngoại lệ vòng đời: kho/kế toán chỉ có ORDER mức R nhưng được soạn/xuất/đóng đơn.
             // Không dùng ORDER WRITE hay SHIPMENT WRITE vì sẽ chặn kế toán đóng đơn và NVKD xác nhận giao.
             // OrderLifecycleService vẫn kiểm vai trò, kho phục vụ và từng bước chuyển trạng thái.
@@ -52,7 +51,6 @@ public final class AccessRules {
             Map.entry("/api/orders/add-last-purchase", new Rule(Kind.WRITE, Module.ORDER)),
 
             Map.entry("/api/orders/stock", new Rule(Kind.READ, Module.ORDER)),
-
             Map.entry("/api/orders/credit", new Rule(Kind.READ, Module.ORDER)),
 
             Map.entry("/logout", new Rule(Kind.AUTHENTICATED, null)),
@@ -99,7 +97,7 @@ public final class AccessRules {
             Map.entry("/inventory/stock-card", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/receipts", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/receipts/save", new Rule(Kind.WRITE, Module.INVENTORY)),
-	    Map.entry("/inventory/transfers", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/transfers", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/suppliers/new", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/suppliers/edit", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/suppliers/delete", new Rule(Kind.WRITE, Module.INVENTORY)),
@@ -117,7 +115,12 @@ public final class AccessRules {
             Map.entry("/finance/invoices/issue", new Rule(Kind.WRITE, Module.INVOICE)),
             Map.entry("/finance/payments", new Rule(Kind.READ, Module.INVOICE)),
             Map.entry("/finance/payments/record", new Rule(Kind.WRITE, Module.INVOICE)),
+
             Map.entry("/orders", new Rule(Kind.READ, Module.ORDER)),
+
+            // S5-02: Đại lý đặt lại đơn hàng đã mua.
+            Map.entry("/orders/reorder", new Rule(Kind.WRITE, Module.ORDER)),
+
             Map.entry("/orders/products", new Rule(Kind.READ, Module.ORDER)),
             Map.entry("/orders/new", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/create", new Rule(Kind.WRITE, Module.ORDER)),
@@ -164,9 +167,10 @@ public final class AccessRules {
             Map.entry("/customers/transfer", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/transfer/apply", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
             Map.entry("/customers/lock", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)),
-            Map.entry("/customers/unlock", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT)));
+            Map.entry("/customers/unlock", new Rule(Kind.WRITE, Module.CUSTOMER_CREDIT))
+    );
 
-    // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ
+    // Ảnh tải lên (S2-03): mọi người đã đăng nhập đều xem được; FileServlet tự lọc tên tệp hợp lệ.
     private static final Rule FILES = new Rule(Kind.AUTHENTICATED, null);
 
     private AccessRules() {
@@ -191,7 +195,11 @@ public final class AccessRules {
 
     /** Các trang không cần đăng nhập. */
     public static boolean isPublic(String path) {
-        return path.equals("/") || path.equals("/login") || path.equals("/forgot-password") || path.equals("/reset-password")
-                || path.startsWith("/assets/") || path.equals("/favicon.ico");
+        return path.equals("/")
+                || path.equals("/login")
+                || path.equals("/forgot-password")
+                || path.equals("/reset-password")
+                || path.startsWith("/assets/")
+                || path.equals("/favicon.ico");
     }
 }
