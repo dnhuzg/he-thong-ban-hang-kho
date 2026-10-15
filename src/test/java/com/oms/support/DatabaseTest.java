@@ -300,6 +300,8 @@ public abstract class DatabaseTest {
             statement.execute("ALTER TABLE shipments ADD invoice_id BIGINT REFERENCES invoices(id)");
             statement.execute("CREATE TABLE document_sequences (name VARCHAR(30) PRIMARY KEY, last_number BIGINT DEFAULT 0)");
             statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0), ('PAYMENT', 0)");
+            statement.execute("INSERT INTO document_sequences VALUES ('STOCK_ADJUSTMENT', 0)");
+            statement.execute("CREATE TABLE stock_adjustments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE, warehouse_id BIGINT REFERENCES warehouses(id), product_id BIGINT REFERENCES products(id), lot_id BIGINT REFERENCES inventory_lots(id), quantity DECIMAL(14,4), reason VARCHAR(20), note VARCHAR(500), unit_cost DECIMAL(15,2), loss_value DECIMAL(15,2), status VARCHAR(20) DEFAULT 'PENDING', created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, decided_by BIGINT REFERENCES users(id), decided_at TIMESTAMP, reject_reason VARCHAR(500))");
             statement.execute("ALTER TABLE invoices ADD paid_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
             statement.execute("ALTER TABLE invoices ADD credited_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
             statement.execute("""

@@ -106,8 +106,12 @@ public class StockCardService {
         }
     }
 
+    private static final java.util.Set<String> OUTFLOWS =
+            java.util.Set.of("SHIPMENT_OUT", "TRANSFER_OUT", "INVENTORY_COUNT_LOSS", "ADJUSTMENT_OUT");
+
     private static BigDecimal signed(StockCardDao.Movement m) {
-        return "SHIPMENT_OUT".equals(m.type()) ? m.quantity().negate() : m.quantity();
+        // Bút toán lưu số dương; chiều xuất suy từ loại bút toán
+        return OUTFLOWS.contains(m.type()) ? m.quantity().negate() : m.quantity();
     }
 
     private static String label(String type) {
@@ -115,6 +119,12 @@ public class StockCardService {
             case "GOODS_RECEIPT" -> "Nhập kho";
             case "SHIPMENT_OUT" -> "Xuất kho";
             case "SHIPMENT_RETURN" -> "Giao thất bại, trả về kho";
+            case "CUSTOMER_RETURN" -> "Đại lý trả hàng";
+            case "TRANSFER_OUT" -> "Chuyển kho đi";
+            case "TRANSFER_IN" -> "Chuyển kho đến";
+            case "INVENTORY_COUNT_GAIN" -> "Kiểm kê thừa";
+            case "INVENTORY_COUNT_LOSS" -> "Kiểm kê thiếu";
+            case "ADJUSTMENT_OUT" -> "Điều chỉnh giảm";
             default -> type;
         };
     }
@@ -123,6 +133,7 @@ public class StockCardService {
         return switch (m.referenceType()) {
             case "GOODS_RECEIPT" -> "/inventory/receipts?id=" + m.referenceId();
             case "SHIPMENT" -> "/shipments/confirm?id=" + m.referenceId();
+            case "STOCK_ADJUSTMENT" -> "/inventory/adjustments";
             default -> null;
         };
     }

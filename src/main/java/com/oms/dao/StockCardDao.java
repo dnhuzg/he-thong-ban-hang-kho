@@ -37,11 +37,12 @@ public class StockCardDao {
         List<Movement> list = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT m.id, m.created_at, m.movement_type, m.reference_type, m.reference_id, "
-                        + "COALESCE(g.code, s.code), w.name, m.quantity * CASE WHEN m.unit_id = p.base_unit_id THEN 1 ELSE "
+                        + "COALESCE(g.code, s.code, sa.code), w.name, m.quantity * CASE WHEN m.unit_id = p.base_unit_id THEN 1 ELSE "
                         + "(SELECT pu.factor FROM product_units pu WHERE pu.product_id = m.product_id AND pu.unit_id = m.unit_id) END "
                         + "FROM inventory_movements m JOIN products p ON p.id = m.product_id JOIN warehouses w ON w.id = m.warehouse_id "
                         + "LEFT JOIN goods_receipts g ON m.reference_type = 'GOODS_RECEIPT' AND g.id = m.reference_id "
                         + "LEFT JOIN shipments s ON m.reference_type = 'SHIPMENT' AND s.id = m.reference_id "
+                        + "LEFT JOIN stock_adjustments sa ON m.reference_type = 'STOCK_ADJUSTMENT' AND sa.id = m.reference_id "
                         + "WHERE m.product_id = ?" + (warehouseId == null ? "" : " AND m.warehouse_id = ?")
                         + " ORDER BY m.created_at, m.id")) {
             ps.setLong(1, productId);
