@@ -150,6 +150,8 @@ public final class AccessRules {
             Map.entry("/orders/lines/delete", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/submit", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/cancel", new Rule(Kind.WRITE, Module.ORDER)),
+            // S5-02: Đại lý đặt lại đơn hàng đã mua.
+            Map.entry("/orders/reorder", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/decide", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/orders/approvals", new Rule(Kind.WRITE, Module.ORDER)),
             Map.entry("/products/discounts", new Rule(Kind.READ, Module.PRODUCT)),
