@@ -36,7 +36,7 @@ class WarehousePageAccessTest {
     }
 
     @Test
-    void warehouseManagerWriteAccessDoesNotOpenUnregisteredMutationUrls() {
+    void warehouseManagerCanUseRegisteredSaveButNotUnregisteredDelete() {
         User manager = new User();
         manager.setRoles(EnumSet.of(Role.WH_MANAGER));
         var policy = new PermissionPolicy(Map.of(
@@ -44,7 +44,10 @@ class WarehousePageAccessTest {
 
         assertTrue(AccessRules.isAllowed(AccessRules.find(PATH), manager, policy));
         assertTrue(policy.canWrite(manager.getRoles(), Module.INVENTORY));
-        assertNull(AccessRules.find(PATH + "/save"));
+        var saveRule = AccessRules.find(PATH + "/save");
+        assertNotNull(saveRule);
+        assertEquals(AccessRules.Kind.WRITE, saveRule.kind());
+        assertEquals(Module.INVENTORY, saveRule.module());
         assertNull(AccessRules.find(PATH + "/delete"));
     }
 }
