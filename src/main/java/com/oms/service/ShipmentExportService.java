@@ -28,8 +28,10 @@ public class ShipmentExportService {
     private static final int RECENT = 20;
 
     public record Page(List<ShipmentExport.Ready> ready, List<ShipmentExport.Backorder> backorders,
-                       List<ShipmentExport.Recent> recent) {
+                       List<ShipmentExport.Recent> recent, Map<Long, List<InventoryLotService.LotChoice>> lotChoices) {
         public List<ShipmentExport.Ready> getReady() { return ready; }
+        /** Đơn → lô gợi ý của các SKU có quản lý lô (GHTK-61). */
+        public Map<Long, List<InventoryLotService.LotChoice>> getLotChoices() { return lotChoices; }
         public List<ShipmentExport.Backorder> getBackorders() { return backorders; }
         public List<ShipmentExport.Recent> getRecent() { return recent; }
     }
@@ -40,7 +42,21 @@ public class ShipmentExportService {
     public Page page(User viewer) throws SQLException {
         Set<Long> scope = PickingService.scope(viewer);
         try (Connection conn = Db.getConnection()) {
-            return new Page(dao.ready(conn, scope), dao.backorders(conn, scope), dao.recent(conn, scope, RECENT));
+            List<ShipmentExport.Ready> ready = dao.ready(conn, scope);
+            Map<Long, List<InventoryLotService.LotChoice>> choices = new HashMap<>();
+            InventoryLotService lots = new InventoryLotService();
+            for (ShipmentExport.Ready r : ready) {
+                Order order = new OrderDao().findById(conn, r.getOrderId());
+                Map<Long, BigDecimal> picked = new HashMap<>();
+                for (ShipmentExportDao.PickedLine line : dao.pickedLines(conn, r.getOrderId())) {
+                    picked.merge(line.productId(), line.picked(), BigDecimal::add);
+                }
+                List<InventoryLotService.LotChoice> list = lots.choices(conn, order.getWarehouseId(), picked);
+                if (!list.isEmpty()) {
+                    choices.put(r.getOrderId(), list);
+                }
+            }
+            return new Page(ready, dao.backorders(conn, scope), dao.recent(conn, scope, RECENT), choices);
         }
     }
 
@@ -50,6 +66,12 @@ public class ShipmentExportService {
     }
 
     public long export(long orderId, User actor, boolean overrideExpiry, String overrideReason) throws SQLException {
+        return export(orderId, actor, overrideExpiry, overrideReason, Map.of(), null);
+    }
+
+    /** chosenLots: SKU → lô thủ kho chọn thay lô gợi ý; khác lô gợi ý thì phải có pickReason. */
+    public long export(long orderId, User actor, boolean overrideExpiry, String overrideReason,
+                       Map<Long, Long> chosenLots, String pickReason) throws SQLException {
         Set<Long> scope = PickingService.scope(actor);
         return Db.inTransaction(conn -> {
             Order order = new OrderDao().findByIdForUpdate(conn, orderId);
@@ -76,7 +98,7 @@ public class ShipmentExportService {
             dao.consumeReservations(conn, orderId, shipped);
 
             long shipmentId = dao.insertShipment(conn, order.getWarehouseId(), order.getCustomerId(), orderId);
-            new InventoryLotService().consume(conn,shipmentId,order.getWarehouseId(),shipped,overrideExpiry,overrideReason,actor);
+            new InventoryLotService().consume(conn,shipmentId,order.getWarehouseId(),shipped,overrideExpiry,overrideReason,chosenLots,pickReason,actor);
             int shortLines = 0;
             for (ShipmentExportDao.PickedLine line : lines) {
                 if (line.picked().signum() > 0) {
