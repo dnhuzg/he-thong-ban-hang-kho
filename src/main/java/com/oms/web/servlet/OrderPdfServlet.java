@@ -6,14 +6,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
-@WebServlet("/api/orders/pdf")
+@WebServlet({"/api/orders/pdf", "/orders/pdf"})
 public class OrderPdfServlet extends BaseServlet {
     @Override protected void doGet(HttpServletRequest req,HttpServletResponse resp) throws IOException {
         long id=longParam(req,"id");
         try {
             byte[] pdf=new OrderPdfService().export(id,currentUser(req));
             resp.setContentType("application/pdf");
-            resp.setHeader("Content-Disposition","inline; filename=\"order-"+id+".pdf\"");
+            String disposition = "true".equals(param(req, "download")) ? "attachment" : "inline";
+            resp.setHeader("Content-Disposition",disposition+"; filename=\"order-"+id+".pdf\"");
             resp.setHeader("Cache-Control","no-store"); resp.setContentLength(pdf.length); resp.getOutputStream().write(pdf);
         } catch(OrderService.NotFoundException e) { resp.sendError(404); }
         catch(ForbiddenException e) { resp.sendError(403); }

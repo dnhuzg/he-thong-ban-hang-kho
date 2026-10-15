@@ -157,6 +157,8 @@ public class OrderServlet extends BaseServlet {
         Order order = orderService.get(longParam(req, "id"), currentUser(req));
         String q = param(req, "q");
         req.setAttribute("order", order);
+        req.setAttribute("canCopyOrder", new com.oms.service.PermissionService().policy()
+                .canWrite(currentUser(req).getRoles(), com.oms.model.Module.ORDER));
         req.setAttribute("points", orderService.deliveryPoints(order.getCustomerId()));
         req.setAttribute("unitOptions", orderService.unitOptions(order));
         req.setAttribute("q", q);

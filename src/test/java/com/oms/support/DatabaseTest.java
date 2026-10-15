@@ -151,6 +151,9 @@ public abstract class DatabaseTest {
             statement.execute("CREATE TABLE warehouse_inventory(warehouse_id BIGINT REFERENCES warehouses(id),product_id BIGINT REFERENCES products(id),on_hand DECIMAL(14,4),reserved DECIMAL(14,4) DEFAULT 0,PRIMARY KEY(warehouse_id,product_id),CHECK(reserved>=0 AND reserved<=on_hand))");
             statement.execute("CREATE TABLE order_inventory_reservations(order_id BIGINT REFERENCES orders(id),warehouse_id BIGINT,product_id BIGINT,quantity DECIMAL(14,4),PRIMARY KEY(order_id,warehouse_id,product_id),FOREIGN KEY(warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id))");
 
+            statement.execute("ALTER TABLE products ADD track_lots BOOLEAN DEFAULT FALSE NOT NULL");
+            statement.execute("ALTER TABLE products ADD expiry_warning_days INT DEFAULT 30 NOT NULL");
+            statement.execute("CREATE TABLE inventory_lots (id BIGINT AUTO_INCREMENT PRIMARY KEY, warehouse_id BIGINT REFERENCES warehouses(id), product_id BIGINT REFERENCES products(id), lot_no VARCHAR(50), manufactured_date DATE, expiry_date DATE, remaining_quantity DECIMAL(14,4) CHECK(remaining_quantity>=0), unit_cost DECIMAL(15,2), received_at TIMESTAMP, source_type VARCHAR(30), source_id BIGINT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("ALTER TABLE orders ADD warehouse_id BIGINT REFERENCES warehouses(id)");
             statement.execute("ALTER TABLE orders ADD approval_reason VARCHAR(1000)");
             statement.execute("ALTER TABLE order_lines ADD unit_price DECIMAL(15,2)");
@@ -234,6 +237,8 @@ public abstract class DatabaseTest {
                         picked_at TIMESTAMP)
                     """);
             statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
+            statement.execute("CREATE TABLE shipment_lot_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, shipment_id BIGINT REFERENCES shipments(id), lot_id BIGINT REFERENCES inventory_lots(id), quantity DECIMAL(14,4) CHECK(quantity>0), override_reason VARCHAR(500), override_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(shipment_id,lot_id))");
+            statement.execute("ALTER TABLE goods_receipt_lines ADD manufactured_date DATE");
             statement.execute("""
                     CREATE TABLE order_backorders (id BIGINT AUTO_INCREMENT PRIMARY KEY, order_id BIGINT REFERENCES orders(id),
                         order_line_id BIGINT UNIQUE REFERENCES order_lines(id), product_id BIGINT REFERENCES products(id),
