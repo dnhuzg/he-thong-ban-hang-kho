@@ -237,6 +237,43 @@ public abstract class DatabaseTest {
                         picked_at TIMESTAMP)
                     """);
             statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
+            // GHTK-78 / S8-03: Phieu dieu chinh ton kho co phe duyet.
+            statement.execute("""
+                    CREATE TABLE inventory_adjustments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) NOT NULL UNIQUE,
+                        warehouse_id BIGINT NOT NULL REFERENCES warehouses(id),
+                        status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+                        note VARCHAR(500),
+                        total_loss_value DECIMAL(18,2) NOT NULL DEFAULT 0,
+                        created_by BIGINT NOT NULL REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        submitted_at TIMESTAMP,
+                        approved_by BIGINT REFERENCES users(id),
+                        approved_at TIMESTAMP,
+                        rejected_by BIGINT REFERENCES users(id),
+                        rejected_at TIMESTAMP,
+                        rejection_reason VARCHAR(500),
+                        CHECK (total_loss_value >= 0),
+                        CHECK (approved_by IS NULL OR approved_by <> created_by)
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE inventory_adjustment_lines (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        adjustment_id BIGINT NOT NULL
+                            REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
+                        product_id BIGINT NOT NULL REFERENCES products(id),
+                        reason VARCHAR(20) NOT NULL
+                            CHECK (reason IN ('DAMAGED', 'LOST', 'EXPIRED')),
+                        reason_detail VARCHAR(500) NOT NULL,
+                        quantity DECIMAL(14,4) NOT NULL CHECK (quantity > 0),
+                        loss_value DECIMAL(18,2) NOT NULL CHECK (loss_value >= 0),
+                        CHECK (LENGTH(TRIM(reason_detail)) > 0)
+                    )
+                    """);
+
             statement.execute("CREATE TABLE shipment_lot_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, shipment_id BIGINT REFERENCES shipments(id), lot_id BIGINT REFERENCES inventory_lots(id), quantity DECIMAL(14,4) CHECK(quantity>0), override_reason VARCHAR(500), override_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(shipment_id,lot_id))");
             statement.execute("ALTER TABLE goods_receipt_lines ADD manufactured_date DATE");
             statement.execute("""
