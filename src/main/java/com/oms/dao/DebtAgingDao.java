@@ -80,7 +80,7 @@ public class DebtAgingDao {
             return new OverdueAgingTotals(BigDecimal.ZERO, List.of(
                     BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         }
-        String sql = "SELECT COALESCE(SUM(i.total_amount - i.paid_amount), 0), "
+        String sql = "SELECT COALESCE(SUM(i.total_amount - i.paid_amount - i.credited_amount), 0), "
                 + bucketSumSql(1) + ", " + bucketSumSql(2) + ", " + bucketSumSql(3) + ", " + bucketSumSql(4) + " "
                 + overdueFromWhere(invoiceIds.size());
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -99,7 +99,7 @@ public class DebtAgingDao {
         List<OwnerAging> result = new ArrayList<>();
         if (invoiceIds.isEmpty()) return result;
         String sql = "SELECT c.sales_rep_id, COALESCE(NULLIF(TRIM(u.full_name), ''), 'Chưa phân công') AS rep_name, "
-                + "COUNT(DISTINCT c.id), COALESCE(SUM(i.total_amount - i.paid_amount), 0) AS overdue_total, "
+                + "COUNT(DISTINCT c.id), COALESCE(SUM(i.total_amount - i.paid_amount - i.credited_amount), 0) AS overdue_total, "
                 + bucketSumSql(1) + " AS age_0_30, " + bucketSumSql(2) + " AS age_31_60, "
                 + bucketSumSql(3) + " AS age_61_90, " + bucketSumSql(4) + " AS age_over_90 "
                 + overdueFromWhere(invoiceIds.size())
@@ -125,7 +125,7 @@ public class DebtAgingDao {
         if (invoiceIds.isEmpty()) return null;
         String sql = "SELECT c.id, c.code, c.name, "
                 + "COALESCE(NULLIF(TRIM(u.full_name), ''), 'Chưa phân công') AS rep_name, COUNT(i.id), "
-                + "COALESCE(SUM(i.total_amount - i.paid_amount), 0) AS overdue_total, " + bucketSumSql(1) + " AS age_0_30, "
+                + "COALESCE(SUM(i.total_amount - i.paid_amount - i.credited_amount), 0) AS overdue_total, " + bucketSumSql(1) + " AS age_0_30, "
                 + bucketSumSql(2) + " AS age_31_60, " + bucketSumSql(3) + " AS age_61_90, "
                 + bucketSumSql(4) + " AS age_over_90, MIN(DATE(i.due_date)) AS oldest_due_date "
                 + overdueFromWhere(invoiceIds.size())
@@ -155,14 +155,14 @@ public class DebtAgingDao {
             default -> "DATE(i.issued_at) < ?";
         };
         return "COALESCE(SUM(CASE WHEN " + condition
-                + " THEN i.total_amount - i.paid_amount ELSE 0 END), 0)";
+                + " THEN i.total_amount - i.paid_amount - i.credited_amount ELSE 0 END), 0)";
     }
 
     private static String overdueFromWhere(int invoiceCount) {
         return "FROM invoices i JOIN customers c ON c.id = i.customer_id "
                 + "LEFT JOIN users u ON u.id = c.sales_rep_id "
                 + "WHERE i.status <> 'CANCELLED' AND i.issued_at < ? AND i.due_date < ? "
-                + "AND i.total_amount > i.paid_amount AND i.id IN ("
+                + "AND i.total_amount > i.paid_amount + i.credited_amount AND i.id IN ("
                 + String.join(",", java.util.Collections.nCopies(invoiceCount, "?")) + ")";
     }
 
