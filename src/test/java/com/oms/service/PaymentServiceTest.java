@@ -2,6 +2,7 @@ package com.oms.service;
 
 import com.oms.model.Invoice;
 import com.oms.model.Payment;
+import com.oms.model.Role;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PaymentServiceTest extends InvoiceServiceTest {
 
@@ -75,5 +77,31 @@ class PaymentServiceTest extends InvoiceServiceTest {
         assertEquals(Invoice.Status.PAID, invoices.get(ids[1], accountant).getStatus());
         // Hết nợ thì không thu thêm được
         assertThrows(ServiceException.class, () -> payments.record(form(null, "1"), accountant));
+    }
+
+    @Test
+    void receiptShowsCodeCustomerAmountMethodCollectorAndPrintsPdf() throws Exception {
+        twoInvoices();
+        payments.record(form(null, "70000"), accountant);
+        PaymentReceiptService receipts = new PaymentReceiptService();
+
+        Payment receipt = receipts.list(accountant).get(0);
+        assertEquals("PT000001", receipt.getCode());
+        Payment same = receipts.get(receipt.getId(), accountant);
+        assertEquals(receipt.getCustomerName(), same.getCustomerName());
+        assertTrue(same.getCustomerCode() != null && !same.getCustomerCode().isEmpty());
+        assertEquals(0, new BigDecimal("70000").compareTo(same.getAmount()));
+        assertEquals(Payment.Method.CASH, same.getMethod());
+        assertEquals("ketoan", same.getCollectedByName());
+        assertEquals("HD000001, HD000002", same.getInvoiceCodes());
+        byte[] pdf = receipts.pdf(receipt.getId(), accountant);
+        assertEquals("%PDF", new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII));
+    }
+
+    @Test
+    void onlyAccountantSeesReceiptsAndUnknownReceiptIsNotFound() throws Exception {
+        PaymentReceiptService receipts = new PaymentReceiptService();
+        assertThrows(ForbiddenException.class, () -> receipts.list(user("nvkd_x", Role.SALES_REP)));
+        assertThrows(PaymentReceiptService.NotFoundException.class, () -> receipts.get(999, accountant));
     }
 }

@@ -127,32 +127,48 @@ public class PaymentDao {
         }
     }
 
+    private static final String SELECT_PAYMENT =
+            "SELECT p.id, p.code, c.name, p.amount, p.method, p.paid_on, u.full_name, p.note, "
+                    + "(SELECT GROUP_CONCAT(i.code ORDER BY i.id SEPARATOR ', ') FROM payment_allocations a "
+                    + "JOIN invoices i ON i.id = a.invoice_id WHERE a.payment_id = p.id), c.code "
+                    + "FROM payments p JOIN customers c ON c.id = p.customer_id JOIN users u ON u.id = p.collected_by ";
+
     public List<Payment> recent(Connection conn, int limit) throws SQLException {
         List<Payment> list = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT p.id, p.code, c.name, p.amount, p.method, p.paid_on, u.full_name, p.note, "
-                        + "(SELECT GROUP_CONCAT(i.code ORDER BY i.id SEPARATOR ', ') FROM payment_allocations a "
-                        + "JOIN invoices i ON i.id = a.invoice_id WHERE a.payment_id = p.id) "
-                        + "FROM payments p JOIN customers c ON c.id = p.customer_id JOIN users u ON u.id = p.collected_by "
-                        + "ORDER BY p.id DESC LIMIT ?")) {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_PAYMENT + "ORDER BY p.id DESC LIMIT ?")) {
             ps.setInt(1, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Payment payment = new Payment();
-                    payment.setId(rs.getLong(1));
-                    payment.setCode(rs.getString(2));
-                    payment.setCustomerName(rs.getString(3));
-                    payment.setAmount(rs.getBigDecimal(4));
-                    payment.setMethod(Payment.Method.valueOf(rs.getString(5)));
-                    payment.setPaidOn(rs.getDate(6).toLocalDate());
-                    payment.setCollectedByName(rs.getString(7));
-                    payment.setNote(rs.getString(8));
-                    payment.setInvoiceCodes(rs.getString(9));
-                    list.add(payment);
+                    list.add(payment(rs));
                 }
             }
         }
         return list;
+    }
+
+    /** Phiếu thu theo id, null khi không có (GHTK-75 in phiếu thu). */
+    public Payment find(Connection conn, long id) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_PAYMENT + "WHERE p.id = ?")) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? payment(rs) : null;
+            }
+        }
+    }
+
+    private static Payment payment(ResultSet rs) throws SQLException {
+        Payment payment = new Payment();
+        payment.setId(rs.getLong(1));
+        payment.setCode(rs.getString(2));
+        payment.setCustomerName(rs.getString(3));
+        payment.setAmount(rs.getBigDecimal(4));
+        payment.setMethod(Payment.Method.valueOf(rs.getString(5)));
+        payment.setPaidOn(rs.getDate(6).toLocalDate());
+        payment.setCollectedByName(rs.getString(7));
+        payment.setNote(rs.getString(8));
+        payment.setInvoiceCodes(rs.getString(9));
+        payment.setCustomerCode(rs.getString(10));
+        return payment;
     }
 
     public List<Payment.Allocation> allocationsOf(Connection conn, long invoiceId) throws SQLException {

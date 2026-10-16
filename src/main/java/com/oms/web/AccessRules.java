@@ -80,6 +80,7 @@ public final class AccessRules {
             Map.entry("/finance/route-collections/record", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/route-collections/confirm", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/payment-receipts", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/finance/payment-receipts/pdf", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/reconciliations", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/reconciliations/create", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/portal", new Rule(Kind.READ, Module.ORDER)),
