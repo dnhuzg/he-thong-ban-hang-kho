@@ -2,7 +2,10 @@ package com.oms.service;
 
 import com.oms.config.Db;
 import com.oms.dao.AuditLogDao;
+import com.oms.dao.OrderDao;
+import com.oms.dao.OrderWorkflowDao;
 import com.oms.dao.ShipmentDao;
+import com.oms.model.Order;
 import com.oms.model.Role;
 import com.oms.model.Shipment;
 import com.oms.model.User;
@@ -47,6 +50,16 @@ public class ShipmentService {
         }
     }
 
+    /** Đơn đã xuất kho chuyển sang Đã giao khi phiếu xuất của nó được xác nhận giao thành công. */
+    private void markOrderDelivered(Connection conn, long shipmentId, String shipmentCode, User actor) throws SQLException {
+        Long orderId = shipmentDao.orderId(conn, shipmentId);
+        Order order = orderId == null ? null : new OrderDao().findByIdForUpdate(conn, orderId);
+        if (order != null && order.getStatus() == Order.Status.SHIPPED) {
+            new OrderWorkflowDao().transition(conn, order, Order.Status.DELIVERED, "ADVANCE",
+                    "Giao thành công phiếu " + shipmentCode, actor.getId(), order.getWarehouseId(), order.getApprovalReason());
+        }
+    }
+
     public void confirmSuccess(long shipmentId, String recipientName, byte[] proofImage, User actor)
             throws SQLException, IOException {
         requireWarehouseActor(actor);
@@ -70,6 +83,7 @@ public class ShipmentService {
                 auditDao.log(conn, actor.getId(), "SHIPMENT_DELIVERED", "SHIPMENT", shipmentId,
                         shipment.getCode() + " / người nhận: " + recipient,
                         describeForAudit(shipment), "DELIVERED");
+                markOrderDelivered(conn, shipmentId, shipment.getCode(), actor);
                 return null;
             });
         } catch (SQLException | RuntimeException e) {

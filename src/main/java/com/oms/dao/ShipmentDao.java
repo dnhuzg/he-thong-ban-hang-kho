@@ -69,6 +69,20 @@ public class ShipmentDao {
         return items;
     }
 
+    /** Đơn hàng của phiếu xuất; null với phiếu cũ trước khi có cột order_id. */
+    public Long orderId(Connection conn, long shipmentId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT order_id FROM shipments WHERE id = ?")) {
+            ps.setLong(1, shipmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                long id = rs.getLong(1);
+                return rs.wasNull() ? null : id;
+            }
+        }
+    }
+
     public int markDelivered(Connection conn, long shipmentId, String recipientName,
                              LocalDateTime deliveredAt, String proofImagePath,
                              LocalDateTime invoiceEligibleAt) throws SQLException {
