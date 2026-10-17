@@ -1,7 +1,10 @@
 
 package com.oms.web.servlet;
 
+import com.oms.config.Db;
 import com.oms.dao.InventoryAdjustmentDao;
+import com.oms.dao.LookupDao;
+import com.oms.model.NamedItem;
 import com.oms.model.User;
 import com.oms.service.ForbiddenException;
 import com.oms.service.InventoryAdjustmentService;
@@ -14,23 +17,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * GHTK-78 / S8-03: Backend lập phiếu điều chỉnh tồn kho có phê duyệt.
- *
- * GET  /inventory/adjustments
- * GET  /inventory/adjustments/detail?id=1
- *
- * POST /inventory/adjustments/create
- * POST /inventory/adjustments/submit
- * POST /inventory/adjustments/approve
- * POST /inventory/adjustments/reject
- *
- * Phản hồi JSON, không phụ thuộc JSP.
- */
 @WebServlet({
         "/inventory/adjustments",
         "/inventory/adjustments/detail",
@@ -55,19 +46,39 @@ public class InventoryAdjustmentServlet extends BaseServlet {
 
             switch (req.getServletPath()) {
                 case "/inventory/adjustments" -> {
-                    List<InventoryAdjustmentDao.Adjustment> adjustments =
-                            service.list(actor);
+                    if ("json".equalsIgnoreCase(
+                            req.getParameter("format"))) {
 
-                    StringBuilder json = new StringBuilder("[");
-                    for (int i = 0; i < adjustments.size(); i++) {
-                        if (i > 0) {
-                            json.append(",");
+                        List<InventoryAdjustmentDao.Adjustment> adjustments =
+                                service.list(actor);
+
+                        StringBuilder json = new StringBuilder("[");
+
+                        for (int i = 0; i < adjustments.size(); i++) {
+                            if (i > 0) {
+                                json.append(",");
+                            }
+                            json.append(adjustmentJson(
+                                    adjustments.get(i)));
                         }
-                        json.append(adjustmentJson(adjustments.get(i)));
-                    }
-                    json.append("]");
 
-                    respondJson(resp, HttpServletResponse.SC_OK, json.toString());
+                        json.append("]");
+                        respondJson(resp, 200, json.toString());
+                        return;
+                    }
+
+                    // Kiểm tra quyền truy cập trước khi render JSP.
+                    service.list(actor);
+
+                    List<NamedItem> warehouses;
+                    try (Connection conn = Db.getConnection()) {
+                        warehouses = new LookupDao().warehouses(conn);
+                    }
+
+                    req.setAttribute("adjustmentWarehouses", warehouses);
+                    req.setAttribute("adjustmentCurrentUserId", actor.getId());
+
+                    render(req, resp, "inventory/adjustments");
                 }
 
                 case "/inventory/adjustments/detail" -> {
@@ -77,6 +88,7 @@ public class InventoryAdjustmentServlet extends BaseServlet {
                             service.get(id, actor);
 
                     StringBuilder json = new StringBuilder();
+
                     json.append("{\"adjustment\":")
                             .append(adjustmentJson(detail.adjustment()))
                             .append(",\"lines\":[");
@@ -89,17 +101,23 @@ public class InventoryAdjustmentServlet extends BaseServlet {
                         InventoryAdjustmentDao.AdjustmentLine line =
                                 detail.lines().get(i);
 
-                        json.append("{\"id\":").append(line.id())
-                                .append(",\"productId\":").append(line.productId())
-                                .append(",\"reason\":").append(quote(line.reason()))
-                                .append(",\"reasonDetail\":").append(quote(line.reasonDetail()))
-                                .append(",\"quantity\":").append(line.quantity().toPlainString())
-                                .append(",\"lossValue\":").append(line.lossValue().toPlainString())
+                        json.append("{\"id\":")
+                                .append(line.id())
+                                .append(",\"productId\":")
+                                .append(line.productId())
+                                .append(",\"reason\":")
+                                .append(quote(line.reason()))
+                                .append(",\"reasonDetail\":")
+                                .append(quote(line.reasonDetail()))
+                                .append(",\"quantity\":")
+                                .append(line.quantity().toPlainString())
+                                .append(",\"lossValue\":")
+                                .append(line.lossValue().toPlainString())
                                 .append("}");
                     }
 
                     json.append("]}");
-                    respondJson(resp, HttpServletResponse.SC_OK, json.toString());
+                    respondJson(resp, 200, json.toString());
                 }
 
                 default -> resp.sendError(
@@ -107,11 +125,14 @@ public class InventoryAdjustmentServlet extends BaseServlet {
             }
 
         } catch (InventoryAdjustmentService.NotFoundException e) {
-            respondError(resp, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            respondError(resp, 404, e.getMessage());
+
         } catch (ForbiddenException e) {
-            respondError(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+            respondError(resp, 403, e.getMessage());
+
         } catch (ServiceException | IllegalArgumentException e) {
-            respondError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            respondError(resp, 400, e.getMessage());
+
         } catch (SQLException e) {
             throw new ServletException(e);
         }
@@ -127,23 +148,21 @@ public class InventoryAdjustmentServlet extends BaseServlet {
             User actor = currentUser(req);
 
             switch (req.getServletPath()) {
-                case "/inventory/adjustments/create" -> {
-                    long warehouseId = positiveLong(req, "warehouseId");
-                    String note = req.getParameter("note");
 
-                    List<InventoryAdjustmentService.LineInput> lines =
-                            parseLines(req);
+                case "/inventory/adjustments/create" -> {
+                    long warehouseId =
+                            positiveLong(req, "warehouseId");
 
                     long id = service.create(
                             warehouseId,
-                            note,
-                            lines,
+                            req.getParameter("note"),
+                            parseLines(req),
                             actor
                     );
 
                     respondJson(
                             resp,
-                            HttpServletResponse.SC_CREATED,
+                            201,
                             "{\"id\":" + id + ",\"status\":\"DRAFT\"}"
                     );
                 }
@@ -155,7 +174,7 @@ public class InventoryAdjustmentServlet extends BaseServlet {
 
                     respondJson(
                             resp,
-                            HttpServletResponse.SC_OK,
+                            200,
                             "{\"id\":" + id + ",\"status\":\"PENDING\"}"
                     );
                 }
@@ -167,20 +186,23 @@ public class InventoryAdjustmentServlet extends BaseServlet {
 
                     respondJson(
                             resp,
-                            HttpServletResponse.SC_OK,
+                            200,
                             "{\"id\":" + id + ",\"status\":\"APPROVED\"}"
                     );
                 }
 
                 case "/inventory/adjustments/reject" -> {
                     long id = positiveLong(req, "id");
-                    String reason = req.getParameter("rejectionReason");
 
-                    service.reject(id, reason, actor);
+                    service.reject(
+                            id,
+                            req.getParameter("rejectionReason"),
+                            actor
+                    );
 
                     respondJson(
                             resp,
-                            HttpServletResponse.SC_OK,
+                            200,
                             "{\"id\":" + id + ",\"status\":\"REJECTED\"}"
                     );
                 }
@@ -190,24 +212,19 @@ public class InventoryAdjustmentServlet extends BaseServlet {
             }
 
         } catch (InventoryAdjustmentService.NotFoundException e) {
-            respondError(resp, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            respondError(resp, 404, e.getMessage());
+
         } catch (ForbiddenException e) {
-            respondError(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+            respondError(resp, 403, e.getMessage());
+
         } catch (ServiceException | IllegalArgumentException e) {
-            respondError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            respondError(resp, 400, e.getMessage());
+
         } catch (SQLException e) {
             throw new ServletException(e);
         }
     }
 
-    /**
-     * Dữ liệu dòng phiếu gửi bằng các tham số dạng mảng:
-     *
-     * productId=101&reason=DAMAGED&reasonDetail=Hang hong
-     * &quantity=2&lossValue=150000
-     *
-     * Lặp lại các tham số trên để gửi nhiều dòng.
-     */
     private static List<InventoryAdjustmentService.LineInput> parseLines(
             HttpServletRequest req
     ) {
@@ -218,7 +235,8 @@ public class InventoryAdjustmentServlet extends BaseServlet {
         String[] lossValues = req.getParameterValues("lossValue");
 
         if (productIds == null || productIds.length == 0) {
-            throw new ServiceException("Phiếu phải có ít nhất một dòng hàng.");
+            throw new ServiceException(
+                    "Phiếu phải có ít nhất một dòng hàng.");
         }
 
         int size = productIds.length;
@@ -228,6 +246,7 @@ public class InventoryAdjustmentServlet extends BaseServlet {
                 || details == null || details.length != size
                 || quantities == null || quantities.length != size
                 || lossValues == null || lossValues.length != size) {
+
             throw new ServiceException(
                     "Dữ liệu chi tiết phiếu điều chỉnh không hợp lệ.");
         }
@@ -237,10 +256,8 @@ public class InventoryAdjustmentServlet extends BaseServlet {
 
         try {
             for (int i = 0; i < size; i++) {
-                long productId = Long.parseLong(productIds[i].trim());
-
                 lines.add(new InventoryAdjustmentService.LineInput(
-                        productId,
+                        Long.parseLong(productIds[i].trim()),
                         reasons[i],
                         details[i],
                         new BigDecimal(quantities[i].trim()),
@@ -263,9 +280,11 @@ public class InventoryAdjustmentServlet extends BaseServlet {
 
         try {
             long id = Long.parseLong(raw.trim());
+
             if (id <= 0) {
                 throw new NumberFormatException();
             }
+
             return id;
         } catch (NumberFormatException | NullPointerException e) {
             throw new ServiceException(
@@ -281,10 +300,12 @@ public class InventoryAdjustmentServlet extends BaseServlet {
                 + ",\"warehouseId\":" + a.warehouseId()
                 + ",\"status\":" + quote(a.status())
                 + ",\"note\":" + quote(a.note())
-                + ",\"totalLossValue\":" + a.totalLossValue().toPlainString()
+                + ",\"totalLossValue\":"
+                + a.totalLossValue().toPlainString()
                 + ",\"createdBy\":" + a.createdBy()
                 + ",\"approvedBy\":"
-                + (a.approvedBy() == null ? "null" : a.approvedBy())
+                + (a.approvedBy() == null
+                ? "null" : a.approvedBy())
                 + "}";
     }
 
@@ -304,9 +325,11 @@ public class InventoryAdjustmentServlet extends BaseServlet {
                 case '\n' -> result.append("\\n");
                 case '\r' -> result.append("\\r");
                 case '\t' -> result.append("\\t");
+
                 default -> {
                     if (c < 0x20) {
-                        result.append(String.format("\\u%04x", (int) c));
+                        result.append(String.format(
+                                "\\u%04x", (int) c));
                     } else {
                         result.append(c);
                     }
@@ -322,13 +345,13 @@ public class InventoryAdjustmentServlet extends BaseServlet {
             int status,
             String body
     ) throws IOException {
+
         resp.setStatus(status);
         resp.setContentType("application/json;charset=UTF-8");
         resp.setHeader("Cache-Control", "no-store");
 
-        try (PrintWriter out = resp.getWriter()) {
-            out.write(body);
-        }
+        PrintWriter out = resp.getWriter();
+        out.write(body);
     }
 
     private static void respondError(
@@ -336,6 +359,7 @@ public class InventoryAdjustmentServlet extends BaseServlet {
             int status,
             String message
     ) throws IOException {
+
         respondJson(
                 resp,
                 status,

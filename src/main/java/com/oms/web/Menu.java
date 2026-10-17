@@ -136,6 +136,7 @@ public final class Menu {
                             item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
                             item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
                             item("Kiểm kê kho", "/inventory/counts", "clipboard-list", path.equals("/inventory/counts"), false),
+                            item("Điều chỉnh tồn kho", "/inventory/adjustments", "clipboard-check", path.startsWith("/inventory/adjustments"), false),
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 

@@ -453,14 +453,26 @@ public class InventoryAdjustmentService {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, warehouseId);
             ps.setLong(2, line.productId());
-            ps.setNull(3, java.sql.Types.BIGINT);
-            ps.setBigDecimal(4, line.quantity().negate());
+            ps.setLong(3, getBaseUnitId(conn, line.productId()));
+            ps.setBigDecimal(4, line.quantity());
             ps.setLong(5, adjustmentId);
             ps.setLong(6, actorId);
             ps.executeUpdate();
         }
     }
 
+    private long getBaseUnitId(Connection conn, long productId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT base_unit_id FROM products WHERE id = ?")) {
+            ps.setLong(1, productId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new ServiceException("Không tìm thấy sản phẩm #" + productId);
+                }
+                return rs.getLong(1);
+            }
+        }
+    }
     private static void validateLine(LineInput line) {
         if (line == null || line.productId() <= 0) {
             throw new ServiceException(
