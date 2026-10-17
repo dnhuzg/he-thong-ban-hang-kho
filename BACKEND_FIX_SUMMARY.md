@@ -16,7 +16,7 @@ The following frontend packs now use the database through `Servlet -> Service ->
 
 Apply the migrations in numeric order after the existing migrations:
 
-1. `database/migrations/029_tra_hang_giam_cong_no.sql`
+1. `database/migrations/035_tra_hang_giam_cong_no.sql`
 2. `database/migrations/030_kho_va_vi_tri.sql`
 3. `database/migrations/031_chuyen_kho.sql`
 4. `database/migrations/032_kiem_ke_kho.sql`

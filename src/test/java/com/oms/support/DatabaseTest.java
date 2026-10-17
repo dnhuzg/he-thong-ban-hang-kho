@@ -1,3 +1,4 @@
+
 package com.oms.support;
 
 import com.oms.config.Db;
@@ -219,7 +220,7 @@ public abstract class DatabaseTest {
                     CREATE TABLE goods_receipt_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         receipt_id BIGINT REFERENCES goods_receipts(id) ON DELETE CASCADE, line_no INT,
                         product_id BIGINT REFERENCES products(id), unit_id BIGINT REFERENCES units(id),
-                        quantity DECIMAL(15,4), factor DECIMAL(12,4), base_quantity DECIMAL(15,4),
+                        quantity DECIMAL(14,4), factor DECIMAL(12,4), base_quantity DECIMAL(15,4),
                         lot_no VARCHAR(50), expiry_date DATE, UNIQUE (receipt_id, line_no))
                     """);
             statement.execute("""
@@ -237,6 +238,7 @@ public abstract class DatabaseTest {
                         picked_at TIMESTAMP)
                     """);
             statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
+
             // GHTK-78 / S8-03: Phieu dieu chinh ton kho co phe duyet.
             statement.execute("""
                     CREATE TABLE inventory_adjustments (
@@ -272,6 +274,52 @@ public abstract class DatabaseTest {
                         loss_value DECIMAL(18,2) NOT NULL CHECK (loss_value >= 0),
                         CHECK (LENGTH(TRIM(reason_detail)) > 0)
                     )
+""");
+
+
+            // GHTK-63 / S6-06: Bảng kiểm thử phân tuyến giao hàng.
+            statement.execute("""
+                    CREATE TABLE delivery_drivers (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        full_name VARCHAR(150) NOT NULL,
+                        phone VARCHAR(20) NOT NULL,
+                        license_no VARCHAR(50),
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_vehicles (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        license_plate VARCHAR(30) NOT NULL UNIQUE,
+                        vehicle_type VARCHAR(100),
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_trips (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) NOT NULL UNIQUE,
+                        warehouse_id BIGINT NOT NULL REFERENCES warehouses(id),
+                        area_name VARCHAR(150) NOT NULL,
+                        delivery_date DATE NOT NULL,
+                        driver_id BIGINT REFERENCES delivery_drivers(id),
+                        vehicle_id BIGINT REFERENCES delivery_vehicles(id),
+                        status VARCHAR(20) DEFAULT 'PLANNED',
+                        created_by BIGINT NOT NULL REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_trip_shipments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        trip_id BIGINT NOT NULL REFERENCES delivery_trips(id) ON DELETE CASCADE,
+                        shipment_id BIGINT NOT NULL UNIQUE REFERENCES shipments(id),
+                        stop_order INT NOT NULL CHECK (stop_order > 0),
+                        UNIQUE (trip_id, stop_order)
+                    )
                     """);
 
             statement.execute("CREATE TABLE shipment_lot_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, shipment_id BIGINT REFERENCES shipments(id), lot_id BIGINT REFERENCES inventory_lots(id), quantity DECIMAL(14,4) CHECK(quantity>0), override_reason VARCHAR(500), override_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(shipment_id,lot_id))");
@@ -286,9 +334,12 @@ public abstract class DatabaseTest {
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
             statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
+
+            // Phải thêm cột code trước khi INSERT dữ liệu kho.
             statement.execute("ALTER TABLE warehouses ADD code VARCHAR(20)");
             statement.execute("INSERT INTO warehouses (id, name, code) VALUES (10, 'Kho A', 'KHO-A'), (20, 'Kho B', 'KHO-B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
+
             statement.execute("""
                     CREATE TABLE invoices (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -302,7 +353,6 @@ public abstract class DatabaseTest {
                         paid_at TIMESTAMP
                     )
                     """);
-
             statement.execute("""
                     CREATE TABLE invoice_reminder_logs (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -318,7 +368,6 @@ public abstract class DatabaseTest {
                         UNIQUE(invoice_id, reminder_date)
                     )
                     """);
-
             statement.execute("""
                     CREATE TABLE notifications (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,

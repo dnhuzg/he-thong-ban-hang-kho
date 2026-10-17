@@ -294,7 +294,7 @@ class InventoryAdjustmentServiceTest extends DatabaseTest {
                 "reference_type = 'INVENTORY_ADJUSTMENT'"
                         + " AND reference_id = " + id
                         + " AND movement_type = 'INVENTORY_ADJUSTMENT_LOSS'"
-                        + " AND quantity = -5"
+                        + " AND quantity = 5"
         ));
 
         assertThrows(

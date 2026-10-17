@@ -128,4 +128,15 @@ class DebtAgingServiceTest extends DatabaseTest {
         assertThrows(ServiceException.class,
                 () -> service.report(new DebtAgingService.Filter(today.plusDays(1), null, null, false), accountant));
     }
+
+    @Test
+    void returnCreditsReduceOverdueTotalsLikeOutstanding() throws Exception {
+        sql("UPDATE invoices SET credited_amount = 50000 WHERE id = 2"); // HD000002: 200.000 − 50.000 đã thu − 50.000 giảm trừ
+        DebtAgingService.Report report = report("", null, false);
+
+        assertEquals(0, new BigDecimal("100000").compareTo(report.getOverdueAgeBuckets().get(1)));
+        assertEquals(0, new BigDecimal("800000").compareTo(report.total().getOverdue())); // trước giảm trừ: 850.000
+        assertEquals(0, report.total().getOverdue().compareTo(
+                report.getOverdueAgeBuckets().stream().reduce(BigDecimal.ZERO, BigDecimal::add)));
+    }
 }
