@@ -33,12 +33,31 @@ public class DeliveryTripService {
             List<DeliveryTripDao.ShipmentStop> availableShipments,
             List<DeliveryTripDao.Driver> drivers,
             List<DeliveryTripDao.Vehicle> vehicles
-    ) {}
+    ) {
+        public List<DeliveryTripDao.Trip> getTrips() {
+            return trips;
+        }
+
+        public List<DeliveryTripDao.ShipmentStop> getAvailableShipments() {
+            return availableShipments;
+        }
+
+        public List<DeliveryTripDao.Driver> getDrivers() {
+            return drivers;
+        }
+
+        public List<DeliveryTripDao.Vehicle> getVehicles() {
+            return vehicles;
+        }
+    }
 
     public record Detail(
             DeliveryTripDao.Trip trip,
             List<DeliveryTripDao.ShipmentStop> stops
-    ) {}
+    ) {
+        public DeliveryTripDao.Trip getTrip() { return trip; }
+        public List<DeliveryTripDao.ShipmentStop> getStops() { return stops; }
+    }
 
     public static class NotFoundException extends ServiceException {
         public NotFoundException() {

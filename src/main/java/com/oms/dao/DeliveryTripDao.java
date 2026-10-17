@@ -20,13 +20,21 @@ public class DeliveryTripDao {
             long id,
             String fullName,
             String phone
-    ) {}
+    ) {
+        public long getId() { return id; }
+        public String getFullName() { return fullName; }
+        public String getPhone() { return phone; }
+    }
 
     public record Vehicle(
             long id,
             String licensePlate,
             String vehicleType
-    ) {}
+    ) {
+        public long getId() { return id; }
+        public String getLicensePlate() { return licensePlate; }
+        public String getVehicleType() { return vehicleType; }
+    }
 
     public record Trip(
             long id,
@@ -40,7 +48,19 @@ public class DeliveryTripDao {
             Long vehicleId,
             String licensePlate,
             String status
-    ) {}
+    ) {
+        public long getId() { return id; }
+        public String getCode() { return code; }
+        public long getWarehouseId() { return warehouseId; }
+        public String getWarehouseName() { return warehouseName; }
+        public String getAreaName() { return areaName; }
+        public LocalDate getDeliveryDate() { return deliveryDate; }
+        public Long getDriverId() { return driverId; }
+        public String getDriverName() { return driverName; }
+        public Long getVehicleId() { return vehicleId; }
+        public String getLicensePlate() { return licensePlate; }
+        public String getStatus() { return status; }
+    }
 
     public record ShipmentStop(
             long shipmentId,
@@ -54,7 +74,19 @@ public class DeliveryTripDao {
             String receiverPhone,
             String routeNote,
             int stopOrder
-    ) {}
+    ) {
+        public long getShipmentId() { return shipmentId; }
+        public String getShipmentCode() { return shipmentCode; }
+        public long getWarehouseId() { return warehouseId; }
+        public String getWarehouseName() { return warehouseName; }
+        public String getAreaName() { return areaName; }
+        public String getCustomerName() { return customerName; }
+        public String getAddress() { return address; }
+        public String getReceiverName() { return receiverName; }
+        public String getReceiverPhone() { return receiverPhone; }
+        public String getRouteNote() { return routeNote; }
+        public int getStopOrder() { return stopOrder; }
+    }
 
     private static final String TRIP_COLUMNS = """
             t.id, t.code, t.warehouse_id,
