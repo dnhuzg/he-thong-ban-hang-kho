@@ -68,6 +68,13 @@
       <version>5.4.1</version>
     </dependency>
 
+    <!-- ImageIO provider for WebP: the existing route-collection FE accepts image/webp. -->
+    <dependency>
+      <groupId>org.sejda.imageio</groupId>
+      <artifactId>webp-imageio</artifactId>
+      <version>0.1.6</version>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
