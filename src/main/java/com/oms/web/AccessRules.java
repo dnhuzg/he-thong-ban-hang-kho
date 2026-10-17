@@ -20,6 +20,8 @@ public final class AccessRules {
     private static final Map<String, Rule> RULES = Map.ofEntries(
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/debt-ledger", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/finance/debt-ledger", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/api/finance/debt-ledger/export", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/return-credits", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/sales/returns", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/api/portal/catalog", new Rule(Kind.READ, Module.ORDER)),
