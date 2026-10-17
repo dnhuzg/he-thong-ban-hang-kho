@@ -931,9 +931,17 @@ CREATE TABLE debt_reconciliations (
  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) NOT NULL UNIQUE, customer_id BIGINT NOT NULL,
  period_start DATE NOT NULL, period_end DATE NOT NULL, opening_balance DECIMAL(15,2) NOT NULL, increase_amount DECIMAL(15,2) NOT NULL,
  decrease_amount DECIMAL(15,2) NOT NULL, closing_balance DECIMAL(15,2) NOT NULL, status ENUM('PENDING','ACCEPTED','DISPUTED') NOT NULL DEFAULT 'PENDING',
- dispute_reason VARCHAR(1000) NULL, created_by BIGINT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, responded_at DATETIME NULL,
+ dispute_reason VARCHAR(1000) NULL, created_by BIGINT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ details_snapshotted_at DATETIME NULL, responded_at DATETIME NULL,
  UNIQUE KEY uk_reconciliation_period(customer_id,period_start,period_end), CONSTRAINT fk_reconciliation_customer FOREIGN KEY(customer_id) REFERENCES customers(id),
  CONSTRAINT fk_reconciliation_created_by FOREIGN KEY(created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE debt_reconciliation_lines (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, reconciliation_id BIGINT NOT NULL, line_no INT NOT NULL,
+ entry_date DATE NOT NULL, reference VARCHAR(50) NOT NULL, entry_type VARCHAR(80) NOT NULL, note VARCHAR(500) NULL,
+ increase_amount DECIMAL(15,2) NOT NULL DEFAULT 0, decrease_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+ UNIQUE KEY uk_reconciliation_line(reconciliation_id,line_no),
+ CONSTRAINT fk_reconciliation_lines_document FOREIGN KEY(reconciliation_id) REFERENCES debt_reconciliations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO document_sequences(name,last_number) VALUES('RECONCILIATION',0);
 -- S6-01: lưu lô thực xuất và người xác nhận ghi đè hạn dùng.
