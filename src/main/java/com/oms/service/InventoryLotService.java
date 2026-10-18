@@ -106,10 +106,62 @@ public class InventoryLotService {
         });
     }
 
-    /** Gọi sau khi khoá số tồn và lập phiếu xuất; lỗi rollback cả phiếu, giữ chỗ và lô. */
+    /** Lô gợi ý xuất (GHTK-61) cho một SKU có quản lý lô: lô còn hạn, hạn gần nhất trước. */
+    public record LotChoice(long productId, String sku, String productName, BigDecimal quantity,
+                            List<InventoryLotDao.Lot> options, String suggestion) {
+        public long getProductId() { return productId; }
+        public String getSku() { return sku; }
+        public String getProductName() { return productName; }
+        public BigDecimal getQuantity() { return quantity; }
+        public List<InventoryLotDao.Lot> getOptions() { return options; }
+        public String getSuggestion() { return suggestion; }
+        public long getSuggestedLotId() { return options.isEmpty() ? 0 : options.get(0).id(); }
+    }
+
+    /** Gợi ý FEFO cho màn xuất kho; chỉ SKU có quản lý lô. Không khoá, chỉ để hiển thị. */
+    public List<LotChoice> choices(Connection conn, long warehouse, Map<Long,BigDecimal> quantities) throws SQLException {
+        List<LotChoice> list = new java.util.ArrayList<>();
+        for (var entry : new TreeMap<>(quantities).entrySet()) {
+            if (entry.getValue().signum()<=0) continue;
+            InventoryLotDao.Product product = dao.product(conn,entry.getKey(),false);
+            if (!product.tracked()) continue;
+            var usable = usable(product,dao.lots(conn,entry.getKey(),warehouse,false),false);
+            StringBuilder suggestion = new StringBuilder();
+            BigDecimal remaining = entry.getValue();
+            for (var lot : usable) {
+                if (remaining.signum()==0) break;
+                BigDecimal taken = remaining.min(lot.remaining());
+                if (suggestion.length()>0) suggestion.append("; ");
+                suggestion.append(lot.number()).append(" (HSD ").append(lot.expiry()).append(") × ").append(taken.stripTrailingZeros().toPlainString());
+                remaining = remaining.subtract(taken);
+            }
+            if (remaining.signum()>0) suggestion.append(suggestion.length()>0?"; ":"").append("thiếu ").append(remaining.stripTrailingZeros().toPlainString());
+            list.add(new LotChoice(product.id(),product.sku(),product.name(),entry.getValue(),usable,suggestion.toString()));
+        }
+        return list;
+    }
+
+    /** Lô dùng được theo thứ tự xuất: còn hạn trước, hạn gần nhất trước; lô quá hạn chỉ khi có ghi đè. */
+    private static List<InventoryLotDao.Lot> usable(InventoryLotDao.Product product, List<InventoryLotDao.Lot> lots, boolean override) {
+        return lots.stream().filter(l -> l.remaining().signum()>0)
+                .filter(l -> !product.tracked() || !l.expiry().isBefore(LocalDate.now()) || override)
+                .sorted(java.util.Comparator.comparing((InventoryLotDao.Lot l) -> product.tracked() && l.expiry().isBefore(LocalDate.now()))
+                        .thenComparing(l -> l.expiry()==null?LocalDate.MAX:l.expiry()).thenComparingLong(InventoryLotDao.Lot::id)).toList();
+    }
+
     public void consume(Connection conn, long shipment, long warehouse, Map<Long,BigDecimal> quantities,
                         boolean override, String reason, User actor) throws SQLException {
+        consume(conn,shipment,warehouse,quantities,override,reason,Map.of(),null,actor);
+    }
+
+    /**
+     * Gọi sau khi khoá số tồn và lập phiếu xuất; lỗi rollback cả phiếu, giữ chỗ và lô.
+     * chosen: SKU → lô thủ kho chọn thay lô gợi ý; chọn khác lô gợi ý thì bắt buộc pickReason.
+     */
+    public void consume(Connection conn, long shipment, long warehouse, Map<Long,BigDecimal> quantities,
+                        boolean override, String reason, Map<Long,Long> chosen, String pickReason, User actor) throws SQLException {
         String explanation = reason == null ? "" : reason.strip();
+        String pickExplanation = pickReason == null ? "" : pickReason.strip();
         User verified = override ? permitted(conn,actor,true) : actor;
         if (override && (!verified.hasRole(Role.WH_MANAGER) || explanation.isEmpty() || explanation.length()>500
                 || (scope(verified)!=null && !scope(verified).contains(warehouse))))
@@ -120,19 +172,29 @@ public class InventoryLotService {
             List<InventoryLotDao.Lot> lots = dao.lots(conn,entry.getKey(),warehouse,true);
             if (product.tracked() && lots.stream().anyMatch(l -> l.remaining().signum()>0 && "incomplete".equals(l.getStatus())))
                 throw new ServiceException("SKU "+product.sku()+" còn lô thiếu số lô, ngày sản xuất hoặc hạn dùng. Bổ sung trước khi xuất.");
-            // Luôn ưu tiên lô còn hạn. Chỉ xét lô quá hạn khi người quản lý đã xác nhận ghi đè.
-            var usable = lots.stream().filter(l -> l.remaining().signum()>0)
-                    .filter(l -> !product.tracked() || !l.expiry().isBefore(LocalDate.now()) || override)
-                    .sorted(java.util.Comparator.comparing((InventoryLotDao.Lot l) -> product.tracked() && l.expiry().isBefore(LocalDate.now()))
-                            .thenComparing(l -> l.expiry()==null?LocalDate.MAX:l.expiry()).thenComparingLong(InventoryLotDao.Lot::id)).toList();
+            var usable = new java.util.ArrayList<>(usable(product,lots,override));
+            Long picked = product.tracked() ? chosen.get(entry.getKey()) : null;
+            boolean manual = picked != null && !usable.isEmpty() && usable.get(0).id() != picked;
+            if (manual) {
+                var lot = usable.stream().filter(l -> l.id()==picked).findFirst()
+                        .orElseThrow(() -> new ServiceException("Lô đã chọn cho SKU "+product.sku()+" không còn xuất được."));
+                if (pickExplanation.isEmpty() || pickExplanation.length()>500)
+                    throw new ServiceException("Chọn lô khác lô gợi ý cho SKU "+product.sku()+" phải nhập lý do (tối đa 500 ký tự).");
+                usable.remove(lot);
+                usable.add(0,lot);
+            }
             BigDecimal remaining = entry.getValue();
             for (var lot : usable) {
                 if (remaining.signum()==0) break;
                 BigDecimal taken = remaining.min(lot.remaining());
                 boolean expired = product.tracked() && lot.expiry().isBefore(LocalDate.now());
-                dao.allocate(conn,shipment,lot,taken,expired?explanation:null,expired?actor.getId():null);
+                boolean chosenLot = manual && lot.id()==picked;
+                String note = expired ? explanation : chosenLot ? pickExplanation : null;
+                dao.allocate(conn,shipment,lot,taken,note,note==null?null:actor.getId());
                 if (expired) new AuditLogDao().log(conn,actor.getId(),"LOT_EXPIRY_OVERRIDE","SHIPMENT",shipment,
                         lot.number()+" / "+taken.toPlainString()+" / "+explanation);
+                if (chosenLot) new AuditLogDao().log(conn,actor.getId(),"LOT_MANUAL_PICK","SHIPMENT",shipment,
+                        lot.number()+" thay "+usable.get(1).number()+" / "+taken.toPlainString()+" / "+pickExplanation);
                 remaining=remaining.subtract(taken);
             }
             if (product.tracked() && remaining.signum()>0)

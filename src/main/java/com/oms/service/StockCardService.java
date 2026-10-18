@@ -107,7 +107,7 @@ public class StockCardService {
     }
 
     private static BigDecimal signed(StockCardDao.Movement m) {
-        return "SHIPMENT_OUT".equals(m.type()) ? m.quantity().negate() : m.quantity();
+        return ("SHIPMENT_OUT".equals(m.type()) || "INVENTORY_ADJUSTMENT_LOSS".equals(m.type())) ? m.quantity().negate() : m.quantity();
     }
 
     private static String label(String type) {
@@ -115,6 +115,7 @@ public class StockCardService {
             case "GOODS_RECEIPT" -> "Nhập kho";
             case "SHIPMENT_OUT" -> "Xuất kho";
             case "SHIPMENT_RETURN" -> "Giao thất bại, trả về kho";
+            case "INVENTORY_ADJUSTMENT_LOSS" -> "Điều chỉnh giảm";
             default -> type;
         };
     }
@@ -123,6 +124,7 @@ public class StockCardService {
         return switch (m.referenceType()) {
             case "GOODS_RECEIPT" -> "/inventory/receipts?id=" + m.referenceId();
             case "SHIPMENT" -> "/shipments/confirm?id=" + m.referenceId();
+            case "INVENTORY_ADJUSTMENT" -> "/inventory/adjustments/detail?id=" + m.referenceId();
             default -> null;
         };
     }

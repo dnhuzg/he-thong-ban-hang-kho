@@ -136,6 +136,7 @@ public final class Menu {
                             item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
                             item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
                             item("Kiểm kê kho", "/inventory/counts", "clipboard-list", path.equals("/inventory/counts"), false),
+                            item("Điều chỉnh tồn kho", "/inventory/adjustments", "clipboard-list", path.startsWith("/inventory/adjustments"), false),
                             item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
         }
 
@@ -143,6 +144,7 @@ public final class Menu {
                 && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
             groups.add(new Group(BUSINESS, "Xuất kho & giao hàng", List.of(
                     item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
+                    item("Phân tuyến giao hàng", "/shipments/trips", "truck", path.startsWith("/shipments/trips"), false),
                     item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 
