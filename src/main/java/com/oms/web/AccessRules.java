@@ -112,6 +112,13 @@ public final class AccessRules {
             Map.entry("/inventory/lots/configure", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/lots/metadata", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/stock-card", new Rule(Kind.READ, Module.INVENTORY)),
+            // GHTK-78 / S8-03: Dieu chinh ton kho co phe duyet.
+            Map.entry("/inventory/adjustments", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/adjustments/detail", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/adjustments/create", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/inventory/adjustments/submit", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/inventory/adjustments/approve", new Rule(Kind.WRITE, Module.INVENTORY)),
+            Map.entry("/inventory/adjustments/reject", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/counts", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/counts/create", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/counts/save", new Rule(Kind.WRITE, Module.INVENTORY)),
