@@ -5,6 +5,8 @@ import com.oms.model.Order;
 import com.oms.model.Role;
 import com.oms.model.User;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /** Mỗi bước kiểm trạng thái dưới khoá đơn và ghi lịch sử cùng transaction với tồn kho. */
 public class OrderLifecycleService {
@@ -24,6 +26,27 @@ public class OrderLifecycleService {
             dao.transition(conn,order,Order.Status.CANCELLED,"CANCEL",opinion,actor.getId(),order.getWarehouseId(),order.getApprovalReason());
             return null;
         });
+    }
+
+    /** GHTK-54: đơn đã duyệt mà kho chưa soạn trước mốc thì tự huỷ để nhả tồn và hạn mức; mỗi đơn một transaction. */
+    public int expireReservations(LocalDateTime cutoff) throws SQLException {
+        List<long[]> due=Db.inTransaction(conn->new OrderWorkflowDao().approvedBefore(conn,cutoff));
+        int count=0;
+        for(long[] row:due) {
+            boolean cancelled=Db.inTransaction(conn->{
+                var order=new OrderDao().findByIdForUpdate(conn,row[0]);
+                // Kho có thể vừa bắt đầu soạn sau lúc lọc danh sách.
+                if(order==null || order.getStatus()!=Order.Status.APPROVED) return false;
+                new CustomerDao().findByIdForUpdate(conn,order.getCustomerId());
+                new OrderStockDao().release(conn,order.getId(),false);
+                new OrderCreditDao().release(conn,order.getId());
+                new OrderWorkflowDao().transition(conn,order,Order.Status.CANCELLED,"CANCEL","Tự huỷ: quá hạn giữ chỗ tồn kho",
+                        row[1],order.getWarehouseId(),order.getApprovalReason());
+                return true;
+            });
+            if(cancelled) count++;
+        }
+        return count;
     }
 
     public void advance(long id,Order.Status next,User actor) throws SQLException {
