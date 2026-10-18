@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-/** GHTK-85: sổ chi tiết công nợ theo một đại lý, dữ liệu trình diễn phía FE. */
+/** URL cũ GHTK-85 được hợp nhất về một màn sổ công nợ duy nhất. */
 @WebServlet("/finance/customer-ledger")
 public class CustomerLedgerPageServlet extends BaseServlet {
     @Override
@@ -17,6 +17,7 @@ public class CustomerLedgerPageServlet extends BaseServlet {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-        render(req, resp, "finance/customer-ledger");
+        String customer = param(req, "customer");
+        redirect(req, resp, "/finance/debt-ledger" + (customer.isBlank() ? "" : "?customer=" + java.net.URLEncoder.encode(customer, java.nio.charset.StandardCharsets.UTF_8)));
     }
 }

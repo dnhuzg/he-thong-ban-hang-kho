@@ -58,6 +58,21 @@
   gap: var(--space-1);
 }
 
+/* Tiêu đề vùng menu: Chung / Nghiệp vụ / Quản trị */
+.sidebar__section {
+  margin: var(--space-4) 0 var(--space-1);
+  padding: 0 var(--space-3);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.sidebar__section:first-child {
+  margin-top: 0;
+}
+
 /* Mục cha gập / mở (thẻ <details>, không cần JavaScript) */
 .sidebar__parent > summary {
   list-style: none;
@@ -137,11 +152,6 @@
 
 .sidebar__link.is-active .icon {
   color: var(--color-primary);
-}
-
-.sidebar__link.is-disabled {
-  color: var(--color-text-muted);
-  pointer-events: none;
 }
 
 .sidebar__scope {

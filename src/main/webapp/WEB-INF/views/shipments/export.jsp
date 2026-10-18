@@ -1,0 +1,177 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="pageTitle" value="Xuất kho"/>
+<%@ include file="/WEB-INF/views/layout/app-top.jspf" %>
+
+        <div class="page-header">
+          <div>
+            <p class="breadcrumb">Xuất kho &amp; giao hàng</p>
+            <h1>Xuất kho</h1>
+            <p class="page-header__desc">Đơn đã soạn xong chờ xác nhận xuất. Xác nhận sẽ trừ tồn đúng số thực soạn, lập phiếu xuất chờ giao; phần soạn thiếu được ghi nợ hàng để giao lượt sau.</p>
+          </div>
+        </div>
+
+        <section class="card list-card">
+          <div class="list-summary">
+            <span class="list-summary__title">Đơn chờ xuất kho</span>
+            <span class="badge badge--primary"><c:out value="${export.ready.size()}"/></span>
+          </div>
+          <div class="table-wrap list-table">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-sku">Mã đơn</th>
+                  <th scope="col">Đại lý</th>
+                  <th scope="col">Phiếu soạn</th>
+                  <th scope="col" class="num">Số dòng</th>
+                  <th scope="col">Soạn thiếu</th>
+                  <th scope="col" class="col-menu"><span class="visually-hidden">Thao tác</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <c:if test="${empty export.ready}">
+                  <tr><td colspan="6" class="text-muted">Không có đơn nào đã soạn xong đang chờ xuất.</td></tr>
+                </c:if>
+                <c:forEach var="r" items="${export.ready}">
+                  <tr>
+                    <td class="nowrap table__cell-code"><a href="${ctx}/orders/edit?id=${r.orderId}"><c:out value="${r.orderCode}"/></a></td>
+                    <td><span class="table__cell-main"><c:out value="${r.customerName}"/></span><c:forEach var="lc" items="${export.lotChoices[r.orderId]}"><span class="table__cell-sub">Lô gợi ý <c:out value="${lc.sku}"/>: <c:out value="${lc.suggestion}"/></span></c:forEach></td>
+                    <td class="nowrap"><c:out value="${r.pickingCode}"/></td>
+                    <td class="num"><c:out value="${r.lineCount}"/></td>
+                    <td><c:choose><c:when test="${r.shortCount > 0}"><span class="badge badge--danger"><c:out value="${r.shortCount}"/> dòng</span></c:when><c:otherwise>—</c:otherwise></c:choose></td>
+                    <td class="nowrap">
+                      <form method="post" action="${ctx}/shipments/export/confirm">
+                        <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                        <input type="hidden" name="orderId" value="${r.orderId}">
+                        <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
+                        <c:if test="${not empty export.lotChoices[r.orderId]}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="lots-${r.orderId}">Chọn lô khác</button></c:if>
+                        <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
+                      </form>
+                    </td>
+                  </tr>
+                </c:forEach>
+              </tbody>
+            </table>
+          </div>
+          <div class="product-cards">
+            <c:if test="${empty export.ready}">
+              <p class="text-muted">Không có đơn nào đã soạn xong đang chờ xuất.</p>
+            </c:if>
+            <c:forEach var="r" items="${export.ready}">
+              <article class="product-card">
+                <div class="product-card__head">
+                  <div class="product-card__title">
+                    <span class="product-card__name"><c:out value="${r.customerName}"/></span>
+                    <p class="product-card__sku"><c:out value="${r.orderCode}"/> · <c:out value="${r.pickingCode}"/></p>
+                    <c:forEach var="lc" items="${export.lotChoices[r.orderId]}"><p class="product-card__sku">Lô gợi ý <c:out value="${lc.sku}"/>: <c:out value="${lc.suggestion}"/></p></c:forEach>
+                  </div>
+                  <c:if test="${r.shortCount > 0}"><span class="badge badge--danger">Thiếu <c:out value="${r.shortCount}"/> dòng</span></c:if>
+                </div>
+                <form class="product-card__foot" method="post" action="${ctx}/shipments/export/confirm">
+                  <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                  <input type="hidden" name="orderId" value="${r.orderId}">
+                  <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
+                  <c:if test="${not empty export.lotChoices[r.orderId]}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="lots-${r.orderId}">Chọn lô khác</button></c:if>
+                        <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
+                </form>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+
+        <section class="card list-card">
+          <div class="list-summary">
+            <span class="list-summary__title">Đơn còn nợ hàng</span>
+            <span class="badge badge--warning"><c:out value="${export.backorders.size()}"/></span>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-sku">Mã đơn</th>
+                  <th scope="col">Đại lý</th>
+                  <th scope="col">Sản phẩm</th>
+                  <th scope="col" class="num">Còn nợ</th>
+                  <th scope="col">Lý do</th>
+                  <th scope="col">Ghi nhận lúc</th>
+                </tr>
+              </thead>
+              <tbody>
+                <c:if test="${empty export.backorders}">
+                  <tr><td colspan="6" class="text-muted">Không có đơn nào còn nợ hàng.</td></tr>
+                </c:if>
+                <c:forEach var="b" items="${export.backorders}">
+                  <tr>
+                    <td class="nowrap table__cell-code"><a href="${ctx}/orders/edit?id=${b.orderId}"><c:out value="${b.orderCode}"/></a></td>
+                    <td><c:out value="${b.customerName}"/></td>
+                    <td><c:out value="${b.sku}"/> · <c:out value="${b.productName}"/></td>
+                    <td class="num nowrap"><c:out value="${b.quantity}"/> <c:out value="${b.baseUnit}"/></td>
+                    <td><c:out value="${b.reason}"/></td>
+                    <td class="nowrap"><c:out value="${b.createdAtText}"/></td>
+                  </tr>
+                </c:forEach>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card list-card">
+          <div class="list-summary">
+            <span class="list-summary__title">Phiếu xuất gần đây</span>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-sku">Mã phiếu</th>
+                  <th scope="col">Đơn</th>
+                  <th scope="col">Đại lý</th>
+                  <th scope="col">Lập lúc</th>
+                  <th scope="col">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <c:if test="${empty export.recent}">
+                  <tr><td colspan="5" class="text-muted">Chưa có phiếu xuất nào.</td></tr>
+                </c:if>
+                <c:forEach var="s" items="${export.recent}">
+                  <tr>
+                    <td class="nowrap table__cell-code"><a href="${ctx}/shipments/confirm?id=${s.id}"><c:out value="${s.code}"/></a></td>
+                    <td class="nowrap"><c:out value="${s.orderCode}"/></td>
+                    <td><c:out value="${s.customerName}"/></td>
+                    <td class="nowrap"><c:out value="${s.createdAtText}"/></td>
+                    <td><c:out value="${s.status.label}"/></td>
+                  </tr>
+                </c:forEach>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+<c:forEach var="r" items="${export.ready}"><c:if test="${not empty export.lotChoices[r.orderId]}">
+  <dialog class="dialog" id="lots-${r.orderId}" aria-labelledby="lots-title-${r.orderId}"><form method="post" action="${ctx}/shipments/export/confirm">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>"><input type="hidden" name="orderId" value="${r.orderId}">
+    <header class="dialog__header"><h2 id="lots-title-${r.orderId}">Chọn lô xuất · <c:out value="${r.orderCode}"/></h2></header>
+    <div class="dialog__body"><p class="alert alert--info">Hệ thống gợi ý lô có hạn dùng gần nhất trước. Lô được chọn sẽ được trừ trước, phần còn thiếu lấy tiếp theo hạn dùng. Chọn khác lô gợi ý thì phải ghi lý do.</p>
+      <c:forEach var="lc" items="${export.lotChoices[r.orderId]}">
+        <div class="form-field"><label class="form-label" for="lot-${r.orderId}-${lc.productId}"><c:out value="${lc.sku}"/> – <c:out value="${lc.productName}"/> (cần <c:out value="${lc.quantity.stripTrailingZeros().toPlainString()}"/>)</label>
+          <input type="hidden" name="lotProduct" value="${lc.productId}">
+          <select class="select" id="lot-${r.orderId}-${lc.productId}" name="lotId">
+            <c:forEach var="lot" items="${lc.options}"><option value="${lot.id}" ${lot.id == lc.suggestedLotId ? 'selected' : ''}><c:out value="${lot.number}"/> · HSD <c:out value="${lot.expiry}"/> · còn <c:out value="${lot.remaining.stripTrailingZeros().toPlainString()}"/>${lot.id == lc.suggestedLotId ? ' (gợi ý)' : ''}</option></c:forEach>
+          </select></div>
+      </c:forEach>
+      <div class="form-field"><label class="form-label" for="lot-reason-${r.orderId}">Lý do chọn lô khác</label><textarea class="textarea" id="lot-reason-${r.orderId}" name="lotReason" rows="2" maxlength="500"></textarea></div>
+    </div><footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-dialog-close>Hủy</button><button class="btn btn--primary" type="submit">Xác nhận xuất</button></footer>
+  </form></dialog>
+</c:if></c:forEach>
+<c:if test="${canOverrideExpiry}"><c:forEach var="r" items="${export.ready}">
+  <dialog class="dialog" id="expiry-${r.orderId}" aria-labelledby="expiry-title-${r.orderId}"><form method="post" action="${ctx}/shipments/export/confirm">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>"><input type="hidden" name="orderId" value="${r.orderId}">
+    <header class="dialog__header"><h2 id="expiry-title-${r.orderId}">Ghi đè hạn dùng · <c:out value="${r.orderCode}"/></h2></header>
+    <div class="dialog__body"><p class="alert alert--warning">Chỉ dùng khi cần xuất lô đã quá hạn. Hệ thống ưu tiên lô còn hạn, ghi người xác nhận và lý do cho từng lô quá hạn thực xuất.</p>
+      <div class="form-field"><label class="form-label" for="expiry-reason-${r.orderId}">Lý do ghi đè *</label><textarea class="textarea" id="expiry-reason-${r.orderId}" name="overrideReason" rows="3" maxlength="500" required></textarea></div>
+      <label><input type="checkbox" name="overrideExpiry" value="true" required> Tôi xác nhận xuất lô quá hạn cho đơn này</label>
+    </div><footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-dialog-close>Hủy</button><button class="btn btn--primary" type="submit">Xác nhận xuất có ghi đè</button></footer>
+  </form></dialog>
+</c:forEach></c:if>
+<%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

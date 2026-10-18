@@ -13,7 +13,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -70,6 +69,9 @@ class ShipmentServiceTest extends DatabaseTest {
         assertFalse(result.isInvoiceEligible());
         assertEquals(2, count("inventory_movements", "reference_type = 'SHIPMENT' AND reference_id = " + shipmentId));
         assertEquals(1, count("audit_logs", "action = 'SHIPMENT_FAILED_RETURNED'"));
+        // Hàng quay về được cộng lại vào tồn thực tế của kho
+        assertEquals(1, count("warehouse_inventory", "warehouse_id = 10 AND product_id = 500 AND on_hand = 24"));
+        assertEquals(1, count("warehouse_inventory", "warehouse_id = 10 AND product_id = 501 AND on_hand = 10"));
     }
 
     @Test
@@ -103,6 +105,19 @@ class ShipmentServiceTest extends DatabaseTest {
         User user = user(username, Role.WAREHOUSE);
         sql("INSERT INTO user_warehouses (user_id, warehouse_id) VALUES (" + user.getId() + ", " + warehouseId + ")");
         return reload(user.getId());
+    }
+
+    @Test
+    void successfulDeliveryMovesShippedOrderToDelivered() throws Exception {
+        User warehouseStaff = warehouseUser("nvkho09", 10);
+        long shipmentId = shipment(1009, "PX-1009");
+        sql("INSERT INTO orders (id, code, customer_id, status, warehouse_id, created_by) VALUES (9009, 'DH009009', 1009, 'SHIPPED', 10, " + warehouseStaff.getId() + ")");
+        sql("UPDATE shipments SET order_id = 9009 WHERE id = " + shipmentId);
+
+        new ShipmentService(new FileStorage(uploads)).confirmSuccess(shipmentId, "Người nhận", image(), warehouseStaff);
+
+        assertEquals(1, count("orders", "id = 9009 AND status = 'DELIVERED'"));
+        assertEquals(1, count("order_status_history", "order_id = 9009 AND to_status = 'DELIVERED'"));
     }
 
     private long shipment(long customerId, String code) throws Exception {

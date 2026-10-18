@@ -2,7 +2,9 @@ package com.oms.dao;
 
 import com.oms.model.Shipment;
 import com.oms.model.ShipmentItem;
+import com.oms.service.ServiceException;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -67,6 +69,20 @@ public class ShipmentDao {
         return items;
     }
 
+    /** Đơn hàng của phiếu xuất; null với phiếu cũ trước khi có cột order_id. */
+    public Long orderId(Connection conn, long shipmentId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT order_id FROM shipments WHERE id = ?")) {
+            ps.setLong(1, shipmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                long id = rs.getLong(1);
+                return rs.wasNull() ? null : id;
+            }
+        }
+    }
+
     public int markDelivered(Connection conn, long shipmentId, String recipientName,
                              LocalDateTime deliveredAt, String proofImagePath,
                              LocalDateTime invoiceEligibleAt) throws SQLException {
@@ -109,6 +125,35 @@ public class ShipmentDao {
             ps.setTimestamp(2, Timestamp.valueOf(returnedAt));
             ps.setLong(3, shipmentId);
             return ps.executeUpdate();
+        }
+    }
+
+    /** Cộng lại tồn thực tế của kho khi hàng giao không thành công quay về; quy về đơn vị cơ sở của sản phẩm. */
+    public void returnToStock(Connection conn, long warehouseId, ShipmentItem item) throws SQLException {
+        BigDecimal factor = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT CASE WHEN p.base_unit_id = ? THEN 1 ELSE "
+                        + "(SELECT pu.factor FROM product_units pu WHERE pu.product_id = p.id AND pu.unit_id = ?) END "
+                        + "FROM products p WHERE p.id = ?")) {
+            ps.setLong(1, item.getUnitId());
+            ps.setLong(2, item.getUnitId());
+            ps.setLong(3, item.getProductId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    factor = rs.getBigDecimal(1);
+                }
+            }
+        }
+        if (factor == null) {
+            throw new ServiceException("Sản phẩm " + item.getProductSku() + " chưa khai báo quy đổi cho đơn vị trên phiếu giao.");
+        }
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO warehouse_inventory (warehouse_id, product_id, on_hand, reserved) VALUES (?, ?, ?, 0) "
+                        + "ON DUPLICATE KEY UPDATE on_hand = on_hand + VALUES(on_hand)")) {
+            ps.setLong(1, warehouseId);
+            ps.setLong(2, item.getProductId());
+            ps.setBigDecimal(3, item.getQuantity().multiply(factor));
+            ps.executeUpdate();
         }
     }
 

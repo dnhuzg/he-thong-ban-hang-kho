@@ -16,7 +16,10 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class OrderDao {
 
@@ -121,6 +124,69 @@ public class OrderDao {
             }
         }
         return new PageResult<>(items, page, pageSize, total);
+    }
+
+    public long countDraftsCreatedBy(Connection conn, long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM orders WHERE status = 'DRAFT' AND created_by = ?")) {
+            ps.setLong(1, userId);
+            return single(ps);
+        }
+    }
+
+    /** Khớp theo chuỗi lý do do OrderWorkflowService.submit ghi, vì đơn không lưu riêng cờ vượt hạn mức. */
+    public long countPendingOverCredit(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM orders WHERE status = 'PENDING_APPROVAL' AND approval_reason LIKE ?")) {
+            ps.setString(1, "%Vượt hạn mức%");
+            return single(ps);
+        }
+    }
+
+    public Map<Order.Status, Long> countByStatusForCustomer(Connection conn, long customerId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT status, COUNT(*) FROM orders WHERE customer_id = ? GROUP BY status")) {
+            ps.setLong(1, customerId);
+            return byStatus(ps);
+        }
+    }
+
+    /** Đơn đang chảy qua kho (đã duyệt → đã xuất) của các kho cho trước. */
+    public Map<Order.Status, Long> countByStatusInWarehouses(Connection conn, List<Long> warehouseIds) throws SQLException {
+        if (warehouseIds.isEmpty()) {
+            return new EnumMap<>(Order.Status.class);
+        }
+        try (PreparedStatement ps = conn.prepareStatement("SELECT status, COUNT(*) FROM orders "
+                + "WHERE status IN ('APPROVED', 'PICKING', 'SHIPPED') AND warehouse_id IN (" + placeholders(warehouseIds) + ") "
+                + "GROUP BY status")) {
+            bind(ps, new ArrayList<>(warehouseIds));
+            return byStatus(ps);
+        }
+    }
+
+    /** Đơn cần soạn của các kho: ngày giao sớm nhất trước, đơn chưa hẹn ngày xếp cuối. */
+    public List<Order> pickQueue(Connection conn, List<Long> warehouseIds, int limit) throws SQLException {
+        if (warehouseIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        String sql = SELECT + " WHERE o.status IN ('APPROVED', 'PICKING') AND o.warehouse_id IN (" + placeholders(warehouseIds) + ")"
+                + " ORDER BY CASE WHEN o.delivery_date IS NULL THEN 1 ELSE 0 END, o.delivery_date, o.id LIMIT ?";
+        List<Object> params = new ArrayList<>(warehouseIds);
+        params.add(limit);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            bind(ps, params);
+            return list(ps);
+        }
+    }
+
+    /** Đơn nháp là giỏ hàng đang gõ dở, chưa phải đơn đã gửi nên không đưa vào danh sách của đại lý. */
+    public List<Order> recentForCustomer(Connection conn, long customerId, int limit) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT + " WHERE o.customer_id = ? AND o.status <> 'DRAFT' "
+                + "ORDER BY o.updated_at DESC, o.id DESC LIMIT ?")) {
+            ps.setLong(1, customerId);
+            ps.setInt(2, limit);
+            return list(ps);
+        }
     }
 
     public void updateHeader(Connection conn, long id, Long deliveryPointId, LocalDate deliveryDate, String note) throws SQLException {
@@ -285,6 +351,37 @@ public class OrderDao {
         } else {
             ps.setLong(index, value);
         }
+    }
+
+    private static String placeholders(List<?> values) {
+        return String.join(",", Collections.nCopies(values.size(), "?"));
+    }
+
+    private static long single(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getLong(1);
+        }
+    }
+
+    private static Map<Order.Status, Long> byStatus(PreparedStatement ps) throws SQLException {
+        Map<Order.Status, Long> counts = new EnumMap<>(Order.Status.class);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                counts.put(Order.Status.valueOf(rs.getString(1)), rs.getLong(2));
+            }
+        }
+        return counts;
+    }
+
+    private static List<Order> list(PreparedStatement ps) throws SQLException {
+        List<Order> items = new ArrayList<>();
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                items.add(map(rs));
+            }
+        }
+        return items;
     }
 
     private static void bind(PreparedStatement ps, List<Object> params) throws SQLException {

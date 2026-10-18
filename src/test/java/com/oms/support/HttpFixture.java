@@ -12,6 +12,7 @@ import java.util.Map;
 public class HttpFixture {
     public final Map<String,String> parameters = new HashMap<>();
     public final java.io.StringWriter body = new java.io.StringWriter();
+    public final java.io.ByteArrayOutputStream binaryBody = new java.io.ByteArrayOutputStream();
     public String contentType;
     public final Map<String, Object> attributes = new HashMap<>();
     public final Map<String, Object> sessionAttributes = new HashMap<>();
@@ -57,6 +58,11 @@ public class HttpFixture {
             case "sendError", "setStatus" -> { status = (Integer) args[0]; yield null; }
             case "getStatus" -> status;
             case "getWriter" -> new java.io.PrintWriter(body);
+            case "getOutputStream" -> new jakarta.servlet.ServletOutputStream() {
+                public boolean isReady() { return true; }
+                public void setWriteListener(jakarta.servlet.WriteListener listener) { }
+                public void write(int value) { binaryBody.write(value); }
+            };
             case "setContentType" -> { contentType=(String)args[0]; yield null; }
             case "getHeader" -> headers.get(args[0]);
             default -> null;

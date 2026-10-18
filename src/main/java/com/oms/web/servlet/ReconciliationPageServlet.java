@@ -1,26 +1,2 @@
-package com.oms.web.servlet;
-
-import com.oms.model.Role;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-
-/** GHTK-72: kế toán lập mẫu biên bản; đại lý xem và phản hồi mẫu trong cổng đại lý. */
-@WebServlet({"/finance/reconciliations", "/portal/reconciliations"})
-public class ReconciliationPageServlet extends BaseServlet {
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        boolean portal = req.getServletPath().equals("/portal/reconciliations");
-        boolean allowed = portal ? currentUser(req).hasRole(Role.CUSTOMER)
-                : currentUser(req).hasRole(Role.ACCOUNTANT) || currentUser(req).hasRole(Role.ADMIN);
-        if (!allowed) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-        req.setAttribute("reconciliationPortal", portal);
-        render(req, resp, "finance/reconciliations");
-    }
-}
+package com.oms.web.servlet;import com.oms.model.Role;import com.oms.service.*;import com.oms.web.Json;import jakarta.servlet.*;import jakarta.servlet.annotation.WebServlet;import jakarta.servlet.http.*;import java.io.*;import java.sql.SQLException;import java.time.*;import java.time.format.DateTimeParseException;import java.util.*;
+@WebServlet({"/finance/reconciliations","/finance/reconciliations/create","/portal/reconciliations","/portal/reconciliations/respond"})public class ReconciliationPageServlet extends BaseServlet{private final ReconciliationService service=new ReconciliationService();@Override protected void doGet(HttpServletRequest q,HttpServletResponse p)throws ServletException,IOException{boolean portal=q.getServletPath().equals("/portal/reconciliations");boolean allowed=portal?currentUser(q).hasRole(Role.CUSTOMER):currentUser(q).hasRole(Role.ACCOUNTANT)||currentUser(q).isAdmin();if(!allowed){p.sendError(403);return;}try{q.setAttribute("reconciliationPortal",portal);q.setAttribute("reconciliationData",Json.encode(service.page(currentUser(q),portal)).replace("<","\\u003c"));render(q,p,"finance/reconciliations");}catch(ForbiddenException e){p.sendError(403); }catch(SQLException e){throw new ServletException(e);}}@Override protected void doPost(HttpServletRequest q,HttpServletResponse p)throws IOException{p.setContentType("application/json;charset=UTF-8");try{if("/finance/reconciliations/create".equals(q.getServletPath())){if(!(currentUser(q).hasRole(Role.ACCOUNTANT)||currentUser(q).isAdmin()))throw new ForbiddenException("Chỉ kế toán được lập biên bản.");service.generate(longParam(q,"customerId"),date(param(q,"start")),date(param(q,"end")),currentUser(q));}else if("/portal/reconciliations/respond".equals(q.getServletPath()))service.respond(longParam(q,"id"),param(q,"status"),param(q,"reason"),currentUser(q));else{error(p,405,"Thao tác không hợp lệ.");return;}p.getWriter().write("{\"ok\":true}");}catch(ForbiddenException e){error(p,403,e.getMessage());}catch(ServiceException|IllegalArgumentException e){error(p,400,e.getMessage());}catch(SQLException e){log("Không xử lý được đối chiếu công nợ",e);error(p,500,"Không thể xử lý biên bản.");}}private static LocalDate date(String x){try{return LocalDate.parse(x);}catch(DateTimeParseException e){throw new ServiceException("Kỳ đối chiếu không hợp lệ.");}}private static void error(HttpServletResponse p,int s,String m)throws IOException{p.setStatus(s);p.getWriter().write(Json.encode(Map.of("error",m)));}}

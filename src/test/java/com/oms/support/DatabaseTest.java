@@ -148,9 +148,12 @@ public abstract class DatabaseTest {
             statement.execute("CREATE TABLE customer_receivables (id BIGINT AUTO_INCREMENT PRIMARY KEY, customer_id BIGINT REFERENCES customers(id), document_code VARCHAR(50) UNIQUE, issued_on DATE, outstanding DECIMAL(15,2))");
             statement.execute("CREATE TABLE order_credit_reservations (order_id BIGINT PRIMARY KEY REFERENCES orders(id), customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2))");
             statement.execute("ALTER TABLE customers ADD serving_warehouse_id BIGINT REFERENCES warehouses(id)");
-            statement.execute("CREATE TABLE warehouse_inventory(warehouse_id BIGINT REFERENCES warehouses(id),product_id BIGINT REFERENCES products(id),on_hand DECIMAL(14,4),reserved DECIMAL(14,4) DEFAULT 0,PRIMARY KEY(warehouse_id,product_id),CHECK(reserved>=0 AND reserved<=on_hand))");
+            statement.execute("CREATE TABLE warehouse_inventory(warehouse_id BIGINT REFERENCES warehouses(id),product_id BIGINT REFERENCES products(id),on_hand DECIMAL(14,4),reserved DECIMAL(14,4) DEFAULT 0,min_quantity DECIMAL(14,4),PRIMARY KEY(warehouse_id,product_id),CHECK(reserved>=0 AND reserved<=on_hand))");
             statement.execute("CREATE TABLE order_inventory_reservations(order_id BIGINT REFERENCES orders(id),warehouse_id BIGINT,product_id BIGINT,quantity DECIMAL(14,4),PRIMARY KEY(order_id,warehouse_id,product_id),FOREIGN KEY(warehouse_id,product_id) REFERENCES warehouse_inventory(warehouse_id,product_id))");
 
+            statement.execute("ALTER TABLE products ADD track_lots BOOLEAN DEFAULT FALSE NOT NULL");
+            statement.execute("ALTER TABLE products ADD expiry_warning_days INT DEFAULT 30 NOT NULL");
+            statement.execute("CREATE TABLE inventory_lots (id BIGINT AUTO_INCREMENT PRIMARY KEY, warehouse_id BIGINT REFERENCES warehouses(id), product_id BIGINT REFERENCES products(id), lot_no VARCHAR(50), manufactured_date DATE, expiry_date DATE, remaining_quantity DECIMAL(14,4) CHECK(remaining_quantity>=0), unit_cost DECIMAL(15,2), received_at TIMESTAMP, source_type VARCHAR(30), source_id BIGINT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             statement.execute("ALTER TABLE orders ADD warehouse_id BIGINT REFERENCES warehouses(id)");
             statement.execute("ALTER TABLE orders ADD approval_reason VARCHAR(1000)");
             statement.execute("ALTER TABLE order_lines ADD unit_price DECIMAL(15,2)");
@@ -204,11 +207,133 @@ public abstract class DatabaseTest {
                         FOREIGN KEY (created_by) REFERENCES users(id)
                     )
                     """);
+            statement.execute("""
+                    CREATE TABLE goods_receipts (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        supplier_id BIGINT REFERENCES suppliers(id), document_no VARCHAR(50), received_date DATE,
+                        warehouse_id BIGINT REFERENCES warehouses(id), note VARCHAR(500), status VARCHAR(20) DEFAULT 'DRAFT',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, confirmed_by BIGINT REFERENCES users(id),
+                        confirmed_at TIMESTAMP, UNIQUE (supplier_id, document_no))
+                    """);
+            statement.execute("""
+                    CREATE TABLE goods_receipt_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        receipt_id BIGINT REFERENCES goods_receipts(id) ON DELETE CASCADE, line_no INT,
+                        product_id BIGINT REFERENCES products(id), unit_id BIGINT REFERENCES units(id),
+                        quantity DECIMAL(15,4), factor DECIMAL(12,4), base_quantity DECIMAL(15,4),
+                        lot_no VARCHAR(50), expiry_date DATE, UNIQUE (receipt_id, line_no))
+                    """);
+            statement.execute("""
+                    CREATE TABLE picking_lists (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        warehouse_id BIGINT REFERENCES warehouses(id), status VARCHAR(10) DEFAULT 'OPEN',
+                        created_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        completed_by BIGINT REFERENCES users(id), completed_at TIMESTAMP)
+                    """);
+            statement.execute("""
+                    CREATE TABLE picking_list_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        picking_list_id BIGINT REFERENCES picking_lists(id) ON DELETE CASCADE,
+                        order_id BIGINT REFERENCES orders(id), order_line_id BIGINT UNIQUE REFERENCES order_lines(id),
+                        product_id BIGINT REFERENCES products(id), required_quantity DECIMAL(14,4),
+                        picked_quantity DECIMAL(14,4), short_reason VARCHAR(500), picked_by BIGINT REFERENCES users(id),
+                        picked_at TIMESTAMP)
+                    """);
+            statement.execute("ALTER TABLE shipments ADD order_id BIGINT REFERENCES orders(id)");
+
+            // GHTK-78 / S8-03: Phieu dieu chinh ton kho co phe duyet.
+            statement.execute("""
+                    CREATE TABLE inventory_adjustments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) NOT NULL UNIQUE,
+                        warehouse_id BIGINT NOT NULL REFERENCES warehouses(id),
+                        status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+                        note VARCHAR(500),
+                        total_loss_value DECIMAL(18,2) NOT NULL DEFAULT 0,
+                        created_by BIGINT NOT NULL REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        submitted_at TIMESTAMP,
+                        approved_by BIGINT REFERENCES users(id),
+                        approved_at TIMESTAMP,
+                        rejected_by BIGINT REFERENCES users(id),
+                        rejected_at TIMESTAMP,
+                        rejection_reason VARCHAR(500),
+                        CHECK (total_loss_value >= 0),
+                        CHECK (approved_by IS NULL OR approved_by <> created_by)
+                    )
+                    """);
+
+            statement.execute("""
+                    CREATE TABLE inventory_adjustment_lines (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        adjustment_id BIGINT NOT NULL
+                            REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
+                        product_id BIGINT NOT NULL REFERENCES products(id),
+                        reason VARCHAR(20) NOT NULL
+                            CHECK (reason IN ('DAMAGED', 'LOST', 'EXPIRED')),
+                        reason_detail VARCHAR(500) NOT NULL,
+                        quantity DECIMAL(14,4) NOT NULL CHECK (quantity > 0),
+                        loss_value DECIMAL(18,2) NOT NULL CHECK (loss_value >= 0),
+                        CHECK (LENGTH(TRIM(reason_detail)) > 0)
+                    )
+""");
+
+
+            // GHTK-63 / S6-06: Bảng kiểm thử phân tuyến giao hàng.
+            statement.execute("""
+                    CREATE TABLE delivery_drivers (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        full_name VARCHAR(150) NOT NULL,
+                        phone VARCHAR(20) NOT NULL,
+                        license_no VARCHAR(50),
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_vehicles (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        license_plate VARCHAR(30) NOT NULL UNIQUE,
+                        vehicle_type VARCHAR(100),
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_trips (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        code VARCHAR(30) NOT NULL UNIQUE,
+                        warehouse_id BIGINT NOT NULL REFERENCES warehouses(id),
+                        area_name VARCHAR(150) NOT NULL,
+                        delivery_date DATE NOT NULL,
+                        driver_id BIGINT REFERENCES delivery_drivers(id),
+                        vehicle_id BIGINT REFERENCES delivery_vehicles(id),
+                        status VARCHAR(20) DEFAULT 'PLANNED',
+                        created_by BIGINT NOT NULL REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE delivery_trip_shipments (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        trip_id BIGINT NOT NULL REFERENCES delivery_trips(id) ON DELETE CASCADE,
+                        shipment_id BIGINT NOT NULL UNIQUE REFERENCES shipments(id),
+                        stop_order INT NOT NULL CHECK (stop_order > 0),
+                        UNIQUE (trip_id, stop_order)
+                    )
+                    """);
+            statement.execute("CREATE TABLE shipment_lot_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, shipment_id BIGINT REFERENCES shipments(id), lot_id BIGINT REFERENCES inventory_lots(id), quantity DECIMAL(14,4) CHECK(quantity>0), override_reason VARCHAR(500), override_by BIGINT REFERENCES users(id), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(shipment_id,lot_id))");
+            statement.execute("ALTER TABLE goods_receipt_lines ADD manufactured_date DATE");
+            statement.execute("""
+                    CREATE TABLE order_backorders (id BIGINT AUTO_INCREMENT PRIMARY KEY, order_id BIGINT REFERENCES orders(id),
+                        order_line_id BIGINT UNIQUE REFERENCES order_lines(id), product_id BIGINT REFERENCES products(id),
+                        quantity DECIMAL(14,4), reason VARCHAR(500), shipment_id BIGINT REFERENCES shipments(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
             statement.execute("INSERT INTO product_categories (id, parent_id, name) VALUES (1, NULL, 'Đồ uống'), (2, 1, 'Nước giải khát'), (3, 2, 'Nước ngọt có ga'), (4, NULL, 'Thực phẩm khô')");
             statement.execute("ALTER TABLE product_categories ALTER COLUMN id RESTART WITH 100");
             statement.execute("INSERT INTO units (id, code, name) VALUES (1, 'LON', 'Lon'), (2, 'THUNG', 'Thùng'), (3, 'GOI', 'Gói')");
             statement.execute("ALTER TABLE units ALTER COLUMN id RESTART WITH 100");
-            statement.execute("INSERT INTO warehouses VALUES (10, 'Kho A'), (20, 'Kho B')");
+            statement.execute("ALTER TABLE warehouses ADD code VARCHAR(20)");
+            statement.execute("INSERT INTO warehouses (id, name, code) VALUES (10, 'Kho A', 'KHO-A'), (20, 'Kho B', 'KHO-B')");
             statement.execute("INSERT INTO areas VALUES (30, 'Địa bàn A')");
             statement.execute("""
                     CREATE TABLE invoices (
@@ -253,6 +378,34 @@ public abstract class DatabaseTest {
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(recipient_user_id, invoice_id, reminder_date)
                     )
+                    """);
+            statement.execute("ALTER TABLE invoices ADD issued_by BIGINT REFERENCES users(id)");
+            statement.execute("ALTER TABLE shipments ADD invoice_id BIGINT REFERENCES invoices(id)");
+            statement.execute("CREATE TABLE document_sequences (name VARCHAR(30) PRIMARY KEY, last_number BIGINT DEFAULT 0)");
+            statement.execute("INSERT INTO document_sequences VALUES ('INVOICE', 0), ('PAYMENT', 0)");
+            statement.execute("ALTER TABLE invoices ADD paid_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
+            statement.execute("ALTER TABLE invoices ADD credited_amount DECIMAL(15,2) DEFAULT 0 NOT NULL");
+            statement.execute("""
+                    CREATE TABLE payments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) UNIQUE,
+                        customer_id BIGINT REFERENCES customers(id), amount DECIMAL(15,2), method VARCHAR(20), paid_on DATE,
+                        collected_by BIGINT REFERENCES users(id), note VARCHAR(500), created_by BIGINT REFERENCES users(id),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+                    """);
+            statement.execute("CREATE TABLE payment_allocations (id BIGINT AUTO_INCREMENT PRIMARY KEY, payment_id BIGINT REFERENCES payments(id), invoice_id BIGINT REFERENCES invoices(id), amount DECIMAL(15,2))");
+            statement.execute("""
+                    CREATE TABLE route_collections (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        payment_id BIGINT NOT NULL UNIQUE REFERENCES payments(id),
+                        receipt_path VARCHAR(255),
+                        status VARCHAR(20) DEFAULT 'PENDING' NOT NULL,
+                        confirmed_by BIGINT REFERENCES users(id),
+                        confirmed_at TIMESTAMP
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE invoice_lines (id BIGINT AUTO_INCREMENT PRIMARY KEY, invoice_id BIGINT REFERENCES invoices(id),
+                        shipment_id BIGINT REFERENCES shipments(id), product_id BIGINT REFERENCES products(id),
+                        quantity DECIMAL(14,4), unit_price DECIMAL(15,2), amount DECIMAL(15,2))
                     """);
         }
     }

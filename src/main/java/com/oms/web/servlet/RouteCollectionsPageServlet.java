@@ -1,27 +1,10 @@
 package com.oms.web.servlet;
-
-import com.oms.security.PermissionPolicy;
-import com.oms.model.Role;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-
-/** GHTK-71: màn hình FE mẫu thu tiền theo tuyến và đối chiếu nộp tiền. */
-@WebServlet("/finance/route-collections")
+import com.oms.model.Role;import com.oms.security.PermissionPolicy;import com.oms.service.*;import com.oms.web.Json;import jakarta.servlet.*;import jakarta.servlet.annotation.*;import jakarta.servlet.http.*;import java.awt.image.BufferedImage;import java.io.*;import java.math.*;import java.sql.SQLException;import java.time.*;import java.time.format.DateTimeParseException;import java.util.*;
+@WebServlet({"/finance/route-collections","/finance/route-collections/record","/finance/route-collections/confirm"})
+@MultipartConfig(maxFileSize=2097153,maxRequestSize=2300000)
 public class RouteCollectionsPageServlet extends BaseServlet {
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!PermissionPolicy.canTakeOrders(currentUser(req).getRoles())
-                && !PermissionPolicy.canManageCredit(currentUser(req).getRoles())) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-        req.setAttribute("canConfirmRouteCollection", currentUser(req).getRoles().contains(Role.ACCOUNTANT)
-                || currentUser(req).getRoles().contains(Role.ADMIN));
-        req.setAttribute("canRecordRouteCollection", PermissionPolicy.canTakeOrders(currentUser(req).getRoles()));
-        render(req, resp, "finance/route-collections");
-    }
+ private final RouteCollectionService service=new RouteCollectionService();private final FileStorage storage=new FileStorage();
+ @Override protected void doGet(HttpServletRequest q,HttpServletResponse p)throws ServletException,IOException{if(!PermissionPolicy.canTakeOrders(currentUser(q).getRoles())&&!PermissionPolicy.canManageCredit(currentUser(q).getRoles())){p.sendError(403);return;}try{q.setAttribute("canConfirmRouteCollection",currentUser(q).hasRole(Role.ACCOUNTANT)||currentUser(q).isAdmin());q.setAttribute("canRecordRouteCollection",PermissionPolicy.canTakeOrders(currentUser(q).getRoles()));q.setAttribute("routeData",Json.encode(service.page(currentUser(q))).replace("<","\\u003c"));render(q,p,"finance/route-collections");}catch(SQLException e){throw new ServletException(e);}}
+ @Override protected void doPost(HttpServletRequest q,HttpServletResponse p)throws IOException,ServletException{p.setContentType("application/json;charset=UTF-8");String stored=null;try{if("/finance/route-collections/confirm".equals(q.getServletPath()))service.confirm(longParam(q,"id"),currentUser(q));else if("/finance/route-collections/record".equals(q.getServletPath())){byte[] bytes=readUpload(q.getPart("receipt"));BufferedImage image=Images.readJpegOrPng(bytes);stored=storage.write("receipts",FileStorage.randomName()+".png",Images.fitPng(image,1600));service.record(longParam(q,"customerId"),new BigDecimal(param(q,"amount")),date(param(q,"date")),stored,currentUser(q));}else{error(p,405,"Thao tác không hợp lệ.");return;}p.getWriter().write("{\"ok\":true}");}catch(ForbiddenException e){if(stored!=null)storage.deleteQuietly(stored);error(p,403,e.getMessage());}catch(ServiceException|IllegalArgumentException e){if(stored!=null)storage.deleteQuietly(stored);error(p,400,e.getMessage());}catch(SQLException e){if(stored!=null)storage.deleteQuietly(stored);log("Không xử lý được khoản thu tuyến",e);error(p,500,"Không thể ghi nhận khoản thu.");}}
+ private static LocalDate date(String x){try{return LocalDate.parse(x);}catch(DateTimeParseException e){throw new ServiceException("Ngày thu không hợp lệ.");}}private static void error(HttpServletResponse p,int s,String m)throws IOException{p.setStatus(s);p.getWriter().write(Json.encode(Map.of("error",m)));}
 }

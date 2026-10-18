@@ -1,3 +1,4 @@
+
 (() => {
     'use strict';
 
@@ -40,8 +41,16 @@
         submitOrderButton: document.getElementById('submitOrderButton')
     };
 
+    // S5-02: Đọc ID đơn hàng từ URL /portal?id=...
+    const urlOrderId = new URLSearchParams(window.location.search).get('id');
+
+    const initialOrderId =
+        urlOrderId && /^[1-9]\d*$/.test(urlOrderId)
+            ? urlOrderId
+            : null;
+
     const state = {
-        orderId: null,
+        orderId: initialOrderId,
         query: '',
         page: 1,
         catalog: [],
@@ -297,6 +306,9 @@
 
             renderCart();
         } catch (error) {
+            elements.cartInitialState.hidden = false;
+            elements.cartInitialState.textContent =
+                'Không thể tải giỏ hàng.';
             showMessage(error.message, true);
         }
     }
@@ -383,7 +395,9 @@
         renderCredit(cart.credit);
         renderDelivery(cart);
 
-        elements.submitOrderButton.disabled = lines.length === 0;
+        // Chỉ gửi đơn đang ở trạng thái nháp và có sản phẩm.
+        elements.submitOrderButton.disabled =
+            lines.length === 0 || cart.status !== 'DRAFT';
     }
 
     function renderCredit(credit) {
@@ -604,6 +618,13 @@
 
     loadCatalog();
 
-    elements.cartInitialState.textContent =
-        'Giỏ hàng chưa có sản phẩm.';
+    // S5-02: Tự tải đơn đặt lại nếu URL có ID.
+    if (state.orderId) {
+        elements.cartInitialState.textContent =
+            'Đang tải đơn hàng...';
+        loadCart();
+    } else {
+        elements.cartInitialState.textContent =
+            'Giỏ hàng chưa có sản phẩm.';
+    }
 })();

@@ -35,9 +35,6 @@
   font-size: 13px;
 }
 
-.payment-receipt-select {
-  white-space: nowrap;
-}
 
 .payment-receipt-paper {
   background: var(--color-surface);
@@ -47,16 +44,6 @@
   padding: 24px;
 }
 
-.payment-receipt-paper__notice {
-  padding: 12px;
-  border: 1px solid var(--color-warning-border);
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
-  text-align: center;
-  font-weight: 700;
-  font-size: 12px;
-  margin-bottom: 24px;
-}
 
 .payment-receipt-paper__header {
   text-align: center;
@@ -126,14 +113,6 @@
   color: var(--color-text-muted);
 }
 
-.payment-receipt-paper__footer {
-  border-top: 1px dashed var(--color-border-strong);
-  padding-top: 14px;
-  font-size: 11px;
-  color: var(--color-danger);
-  text-align: center;
-  font-weight: 700;
-}
 
 .payment-receipts__actions {
   display: flex;
@@ -166,81 +145,4 @@
 @page {
   size: A4;
   margin: 15mm;
-}
-
-@media print {
-  body * {
-    visibility: hidden !important;
-  }
-
-  #payment-receipt-paper,
-  #payment-receipt-paper * {
-    visibility: visible !important;
-  }
-
-  #payment-receipt-paper {
-    display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-sizing: border-box;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: var(--color-surface);
-    color: var(--color-text);
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  #payment-receipt-paper .payment-receipt-paper__notice {
-    border: 2px solid var(--color-text);
-    color: var(--color-text);
-    background: var(--color-surface);
-  }
-
-  #payment-receipt-paper .payment-receipt-paper__footer {
-    color: var(--color-text);
-  }
-  @media print {
-  body * {
-    visibility: hidden !important;
-  }
-
-  #payment-receipt-paper,
-  #payment-receipt-paper * {
-    visibility: visible !important;
-  }
-
-  #payment-receipt-paper {
-    display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-sizing: border-box;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: var(--color-surface);
-    color: var(--color-text);
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  #payment-receipt-paper .payment-receipt-paper__notice {
-    border: 2px solid var(--color-text);
-    color: var(--color-text);
-    background: var(--color-surface);
-  }
-
-  #payment-receipt-paper .payment-receipt-paper__footer {
-    color: var(--color-text);
-  }
-}
 }

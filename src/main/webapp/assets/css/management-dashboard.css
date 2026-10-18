@@ -1,0 +1,159 @@
+.mdash {
+    display: grid;
+    gap: var(--space-4, 16px);
+    min-width: 0;
+}
+.mdash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.mdash-header h1 {
+    margin: 4px 0 8px;
+    font-size: clamp(24px, 3vw, 32px);
+    color: var(--color-text);
+}
+.mdash-eyebrow {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+.mdash-subtitle, .mdash-section-heading p,
+.mdash-panel-heading p, .mdash-empty {
+    color: var(--color-text-muted);
+}
+.mdash-subtitle { margin: 0; }
+.mdash-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.mdash-section-heading h2, .mdash-panel-heading h2 {
+    color: var(--color-text);
+    margin: 0;
+    font-size: 18px;
+}
+.mdash-section-heading p, .mdash-panel-heading p {
+    margin: 4px 0 0;
+    font-size: 13px;
+}
+.mdash-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+.mdash-kpi, .mdash-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    min-width: 0;
+}
+.mdash-kpi {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.mdash-kpi p {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+.mdash-kpi strong {
+    color: var(--color-primary);
+    font-size: clamp(20px, 2.5vw, 28px);
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+}
+.mdash-kpi span { color: var(--color-text-muted); font-size: 12px; }
+.mdash-kpi--danger strong { color: var(--color-danger); }
+.mdash-kpi--warning strong { color: var(--color-warning); }
+.mdash-charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 14px;
+}
+.mdash-panel { padding: 20px; }
+.mdash-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.mdash-panel-tag {
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.mdash-chart {
+    width: 100%;
+    min-height: 250px;
+    overflow: hidden;
+}
+.mdash-chart svg { width: 100%; height: auto; display: block; }
+.mdash-chart .grid-line { stroke: var(--color-border); stroke-width: 1; }
+.mdash-chart .axis-label {
+    fill: var(--color-text-muted);
+    font-size: 12px;
+    font-family: inherit;
+}
+.mdash-chart .chart-line {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+.mdash-chart .chart-dot { fill: var(--color-primary); }
+.mdash-chart .chart-bar { fill: var(--color-primary); }
+.mdash-table-wrap { overflow-x: auto; }
+.mdash-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 570px;
+    text-align: left;
+}
+.mdash-table th, .mdash-table td {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+.mdash-table th {
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+.mdash-table td {
+    color: var(--color-text);
+    font-size: 13px;
+}
+.mdash-table td:last-child {
+    font-weight: 700;
+    color: var(--color-danger);
+    font-variant-numeric: tabular-nums;
+}
+.mdash-table tbody tr:last-child td { border-bottom: 0; }
+.mdash-empty { margin: 0; padding: 40px 0; text-align: center; }
+@media (max-width: 1100px) {
+    .mdash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mdash-charts { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+    .mdash-kpis { grid-template-columns: 1fr; }
+    .mdash-kpi, .mdash-panel { padding: 16px; }
+    .mdash-panel-heading { flex-wrap: wrap; }
+    .mdash-header h1 { font-size: 23px; }
+}

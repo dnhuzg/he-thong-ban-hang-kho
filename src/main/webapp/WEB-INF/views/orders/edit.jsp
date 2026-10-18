@@ -12,6 +12,9 @@
             <p class="page-header__desc"><a href="${ctx}/customers/view?id=${order.customerId}"><c:out value="${order.customerName}"/></a> · <c:out value="${order.customerCode} · ${order.customerGroupName}"/></p>
           </div>
           <div class="page-header__actions">
+            <a class="btn btn--secondary" href="${ctx}/orders/pdf?id=${order.id}" target="_blank" rel="noopener">In / xem PDF</a>
+            <a class="btn btn--secondary" href="${ctx}/orders/pdf?id=${order.id}&amp;download=true">Tải PDF</a>
+            <c:if test="${canCopyOrder}"><button class="btn btn--secondary" type="button" data-dialog-open="copy-order">Sao chép đơn</button></c:if>
             <span class="badge${empty order.status.tone ? '' : ' badge--'.concat(order.status.tone)}"><c:out value="${order.status.label}"/></span>
             <c:choose>
               <c:when test="${order.draft and empty history}">
@@ -300,4 +303,15 @@
           </form>
         </dialog>
 
+<c:if test="${canCopyOrder}">
+<dialog class="dialog" id="copy-order" aria-labelledby="copy-order-title">
+  <form method="post" action="${ctx}/orders/copy">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+    <input type="hidden" name="id" value="${order.id}">
+    <header class="dialog__header"><h2 id="copy-order-title">Sao chép đơn <c:out value="${order.code}"/>?</h2></header>
+    <div class="dialog__body"><p>Tạo một đơn nháp mới cho cùng đại lý, giữ các mặt hàng và số lượng. Giá, chiết khấu được tính lại theo chính sách hiện hành. Ngày giao đã qua được bỏ trống.</p></div>
+    <footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-dialog-close>Hủy</button><button class="btn btn--primary" type="submit">Tạo đơn nháp mới</button></footer>
+  </form>
+</dialog>
+</c:if>
 <%@ include file="/WEB-INF/views/layout/app-bottom.jspf" %>

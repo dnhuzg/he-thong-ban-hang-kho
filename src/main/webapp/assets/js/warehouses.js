@@ -4,8 +4,7 @@
   if (!root) return;
   const $ = id => root.querySelector('#' + id);
   const canWrite = root.dataset.canWrite === 'true';
-  $('reset').hidden = !canWrite;
-  const repo = window.WarehouseDemo;
+  const repo = window.WarehouseData;
   const pages = {
     warehouses: { title: 'Danh sách kho', description: 'Khai báo thông tin và quản lý trạng thái các kho.', heading: 'Thông tin kho', hint: 'Mỗi kho có mã định danh riêng.', action: '+ Thêm kho', search: 'Tìm mã kho, tên kho hoặc địa chỉ…', heads: ['Mã kho','Tên kho','Địa chỉ','Người phụ trách','Trạng thái','Thao tác'] },
     locations: { title: 'Vị trí lưu trữ', description: 'Khai báo khu và kệ để xác định vị trí lưu hàng trong từng kho.', heading: 'Vị trí trong kho', hint: 'Kệ có thể nằm trong một khu hoặc được khai báo độc lập.', action: '+ Thêm vị trí', search: 'Tìm mã hoặc tên vị trí…', heads: ['Mã vị trí','Tên vị trí','Loại vị trí','Khu chứa','Kho','Thao tác'] },
@@ -123,7 +122,7 @@
     field('code','Mã kho',item?.code,{max:30,hint:'Ví dụ: KHO-TN01. Không trùng với kho khác.'});
     field('status','Trạng thái',item?.status || 'active',{options:[['active','Hoạt động'],['inactive','Tạm ngừng']]});
     field('name','Tên kho',item?.name,{full:true}); field('address','Địa chỉ',item?.address,{full:true,multiline:true,max:255});
-    field('manager','Người phụ trách',item?.manager,{full:true,hint:'Tên minh họa; khi tích hợp sẽ chọn từ danh sách nhân sự.'});
+    field('manager','Người phụ trách',item?.manager,{full:true,hint:'Nhập họ tên người phụ trách kho.'});
     if (item && state.dealers.some(d => d.warehouseId === item.id)) $('fields').append(node('p','Kho đang được gán cho đại lý. Đổi trạng thái không tự thay đổi kho mặc định của đại lý.','wh-field--full wh-description'));
     $('editor').showModal();
   }
@@ -153,27 +152,22 @@
     field('warehouseId','Kho phục vụ mặc định',w?.status === 'active' ? w.id : '',{full:true,options:[['','Chọn kho phục vụ'],...state.warehouses.filter(x => x.status === 'active').map(x => [x.id,x.code+' · '+x.name])],hint:'Bản thử chỉ cho gán mới vào kho đang hoạt động.'});
     $('editor').showModal();
   }
-  $('editor-form').addEventListener('submit',event => {
+  $('editor-form').addEventListener('submit',async event => {
     event.preventDefault();
     if (!canWrite) return;
     const values = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      if (currentEdit.kind === 'warehouse') repo.saveWarehouse(values,currentEdit.id);
-      else if (currentEdit.kind === 'location') { if(currentEdit.id) values.warehouseId = state.locations.find(l => l.id === currentEdit.id).warehouseId; repo.saveLocation(values,currentEdit.id); }
-      else repo.assignDealer(currentEdit.id,values.warehouseId);
-      $('editor').close();
-      const selected = $('warehouse-filter').value;
-      options($('warehouse-filter'),[['','Tất cả kho'],...repo.load().warehouses.map(w => [w.id,w.code+' · '+w.name])],selected);
-      render(); showNotice('Đã lưu thay đổi.');
-    } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
+      $('save').disabled = true;
+      if (currentEdit.kind === 'warehouse') await repo.saveWarehouse(values,currentEdit.id);
+      else if (currentEdit.kind === 'location') { if(currentEdit.id) values.warehouseId = state.locations.find(l => l.id === currentEdit.id).warehouseId; await repo.saveLocation(values,currentEdit.id); }
+      else await repo.assignDealer(currentEdit.id,values.warehouseId);
+    } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; $('save').disabled = false; }
   });
   root.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click',() => $('editor').close()));
   root.querySelectorAll('[data-page]').forEach(link => link.addEventListener('click',event => { event.preventDefault(); go(link.dataset.page); }));
   $('add').addEventListener('click',() => page === 'warehouses' ? openWarehouse() : openLocation());
   $('search').addEventListener('input',render); $('filter').addEventListener('change',render); $('warehouse-filter').addEventListener('change',render);
   $('clear-filter').addEventListener('click',() => { $('search').value = ''; $('filter').value = ''; $('warehouse-filter').value = ''; render(); });
-  $('reset').addEventListener('click',() => { if (!canWrite) return; $('reset-dialog').returnValue = ''; $('reset-dialog').showModal(); });
-  $('reset-dialog').addEventListener('close',() => { if (canWrite && $('reset-dialog').returnValue === 'confirm') { repo.reset(); go(page); showNotice('Đã khôi phục dữ liệu mẫu.'); } });
   function closeMenu() {
     document.querySelector('.app')?.classList.remove('is-sidebar-open');
     document.querySelectorAll('[data-sidebar-toggle]').forEach(button => button.setAttribute('aria-expanded', 'false'));

@@ -60,6 +60,17 @@ public class OrderWorkflowDao {
         }
         return result;
     }
+    /** Đơn còn Đã duyệt mà lần duyệt cuối trước mốc; mỗi dòng là [mã đơn, người duyệt]. */
+    public List<long[]> approvedBefore(Connection conn,LocalDateTime cutoff) throws SQLException {
+        var result=new ArrayList<long[]>();
+        try(var ps=conn.prepareStatement("SELECT o.id,h.actor_id FROM orders o JOIN order_status_history h ON h.order_id=o.id"
+                +" AND h.id=(SELECT MAX(x.id) FROM order_status_history x WHERE x.order_id=o.id AND x.to_status='APPROVED')"
+                +" WHERE o.status='APPROVED' AND h.created_at<? ORDER BY o.id LIMIT 200")) {
+            ps.setTimestamp(1,java.sql.Timestamp.valueOf(cutoff));
+            try(var rs=ps.executeQuery()) { while(rs.next()) result.add(new long[] {rs.getLong(1),rs.getLong(2)}); }
+        }
+        return result;
+    }
     public List<Long> pending(Connection conn) throws SQLException {
         var result=new ArrayList<Long>();
         try(var ps=conn.prepareStatement("SELECT id FROM orders WHERE status='PENDING_APPROVAL' ORDER BY created_at,id LIMIT 200");var rs=ps.executeQuery()) {

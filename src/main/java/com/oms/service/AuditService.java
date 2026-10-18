@@ -35,6 +35,13 @@ public class AuditService {
         }
     }
 
+    /** Thao tác gần đây của chính người dùng, hiện ở trang chủ của mọi vai trò (không cần quyền xem nhật ký). */
+    public List<AuditEntry> recentBy(long actorId, int limit) throws SQLException {
+        try (Connection conn = Db.getConnection()) {
+            return auditDao.recentByActor(conn, actorId, limit);
+        }
+    }
+
     /** Danh sách người dùng cho bộ lọc "Người thực hiện". */
     public List<NamedItem> actors() throws SQLException {
         try (Connection conn = Db.getConnection()) {

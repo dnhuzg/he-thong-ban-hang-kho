@@ -124,6 +124,8 @@
                   <th scope="col">Sản phẩm</th>
                   <th scope="col">Nhóm hàng</th>
                   <th scope="col" class="col-unit">ĐVT cơ sở</th>
+                  <th scope="col" class="num">Tồn kho</th>
+                  <th scope="col" class="num">Khả dụng</th>
                   <c:if test="${canViewCostPrice}"><th scope="col" class="num col-cost">Giá vốn</th></c:if>
                   <th scope="col" class="col-status">Trạng thái</th>
                   <c:if test="${canWrite or canViewPriceLists}"><th scope="col" class="col-menu"><span class="visually-hidden">Thao tác</span></th></c:if>
@@ -131,7 +133,7 @@
               </thead>
               <tbody>
                 <c:if test="${empty result.items}">
-                  <tr><td colspan="7" class="text-muted">Không có sản phẩm nào khớp điều kiện tìm kiếm.</td></tr>
+                  <tr><td colspan="9" class="text-muted">Không có sản phẩm nào khớp điều kiện tìm kiếm.</td></tr>
                 </c:if>
                 <c:forEach var="p" items="${result.items}">
                   <tr>
@@ -155,6 +157,8 @@
                     </td>
                     <td class="text-muted"><c:out value="${fn:replace(p.categoryPath, ' › ', ' • ')}"/></td>
                     <td><c:out value="${p.baseUnitName}"/></td>
+                    <td class="num nowrap"><fmt:formatNumber value="${p.stockOnHand}" maxFractionDigits="2"/></td>
+                    <td class="num nowrap ${p.stockAvailable.signum() > 0 ? 'text-success' : 'text-muted'}"><fmt:formatNumber value="${p.stockAvailable}" maxFractionDigits="2"/></td>
                     <c:if test="${canViewCostPrice}">
                       <td class="num nowrap table__cell-main">
                         <c:choose>

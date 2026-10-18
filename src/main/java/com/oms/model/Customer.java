@@ -38,6 +38,7 @@ public class Customer {
     private String salesRepName;
     private Status status = Status.ACTIVE;
     private BigDecimal creditLimit = BigDecimal.ZERO;
+    private BigDecimal debt = BigDecimal.ZERO;
     private int creditDays;
     private String lockReason;
     private LocalDateTime lockedAt;
@@ -91,6 +92,25 @@ public class Customer {
     /** Hạn mức nợ tối đa (₫); 0 là không cho nợ. */
     public BigDecimal getCreditLimit() { return creditLimit; }
     public void setCreditLimit(BigDecimal creditLimit) { this.creditLimit = creditLimit; }
+
+    /** Dư nợ hiện hành: tổng còn phải thu trên các hoá đơn đã phát hành. */
+    public BigDecimal getDebt() { return debt; }
+    public void setDebt(BigDecimal debt) { this.debt = debt == null ? BigDecimal.ZERO : debt; }
+
+    /** Phần trăm hạn mức đã dùng (làm tròn); 0 khi không cấp hạn mức. */
+    public int getUsagePercent() {
+        return creditLimit.signum() > 0
+                ? debt.multiply(BigDecimal.valueOf(100)).divide(creditLimit, 0, java.math.RoundingMode.HALF_UP).intValue() : 0;
+    }
+
+    /** Bậc 10% (tối đa 100) cho độ rộng thanh tỉ lệ trên giao diện. */
+    public int getUsageStep() { return Math.min(100, getUsagePercent() / 10 * 10); }
+
+    /** Sắc thái thanh tỉ lệ: dưới 70% an toàn, 70–90% cảnh báo, trên 90% nguy hiểm. */
+    public String getUsageTone() {
+        int p = getUsagePercent();
+        return p > 90 ? "danger" : p >= 70 ? "warning" : "success";
+    }
     /** Số ngày nợ tối đa; 0 là phải thanh toán ngay. */
     public int getCreditDays() { return creditDays; }
     public void setCreditDays(int creditDays) { this.creditDays = creditDays; }
