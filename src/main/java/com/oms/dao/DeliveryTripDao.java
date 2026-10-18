@@ -1,6 +1,7 @@
 
 package com.oms.dao;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -428,6 +429,66 @@ public class DeliveryTripDao {
 
             while (rs.next()) {
                 result.add(mapTrip(rs));
+            }
+        }
+
+        return result;
+    }
+
+    /** GHTK-64: chuyến còn điểm chờ giao, kèm số điểm và giá trị hàng chưa giao. */
+    public record InTransit(Trip trip, int stops, int delivered, int failed, BigDecimal remainingValue) {
+        public Trip getTrip() { return trip; }
+        public int getStops() { return stops; }
+        public int getDelivered() { return delivered; }
+        public int getFailed() { return failed; }
+        public int getRemaining() { return stops - delivered - failed; }
+        public BigDecimal getRemainingValue() { return remainingValue; }
+    }
+
+    /**
+     * Giá trị một phiếu tính như lúc lập hoá đơn: số lượng quy về đơn vị cơ sở
+     * × đơn giá thuần (sau chiết khấu) của sản phẩm trên đơn.
+     */
+    public List<InTransit> inTransit(Connection conn) throws SQLException {
+        String sql = "SELECT " + TRIP_COLUMNS + """
+                , COUNT(*) AS stops,
+                SUM(CASE WHEN sv.status = 'DELIVERED' THEN 1 ELSE 0 END) AS delivered,
+                SUM(CASE WHEN sv.status = 'FAILED_RETURNED' THEN 1 ELSE 0 END) AS failed,
+                SUM(CASE WHEN sv.status = 'READY' THEN COALESCE(sv.amount, 0) ELSE 0 END) AS remaining_value
+                """ + TRIP_JOINS + """
+                JOIN delivery_trip_shipments ts ON ts.trip_id = t.id
+                JOIN (
+                    SELECT s.id, s.status,
+                        (SELECT SUM(i.quantity
+                                * CASE WHEN i.unit_id = p.base_unit_id THEN 1 ELSE
+                                    (SELECT pu.factor FROM product_units pu
+                                     WHERE pu.product_id = i.product_id AND pu.unit_id = i.unit_id) END
+                                * (SELECT SUM(l.gross_amount - COALESCE(l.discount_amount, 0)) / SUM(l.base_quantity)
+                                   FROM order_lines l
+                                   WHERE l.order_id = s.order_id AND l.product_id = i.product_id))
+                         FROM shipment_items i JOIN products p ON p.id = i.product_id
+                         WHERE i.shipment_id = s.id) AS amount
+                    FROM shipments s
+                ) sv ON sv.id = ts.shipment_id
+                GROUP BY t.id, t.code, t.warehouse_id, w.name, t.area_name, t.delivery_date,
+                    t.driver_id, d.full_name, t.vehicle_id, v.license_plate, t.status
+                HAVING SUM(CASE WHEN sv.status = 'READY' THEN 1 ELSE 0 END) > 0
+                ORDER BY t.delivery_date, t.id
+                """;
+
+        List<InTransit> result = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                result.add(new InTransit(
+                        mapTrip(rs),
+                        rs.getInt("stops"),
+                        rs.getInt("delivered"),
+                        rs.getInt("failed"),
+                        rs.getBigDecimal("remaining_value")
+                ));
             }
         }
 

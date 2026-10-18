@@ -139,6 +139,7 @@ public final class AccessRules {
             Map.entry("/shipments/picking/pick", new Rule(Kind.WRITE, Module.SHIPMENT)),
             Map.entry("/shipments/picking/complete", new Rule(Kind.WRITE, Module.SHIPMENT)),
             Map.entry("/shipments/trips", new Rule(Kind.READ, Module.SHIPMENT)),
+            Map.entry("/shipments/in-transit", new Rule(Kind.READ, Module.SHIPMENT)),
             Map.entry("/shipments/trips/view", new Rule(Kind.READ, Module.SHIPMENT)),
             Map.entry("/shipments/trips/print", new Rule(Kind.READ, Module.SHIPMENT)),
             Map.entry("/shipments/trips/create", new Rule(Kind.WRITE, Module.SHIPMENT)),

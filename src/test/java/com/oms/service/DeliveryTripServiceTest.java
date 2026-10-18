@@ -2,11 +2,13 @@
 package com.oms.service;
 
 import com.oms.dao.DeliveryTripDao;
+import com.oms.model.NamedItem;
 import com.oms.model.Role;
 import com.oms.model.User;
 import com.oms.support.DatabaseTest;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -298,5 +300,56 @@ class DeliveryTripServiceTest extends DatabaseTest {
         assertEquals("Trần Văn B", second.receiverName());
         assertEquals("0902222222", second.receiverPhone());
         assertEquals("Giao buổi chiều", second.routeNote());
+    }
+
+    /**
+     * GHTK-64: chuyến còn điểm chờ giao, tiền hàng chưa giao tính theo giá thuần trên đơn,
+     * quá ngày giao thì cảnh báo; giao hết hoặc nhận lại hết thì chuyến rời danh sách.
+     */
+    @Test
+    void inTransitCountsRemainingStopsValueAndOverdueTrips()
+            throws SQLException {
+
+        User admin = user("trip_admin_transit", Role.ADMIN);
+        seedShipments();
+        sql("INSERT INTO products (id, sku, name, base_unit_id) VALUES (901, 'COCA', 'Coca lon', 1)");
+        sql("INSERT INTO product_units (product_id, unit_id, factor) VALUES (901, 2, 24)");
+        // Đơn 301: 2 thùng = 48 lon, 480.000 trừ chiết khấu 48.000 → 9.000/lon; đơn 302: 10 lon, 10.000/lon
+        sql("""
+                INSERT INTO order_lines (order_id, product_id, unit_id, quantity, factor, base_quantity,
+                                         gross_amount, discount_amount)
+                VALUES (301, 901, 2, 2, 24, 48, 480000, 48000),
+                       (302, 901, 1, 10, 1, 10, 100000, NULL)
+                """);
+        sql("""
+                INSERT INTO shipment_items (shipment_id, product_id, unit_id, quantity)
+                VALUES (401, 901, 2, 1), (402, 901, 1, 10)
+                """);
+        LocalDate day = LocalDate.of(2026, 10, 17);
+        service.create(List.of(401L, 402L), day, null, null, admin);
+
+        DeliveryTripService.InTransitPage page = service.inTransit(admin, day);
+        assertEquals(1, page.rows().size());
+        assertEquals(2, page.remainingStops());
+        assertEquals(0, new BigDecimal("316000").compareTo(page.totalValue()));   // 24 × 9.000 + 10 × 10.000
+        assertFalse(page.rows().get(0).overdue());
+
+        sql("UPDATE shipments SET status = 'DELIVERED' WHERE id = 402");
+        page = service.inTransit(admin, day.plusDays(1));
+        DeliveryTripDao.InTransit row = page.rows().get(0).row();
+        assertEquals(1, row.delivered());
+        assertEquals(1, row.getRemaining());
+        assertEquals(0, new BigDecimal("216000").compareTo(page.totalValue()));
+        assertTrue(page.rows().get(0).overdue());
+        assertEquals(1, page.overdueTrips());
+
+        User otherWarehouse = user("kho_b_transit", Role.WAREHOUSE);
+        otherWarehouse.setWarehouses(List.of(new NamedItem(20, "Kho B")));
+        assertTrue(service.inTransit(otherWarehouse, day).rows().isEmpty());
+        User rep = user("nvkd_transit", Role.SALES_REP);
+        assertThrows(ForbiddenException.class, () -> service.inTransit(rep, day));
+
+        sql("UPDATE shipments SET status = 'FAILED_RETURNED' WHERE id = 401");
+        assertTrue(service.inTransit(admin, day).rows().isEmpty());
     }
 }

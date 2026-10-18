@@ -145,6 +145,7 @@ public final class Menu {
             groups.add(new Group(BUSINESS, "Xuất kho & giao hàng", List.of(
                     item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
                     item("Phân tuyến giao hàng", "/shipments/trips", "truck", path.startsWith("/shipments/trips"), false),
+                    item("Hàng đang giao", "/shipments/in-transit", "history", path.equals("/shipments/in-transit"), false),
                     item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 
