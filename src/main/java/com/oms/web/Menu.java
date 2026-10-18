@@ -51,6 +51,11 @@ public final class Menu {
                             "/reports/sales",
                             "clipboard-list",
                             path.equals("/reports/sales"),
+                            false),
+                    item("Chỉ tiêu doanh số",
+                            "/sales/targets",
+                            "percent",
+                            path.equals("/sales/targets"),
                             false))));
         }
 
@@ -85,6 +90,9 @@ public final class Menu {
             boolean approvals = path.equals("/orders/approvals");
             salesItems.add(item("Đơn hàng", "/orders", "clipboard-list", path.startsWith("/orders") && !approvals, true));
             salesItems.add(item("Duyệt đơn", "/orders/approvals", "circle-check", approvals, false));
+        }
+        if (user.getRoles().contains(Role.SALES_REP)) {
+            salesItems.add(item("Chỉ tiêu của tôi", "/sales/targets/my", "percent", path.equals("/sales/targets/my"), false));
         }
         if (PermissionPolicy.canTakeOrders(user.getRoles()) || user.getRoles().contains(Role.WH_MANAGER)) {
             salesItems.add(item("Trả hàng từ đại lý", "/sales/returns", "clipboard-list", path.equals("/sales/returns"), false));
