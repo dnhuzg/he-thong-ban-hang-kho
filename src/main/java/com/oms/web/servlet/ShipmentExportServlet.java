@@ -43,7 +43,8 @@ public class ShipmentExportServlet extends BaseServlet {
         }
         try {
             long shipmentId = exportService.export(longParam(req, "orderId"), currentUser(req),
-                    "true".equals(param(req,"overrideExpiry")),param(req,"overrideReason"));
+                    "true".equals(param(req,"overrideExpiry")),param(req,"overrideReason"),
+                    chosenLots(req), param(req, "lotReason"));
             flash(req, String.format("Đã xuất kho, lập phiếu xuất PX%06d; phiếu chờ xác nhận giao hàng.", shipmentId));
         } catch (OrderService.NotFoundException e) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -57,5 +58,23 @@ public class ShipmentExportServlet extends BaseServlet {
             throw new ServletException(e);
         }
         redirect(req, resp, "/shipments/export");
+    }
+
+    /** Cặp lotProduct[i] → lotId[i] từ hộp thoại chọn lô (GHTK-61). */
+    private static java.util.Map<Long, Long> chosenLots(HttpServletRequest req) {
+        String[] products = req.getParameterValues("lotProduct");
+        String[] lots = req.getParameterValues("lotId");
+        java.util.Map<Long, Long> chosen = new java.util.HashMap<>();
+        if (products == null || lots == null || products.length != lots.length) {
+            return chosen;
+        }
+        for (int i = 0; i < products.length; i++) {
+            try {
+                chosen.put(Long.parseLong(products[i]), Long.parseLong(lots[i]));
+            } catch (NumberFormatException e) {
+                throw new ServiceException("Lô đã chọn không hợp lệ.");
+            }
+        }
+        return chosen;
     }
 }

@@ -127,22 +127,29 @@ public final class Menu {
         }
 
         if (policy.canRead(user.getRoles(), Module.INVENTORY)) {
-            groups.add(new Group(BUSINESS, "Tồn kho & nhập kho",
-                    List.of(
-                            item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
-                            item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
-                            item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false),
-                            item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false),
-                            item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
-                            item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
-                            item("Kiểm kê kho", "/inventory/counts", "clipboard-list", path.equals("/inventory/counts"), false),
-                            item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false))));
+            List<Item> inventoryItems = new ArrayList<>(List.of(
+                    item("Nhà cung cấp", "/suppliers", "truck", path.startsWith("/suppliers"), false),
+                    item("Kho & vị trí lưu trữ", "/inventory/warehouses", "boxes", path.equals("/inventory/warehouses"), false),
+                    item("Phiếu nhập kho", "/inventory/receipts", "clipboard-list", path.equals("/inventory/receipts"), false),
+                    item("Tồn kho theo SKU", "/inventory/stock", "boxes", path.equals("/inventory/stock"), false),
+                    item("Lô & hạn sử dụng", "/inventory/lots", "package", path.equals("/inventory/lots"), false),
+                    item("Thẻ kho sản phẩm", "/inventory/stock-card", "history", path.equals("/inventory/stock-card"), false),
+                    item("Kiểm kê kho", "/inventory/counts", "clipboard-list", path.equals("/inventory/counts"), false),
+                    item("Chuyển kho nội bộ", "/inventory/transfers", "truck", path.equals("/inventory/transfers"), false)));
+            // InventoryAdjustmentService chỉ cho người của kho xem phiếu; vai trò khác vào sẽ bị 403.
+            if (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER)) {
+                inventoryItems.add(7, item("Điều chỉnh tồn kho", "/inventory/adjustments", "clipboard-list",
+                        path.startsWith("/inventory/adjustments"), false));
+            }
+            groups.add(new Group(BUSINESS, "Tồn kho & nhập kho", inventoryItems));
         }
 
         if (policy.canWrite(user.getRoles(), Module.SHIPMENT)
                 && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
             groups.add(new Group(BUSINESS, "Xuất kho & giao hàng", List.of(
                     item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
+                    item("Phân tuyến giao hàng", "/shipments/trips", "truck", path.startsWith("/shipments/trips"), false),
+                    item("Hàng đang giao", "/shipments/in-transit", "history", path.equals("/shipments/in-transit"), false),
                     item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 

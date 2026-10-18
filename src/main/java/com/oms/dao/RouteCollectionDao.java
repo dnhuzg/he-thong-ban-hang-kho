@@ -5,7 +5,7 @@ public class RouteCollectionDao {
  public PageData page(Connection c,Long salesRepId)throws SQLException{
   List<Customer> customers=new ArrayList<>();String customerSql="SELECT c.id,c.code,c.name,COALESCE(SUM(r.outstanding),0) FROM customers c JOIN customer_receivables r ON r.customer_id=c.id WHERE r.outstanding>0"+(salesRepId==null?"":" AND c.sales_rep_id=?")+" GROUP BY c.id ORDER BY c.code";
   try(var p=c.prepareStatement(customerSql)){if(salesRepId!=null)p.setLong(1,salesRepId);try(var r=p.executeQuery()){while(r.next())customers.add(new Customer(r.getLong(1),r.getString(2),r.getString(3),r.getBigDecimal(4)));}}
-  List<Row> records=new ArrayList<>();String rowSql="SELECT rc.id,p.paid_on,u.full_name,c.name,p.amount,rc.status,rc.receipt_path FROM route_collections rc JOIN payments p ON p.id=rc.payment_id JOIN users u ON u.id=p.collected_by JOIN customers c ON c.id=p.customer_id"+(salesRepId==null?"":" WHERE p.collected_by=?")+" ORDER BY rc.id DESC LIMIT 100";
+  List<Row> records=new ArrayList<>();String rowSql="SELECT rc.id,p.paid_on,u.full_name,c.name,p.amount,rc.status,rc.receipt_path FROM route_collections rc JOIN payments p ON p.id=rc.payment_id JOIN users u ON u.id=p.collected_by JOIN customers c ON c.id=p.customer_id"+(salesRepId==null?"":" WHERE p.collected_by=?")+" ORDER BY rc.id DESC";
   try(var p=c.prepareStatement(rowSql)){if(salesRepId!=null)p.setLong(1,salesRepId);try(var r=p.executeQuery()){while(r.next())records.add(new Row(r.getLong(1),r.getDate(2).toLocalDate(),r.getString(3),r.getString(4),r.getBigDecimal(5),r.getString(6),r.getString(7)));}}
   return new PageData(customers,records);
  }

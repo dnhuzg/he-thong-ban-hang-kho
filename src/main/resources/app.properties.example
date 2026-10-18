@@ -22,3 +22,6 @@ mail.fromName=OMS Bán hàng & Kho
 # Thư mục lưu ảnh tải lên (ảnh đại diện, ảnh sản phẩm), nằm ngoài Tomcat để không mất khi deploy lại.
 # Để trống thì dùng thư mục oms-uploads trong thư mục người dùng.
 upload.dir=
+
+# Số ngày giữ chỗ tồn cho đơn đã duyệt; quá hạn mà kho chưa soạn thì đơn tự huỷ (GHTK-54). Để trống = 3.
+order.reservationDays=

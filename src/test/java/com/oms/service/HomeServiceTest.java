@@ -134,13 +134,17 @@ class HomeServiceTest extends DatabaseTest {
         sql("INSERT INTO products(id,sku,name,category_id,base_unit_id,status) VALUES"
                 + "(500,'H0','Hết hàng',3,1,'ACTIVE'),(501,'NG','Ngừng bán',3,1,'INACTIVE'),"
                 + "(502,'GC','Giữ chỗ hết',3,1,'ACTIVE'),(503,'CO','Còn hàng',3,1,'ACTIVE'),(504,'KB','Kho khác',3,1,'ACTIVE')");
-        sql("INSERT INTO warehouse_inventory VALUES(10,500,0,0),(10,501,0,0),(10,502,5,5),(10,503,10,2),(20,504,0,0)");
+        sql("INSERT INTO warehouse_inventory(warehouse_id,product_id,on_hand,reserved) VALUES(10,500,0,0),(10,501,0,0),(10,502,5,5),(10,503,10,2),(20,504,0,0)");
 
         HomeService.Dashboard d = home.build(keeper, TODAY);
 
         assertEquals(2, card(d, "wh.approved").count());
         assertEquals(1, card(d, "wh.picking").count());
         assertEquals(1, card(d, "wh.shipped").count());
+        sql("UPDATE warehouse_inventory SET min_quantity = 10 WHERE product_id IN (503, 504)");   // 504 thuộc kho khác
+        HomeService.Card low = card(home.build(keeper, TODAY), "wh.belowMinimum");
+        assertEquals(1, low.count());
+        assertEquals("warning", low.tone());
         HomeService.Card out = card(d, "wh.outOfStock");
         assertEquals(2, out.count());
         assertEquals("danger", out.tone());

@@ -560,6 +560,7 @@ CREATE TABLE IF NOT EXISTS warehouse_inventory (
   product_id BIGINT NOT NULL,
   on_hand DECIMAL(14,4) NOT NULL DEFAULT 0,
   reserved DECIMAL(14,4) NOT NULL DEFAULT 0,
+  min_quantity DECIMAL(14,4) NULL,
   PRIMARY KEY (warehouse_id, product_id),
   CONSTRAINT fk_inventory_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
   CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),
@@ -931,9 +932,17 @@ CREATE TABLE debt_reconciliations (
  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, code VARCHAR(20) NOT NULL UNIQUE, customer_id BIGINT NOT NULL,
  period_start DATE NOT NULL, period_end DATE NOT NULL, opening_balance DECIMAL(15,2) NOT NULL, increase_amount DECIMAL(15,2) NOT NULL,
  decrease_amount DECIMAL(15,2) NOT NULL, closing_balance DECIMAL(15,2) NOT NULL, status ENUM('PENDING','ACCEPTED','DISPUTED') NOT NULL DEFAULT 'PENDING',
- dispute_reason VARCHAR(1000) NULL, created_by BIGINT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, responded_at DATETIME NULL,
+ dispute_reason VARCHAR(1000) NULL, created_by BIGINT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ details_snapshotted_at DATETIME NULL, responded_at DATETIME NULL,
  UNIQUE KEY uk_reconciliation_period(customer_id,period_start,period_end), CONSTRAINT fk_reconciliation_customer FOREIGN KEY(customer_id) REFERENCES customers(id),
  CONSTRAINT fk_reconciliation_created_by FOREIGN KEY(created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE debt_reconciliation_lines (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, reconciliation_id BIGINT NOT NULL, line_no INT NOT NULL,
+ entry_date DATE NOT NULL, reference VARCHAR(50) NOT NULL, entry_type VARCHAR(80) NOT NULL, note VARCHAR(500) NULL,
+ increase_amount DECIMAL(15,2) NOT NULL DEFAULT 0, decrease_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+ UNIQUE KEY uk_reconciliation_line(reconciliation_id,line_no),
+ CONSTRAINT fk_reconciliation_lines_document FOREIGN KEY(reconciliation_id) REFERENCES debt_reconciliations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO document_sequences(name,last_number) VALUES('RECONCILIATION',0);
 -- S6-01: lưu lô thực xuất và người xác nhận ghi đè hạn dùng.
@@ -951,4 +960,72 @@ CREATE TABLE IF NOT EXISTS shipment_lot_allocations (
   CONSTRAINT fk_shipment_lot_lot FOREIGN KEY (lot_id) REFERENCES inventory_lots(id),
   CONSTRAINT fk_shipment_lot_actor FOREIGN KEY (override_by) REFERENCES users(id),
   CONSTRAINT chk_shipment_lot_quantity CHECK (quantity > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- GHTK-63: phân tuyến giao hàng và gán tài xế (giống migration 036)
+CREATE TABLE IF NOT EXISTS delivery_drivers (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    full_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    license_no VARCHAR(50) NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_vehicles (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    license_plate VARCHAR(30) NOT NULL,
+    vehicle_type VARCHAR(100) NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_delivery_vehicles_plate (license_plate)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_trips (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    code VARCHAR(30) NOT NULL,
+    warehouse_id BIGINT NOT NULL,
+    area_name VARCHAR(150) NOT NULL,
+    delivery_date DATE NOT NULL,
+    driver_id BIGINT NULL,
+    vehicle_id BIGINT NULL,
+    status ENUM('PLANNED', 'IN_PROGRESS', 'COMPLETED')
+        NOT NULL DEFAULT 'PLANNED',
+    created_by BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_delivery_trips_code (code),
+    KEY idx_delivery_trips_warehouse_date (warehouse_id, delivery_date),
+    KEY idx_delivery_trips_driver (driver_id),
+    KEY idx_delivery_trips_vehicle (vehicle_id),
+    CONSTRAINT fk_delivery_trips_warehouse
+        FOREIGN KEY (warehouse_id) REFERENCES warehouses (id),
+    CONSTRAINT fk_delivery_trips_driver
+        FOREIGN KEY (driver_id) REFERENCES delivery_drivers (id),
+    CONSTRAINT fk_delivery_trips_vehicle
+        FOREIGN KEY (vehicle_id) REFERENCES delivery_vehicles (id),
+    CONSTRAINT fk_delivery_trips_creator
+        FOREIGN KEY (created_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_trip_shipments (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    trip_id BIGINT NOT NULL,
+    shipment_id BIGINT NOT NULL,
+    stop_order INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_delivery_trip_shipment (shipment_id),
+    UNIQUE KEY uk_delivery_trip_stop (trip_id, stop_order),
+    KEY idx_delivery_trip_shipments_trip (trip_id),
+    CONSTRAINT fk_delivery_trip_shipments_trip
+        FOREIGN KEY (trip_id) REFERENCES delivery_trips (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_delivery_trip_shipments_shipment
+        FOREIGN KEY (shipment_id) REFERENCES shipments (id),
+    CONSTRAINT chk_delivery_trip_stop_order
+        CHECK (stop_order > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

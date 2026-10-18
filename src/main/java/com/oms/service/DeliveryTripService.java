@@ -8,6 +8,7 @@ import com.oms.model.NamedItem;
 import com.oms.model.Role;
 import com.oms.model.User;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -33,12 +34,31 @@ public class DeliveryTripService {
             List<DeliveryTripDao.ShipmentStop> availableShipments,
             List<DeliveryTripDao.Driver> drivers,
             List<DeliveryTripDao.Vehicle> vehicles
-    ) {}
+    ) {
+        public List<DeliveryTripDao.Trip> getTrips() {
+            return trips;
+        }
+
+        public List<DeliveryTripDao.ShipmentStop> getAvailableShipments() {
+            return availableShipments;
+        }
+
+        public List<DeliveryTripDao.Driver> getDrivers() {
+            return drivers;
+        }
+
+        public List<DeliveryTripDao.Vehicle> getVehicles() {
+            return vehicles;
+        }
+    }
 
     public record Detail(
             DeliveryTripDao.Trip trip,
             List<DeliveryTripDao.ShipmentStop> stops
-    ) {}
+    ) {
+        public DeliveryTripDao.Trip getTrip() { return trip; }
+        public List<DeliveryTripDao.ShipmentStop> getStops() { return stops; }
+    }
 
     public static class NotFoundException extends ServiceException {
         public NotFoundException() {
@@ -70,6 +90,42 @@ public class DeliveryTripService {
                     available,
                     dao.activeDrivers(conn),
                     dao.activeVehicles(conn)
+            );
+        }
+    }
+
+    public record InTransitRow(DeliveryTripDao.InTransit row, boolean overdue) {
+        public DeliveryTripDao.InTransit getRow() { return row; }
+        public boolean isOverdue() { return overdue; }
+    }
+
+    public record InTransitPage(List<InTransitRow> rows, BigDecimal totalValue, int remainingStops, long overdueTrips) {
+        public List<InTransitRow> getRows() { return rows; }
+        public BigDecimal getTotalValue() { return totalValue; }
+        public int getRemainingStops() { return remainingStops; }
+        public long getOverdueTrips() { return overdueTrips; }
+    }
+
+    /**
+     * GHTK-64: chuyến còn điểm chờ giao. Hàng chưa giao vẫn tính cho chuyến
+     * đến khi kho xác nhận giao thành công hoặc nhận lại, không tự về kho.
+     */
+    public InTransitPage inTransit(User viewer, LocalDate today) throws SQLException {
+        Set<Long> scope = scope(viewer);
+
+        try (Connection conn = Db.getConnection()) {
+            List<InTransitRow> rows = dao.inTransit(conn)
+                    .stream()
+                    .filter(r -> inScope(scope, r.trip().warehouseId()))
+                    // Chuyến dự kiến giao xong trong ngày giao đã lập.
+                    .map(r -> new InTransitRow(r, r.trip().deliveryDate().isBefore(today)))
+                    .toList();
+
+            return new InTransitPage(
+                    rows,
+                    rows.stream().map(r -> r.row().remainingValue()).reduce(BigDecimal.ZERO, BigDecimal::add),
+                    rows.stream().mapToInt(r -> r.row().getRemaining()).sum(),
+                    rows.stream().filter(InTransitRow::overdue).count()
             );
         }
     }

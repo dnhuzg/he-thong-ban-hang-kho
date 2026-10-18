@@ -35,7 +35,7 @@
                 <c:forEach var="r" items="${export.ready}">
                   <tr>
                     <td class="nowrap table__cell-code"><a href="${ctx}/orders/edit?id=${r.orderId}"><c:out value="${r.orderCode}"/></a></td>
-                    <td class="table__cell-main"><c:out value="${r.customerName}"/></td>
+                    <td><span class="table__cell-main"><c:out value="${r.customerName}"/></span><c:forEach var="lc" items="${export.lotChoices[r.orderId]}"><span class="table__cell-sub">Lô gợi ý <c:out value="${lc.sku}"/>: <c:out value="${lc.suggestion}"/></span></c:forEach></td>
                     <td class="nowrap"><c:out value="${r.pickingCode}"/></td>
                     <td class="num"><c:out value="${r.lineCount}"/></td>
                     <td><c:choose><c:when test="${r.shortCount > 0}"><span class="badge badge--danger"><c:out value="${r.shortCount}"/> dòng</span></c:when><c:otherwise>—</c:otherwise></c:choose></td>
@@ -44,6 +44,7 @@
                         <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                         <input type="hidden" name="orderId" value="${r.orderId}">
                         <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
+                        <c:if test="${not empty export.lotChoices[r.orderId]}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="lots-${r.orderId}">Chọn lô khác</button></c:if>
                         <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
                       </form>
                     </td>
@@ -62,6 +63,7 @@
                   <div class="product-card__title">
                     <span class="product-card__name"><c:out value="${r.customerName}"/></span>
                     <p class="product-card__sku"><c:out value="${r.orderCode}"/> · <c:out value="${r.pickingCode}"/></p>
+                    <c:forEach var="lc" items="${export.lotChoices[r.orderId]}"><p class="product-card__sku">Lô gợi ý <c:out value="${lc.sku}"/>: <c:out value="${lc.suggestion}"/></p></c:forEach>
                   </div>
                   <c:if test="${r.shortCount > 0}"><span class="badge badge--danger">Thiếu <c:out value="${r.shortCount}"/> dòng</span></c:if>
                 </div>
@@ -69,7 +71,8 @@
                   <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
                   <input type="hidden" name="orderId" value="${r.orderId}">
                   <button class="btn btn--primary btn--sm" type="submit">Xác nhận xuất</button>
-                  <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
+                  <c:if test="${not empty export.lotChoices[r.orderId]}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="lots-${r.orderId}">Chọn lô khác</button></c:if>
+                        <c:if test="${canOverrideExpiry}"><button class="btn btn--secondary btn--sm" type="button" data-dialog-open="expiry-${r.orderId}">Ghi đè hạn dùng</button></c:if>
                 </form>
               </article>
             </c:forEach>
@@ -145,6 +148,22 @@
           </div>
         </section>
 
+<c:forEach var="r" items="${export.ready}"><c:if test="${not empty export.lotChoices[r.orderId]}">
+  <dialog class="dialog" id="lots-${r.orderId}" aria-labelledby="lots-title-${r.orderId}"><form method="post" action="${ctx}/shipments/export/confirm">
+    <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>"><input type="hidden" name="orderId" value="${r.orderId}">
+    <header class="dialog__header"><h2 id="lots-title-${r.orderId}">Chọn lô xuất · <c:out value="${r.orderCode}"/></h2></header>
+    <div class="dialog__body"><p class="alert alert--info">Hệ thống gợi ý lô có hạn dùng gần nhất trước. Lô được chọn sẽ được trừ trước, phần còn thiếu lấy tiếp theo hạn dùng. Chọn khác lô gợi ý thì phải ghi lý do.</p>
+      <c:forEach var="lc" items="${export.lotChoices[r.orderId]}">
+        <div class="form-field"><label class="form-label" for="lot-${r.orderId}-${lc.productId}"><c:out value="${lc.sku}"/> – <c:out value="${lc.productName}"/> (cần <c:out value="${lc.quantity.stripTrailingZeros().toPlainString()}"/>)</label>
+          <input type="hidden" name="lotProduct" value="${lc.productId}">
+          <select class="select" id="lot-${r.orderId}-${lc.productId}" name="lotId">
+            <c:forEach var="lot" items="${lc.options}"><option value="${lot.id}" ${lot.id == lc.suggestedLotId ? 'selected' : ''}><c:out value="${lot.number}"/> · HSD <c:out value="${lot.expiry}"/> · còn <c:out value="${lot.remaining.stripTrailingZeros().toPlainString()}"/>${lot.id == lc.suggestedLotId ? ' (gợi ý)' : ''}</option></c:forEach>
+          </select></div>
+      </c:forEach>
+      <div class="form-field"><label class="form-label" for="lot-reason-${r.orderId}">Lý do chọn lô khác</label><textarea class="textarea" id="lot-reason-${r.orderId}" name="lotReason" rows="2" maxlength="500"></textarea></div>
+    </div><footer class="dialog__footer"><button class="btn btn--secondary" type="button" data-dialog-close>Hủy</button><button class="btn btn--primary" type="submit">Xác nhận xuất</button></footer>
+  </form></dialog>
+</c:if></c:forEach>
 <c:if test="${canOverrideExpiry}"><c:forEach var="r" items="${export.ready}">
   <dialog class="dialog" id="expiry-${r.orderId}" aria-labelledby="expiry-title-${r.orderId}"><form method="post" action="${ctx}/shipments/export/confirm">
     <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>"><input type="hidden" name="orderId" value="${r.orderId}">

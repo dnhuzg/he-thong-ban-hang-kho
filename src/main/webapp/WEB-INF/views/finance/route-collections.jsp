@@ -20,7 +20,7 @@
       <div class="form-field"><label class="form-label" for="route-agency">Đại lý / cửa hàng</label><select class="select" id="route-agency" required><option value="">Chọn đại lý còn công nợ</option></select></div>
       <div class="form-field"><label class="form-label" for="route-date">Ngày thu</label><input class="input" type="date" id="route-date" required></div>
       <div class="form-field"><label class="form-label" for="route-amount">Số tiền thu (VND)</label><input class="input" type="number" id="route-amount" min="1" step="1" required placeholder="Ví dụ: 2500000"></div>
-      <div class="form-field"><label class="form-label" for="route-receipt">Ảnh biên lai</label><input class="input" type="file" id="route-receipt" accept="image/png,image/jpeg,image/webp" required><small>PNG, JPG hoặc WebP · tối đa 2 MB</small></div>
+      <div class="form-field"><label class="form-label" for="route-receipt">Ảnh biên lai</label><input class="input" type="file" id="route-receipt" accept="image/png,image/jpeg" required><small>PNG hoặc JPG · tối đa 2 MB</small></div>
       <div class="route-form__action"><button class="btn btn--primary" type="submit">Ghi khoản thu</button></div>
     </form>
     <p class="route-feedback" id="route-feedback" role="status" aria-live="polite"></p>

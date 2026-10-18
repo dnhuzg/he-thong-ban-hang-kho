@@ -36,6 +36,10 @@
       <span class="stock-stat__icon stock-stat__icon--danger"><span class="icon icon--boxes" aria-hidden="true"></span></span>
       <div><p>Hết hàng</p><strong><fmt:formatNumber value="${stock.emptyCount}"/></strong><small>Tồn thực tế bằng 0</small></div>
     </div>
+    <a class="card stock-stat${stock.belowMinimumCount > 0 ? ' stock-stat--warning' : ''}" href="${ctx}/inventory/stock?status=LOW">
+      <span class="stock-stat__icon stock-stat__icon--warning"><span class="icon icon--history" aria-hidden="true"></span></span>
+      <div><p>Dưới mức tối thiểu</p><strong><fmt:formatNumber value="${stock.belowMinimumCount}"/></strong><small>Khả dụng thấp hơn ngưỡng đã khai báo</small></div>
+    </a>
   </div>
 
   <section class="card stock-panel" aria-labelledby="stock-table-title">
@@ -79,6 +83,7 @@
           <option value="AVAILABLE" ${f.status == 'AVAILABLE' ? 'selected' : ''}>Còn khả dụng</option>
           <option value="RESERVED_OUT" ${f.status == 'RESERVED_OUT' ? 'selected' : ''}>Đã giữ chỗ hết</option>
           <option value="EMPTY" ${f.status == 'EMPTY' ? 'selected' : ''}>Hết hàng</option>
+          <option value="LOW" ${f.status == 'LOW' ? 'selected' : ''}>Dưới mức tối thiểu</option>
         </select>
       </div>
       <button class="btn btn--secondary" type="submit">Lọc</button>
@@ -95,27 +100,46 @@
             <th scope="col" class="stock-number">Tồn thực tế</th>
             <th scope="col" class="stock-number">Đang giữ chỗ</th>
             <th scope="col" class="stock-number">Khả dụng</th>
+            <th scope="col" class="stock-number">Tồn tối thiểu</th>
             <th scope="col">Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           <c:if test="${empty stock.lines}">
-            <tr><td colspan="7" class="text-muted">Không có dòng tồn nào khớp bộ lọc.</td></tr>
+            <tr><td colspan="8" class="text-muted">Không có dòng tồn nào khớp bộ lọc.</td></tr>
           </c:if>
           <c:forEach var="l" items="${stock.lines}">
-            <tr>
+            <tr${l.belowMinimum ? ' class="stock-row--low"' : ''}>
               <td><span class="table__cell-main"><c:out value="${l.productName}"/></span><span class="table__cell-sub"><c:out value="${l.sku}"/> · <c:out value="${l.baseUnit}"/></span></td>
               <td><c:out value="${l.warehouseName}"/></td>
               <td class="text-muted"><c:out value="${l.categoryName}"/></td>
               <td class="stock-number"><fmt:formatNumber value="${l.onHand}" maxFractionDigits="4"/></td>
               <td class="stock-number"><fmt:formatNumber value="${l.reserved}" maxFractionDigits="4"/></td>
               <td class="stock-number table__cell-main"><fmt:formatNumber value="${l.available}" maxFractionDigits="4"/></td>
+              <td class="stock-number">
+                <c:choose>
+                  <c:when test="${minimumWarehouses.contains(l.warehouseId)}">
+                    <form class="stock-minimum" method="post" action="${ctx}/inventory/stock/minimum">
+                      <input type="hidden" name="_csrf" value="<c:out value='${csrfToken}'/>">
+                      <input type="hidden" name="warehouseId" value="${l.warehouseId}">
+                      <input type="hidden" name="productId" value="${l.productId}">
+                      <input type="hidden" name="back" value="<c:out value='?${pageContext.request.queryString}'/>">
+                      <label class="visually-hidden" for="min-${l.warehouseId}-${l.productId}">Tồn tối thiểu <c:out value="${l.sku}"/> tại <c:out value="${l.warehouseName}"/></label>
+                      <input class="input stock-minimum__input" type="number" min="0" step="any" id="min-${l.warehouseId}-${l.productId}" name="minQuantity" value="${l.minQuantity}" placeholder="—">
+                      <button class="btn btn--secondary btn--sm" type="submit">Lưu</button>
+                    </form>
+                  </c:when>
+                  <c:when test="${l.minQuantity != null}"><fmt:formatNumber value="${l.minQuantity}" maxFractionDigits="4"/></c:when>
+                  <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                </c:choose>
+              </td>
               <td>
                 <c:choose>
                   <c:when test="${l.status == 'AVAILABLE'}"><span class="badge badge--success">Còn khả dụng</span></c:when>
                   <c:when test="${l.status == 'RESERVED_OUT'}"><span class="badge badge--warning">Đã giữ chỗ hết</span></c:when>
                   <c:otherwise><span class="badge badge--danger">Hết hàng</span></c:otherwise>
                 </c:choose>
+                <c:if test="${l.belowMinimum}"><span class="badge badge--warning">Dưới mức tối thiểu</span></c:if>
               </td>
             </tr>
           </c:forEach>
@@ -125,7 +149,7 @@
 
     <div class="stock-mobile">
       <c:forEach var="l" items="${stock.lines}">
-        <div class="stock-mobile__card${l.status == 'EMPTY' ? ' stock-mobile__card--out' : (l.status == 'RESERVED_OUT' ? ' stock-mobile__card--low' : '')}">
+        <div class="stock-mobile__card${l.status == 'EMPTY' ? ' stock-mobile__card--out' : (l.status == 'RESERVED_OUT' || l.belowMinimum ? ' stock-mobile__card--low' : '')}">
           <div class="stock-mobile__header"><strong><c:out value="${l.productName}"/></strong></div>
           <p class="stock-mobile__subtitle"><c:out value="${l.sku}"/> · <c:out value="${l.warehouseName}"/></p>
           <div class="stock-mobile__values">
@@ -133,6 +157,7 @@
             <div><span>Giữ chỗ</span><strong><fmt:formatNumber value="${l.reserved}" maxFractionDigits="4"/></strong></div>
             <div><span>Khả dụng</span><strong><fmt:formatNumber value="${l.available}" maxFractionDigits="4"/></strong></div>
           </div>
+          <c:if test="${l.belowMinimum}"><p><span class="badge badge--warning">Dưới mức tối thiểu <fmt:formatNumber value="${l.minQuantity}" maxFractionDigits="4"/></span></p></c:if>
         </div>
       </c:forEach>
     </div>

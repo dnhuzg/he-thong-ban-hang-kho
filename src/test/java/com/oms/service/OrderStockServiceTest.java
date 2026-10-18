@@ -16,7 +16,7 @@ class OrderStockServiceTest extends DatabaseTest {
         var rep=user("rep",Role.SALES_REP);
         sql("INSERT INTO customers(id,code,name,group_id,sales_rep_id,serving_warehouse_id) VALUES(900,'DL','Đại lý',1,"+rep.getId()+",10)");
         sql("INSERT INTO products(id,sku,name,category_id,base_unit_id) VALUES(500,'A','Hàng',3,1)");
-        sql("INSERT INTO warehouse_inventory VALUES(10,500,10,0)");
+        sql("INSERT INTO warehouse_inventory(warehouse_id,product_id,on_hand,reserved) VALUES(10,500,10,0)");
         first=new OrderService().create(900,rep); second=new OrderService().create(900,rep);
     }
     @Test void twoConcurrentOrdersCannotOverReserve() throws Exception {
