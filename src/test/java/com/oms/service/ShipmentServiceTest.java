@@ -107,6 +107,19 @@ class ShipmentServiceTest extends DatabaseTest {
         return reload(user.getId());
     }
 
+    @Test
+    void successfulDeliveryMovesShippedOrderToDelivered() throws Exception {
+        User warehouseStaff = warehouseUser("nvkho09", 10);
+        long shipmentId = shipment(1009, "PX-1009");
+        sql("INSERT INTO orders (id, code, customer_id, status, warehouse_id, created_by) VALUES (9009, 'DH009009', 1009, 'SHIPPED', 10, " + warehouseStaff.getId() + ")");
+        sql("UPDATE shipments SET order_id = 9009 WHERE id = " + shipmentId);
+
+        new ShipmentService(new FileStorage(uploads)).confirmSuccess(shipmentId, "Người nhận", image(), warehouseStaff);
+
+        assertEquals(1, count("orders", "id = 9009 AND status = 'DELIVERED'"));
+        assertEquals(1, count("order_status_history", "order_id = 9009 AND to_status = 'DELIVERED'"));
+    }
+
     private long shipment(long customerId, String code) throws Exception {
         sql("INSERT INTO customers (id, code, name) VALUES (" + customerId + ", 'DL" + customerId + "', 'Đại lý " + customerId + "')");
         sql("INSERT INTO shipments (id, code, warehouse_id, customer_id) VALUES (" + customerId + ", '" + code + "', 10, " + customerId + ")");

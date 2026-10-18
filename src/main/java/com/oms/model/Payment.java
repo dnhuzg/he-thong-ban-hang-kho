@@ -27,6 +27,7 @@ public class Payment {
     private long id;
     private String code;
     private String customerName;
+    private String customerCode;
     private BigDecimal amount;
     private Method method;
     private LocalDate paidOn;
@@ -40,6 +41,8 @@ public class Payment {
     public void setCode(String code) { this.code = code; }
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getCustomerCode() { return customerCode; }
+    public void setCustomerCode(String customerCode) { this.customerCode = customerCode; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public Method getMethod() { return method; }
