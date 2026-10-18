@@ -143,7 +143,7 @@ public final class Menu {
                 && (user.isAdmin() || user.hasRole(Role.WAREHOUSE) || user.hasRole(Role.WH_MANAGER))) {
             groups.add(new Group(BUSINESS, "Xuất kho & giao hàng", List.of(
                     item("Phiếu soạn hàng", "/shipments/picking", "package", path.startsWith("/shipments/picking"), true),
-                    item("Phân tuyến giao hàng", "/shipments/trips", "route", path.startsWith("/shipments/trips"), false),
+                    item("Phân tuyến giao hàng", "/shipments/trips", "truck", path.startsWith("/shipments/trips"), false),
                     item("Xuất kho", "/shipments/export", "truck", path.startsWith("/shipments/export"), false))));
         }
 
