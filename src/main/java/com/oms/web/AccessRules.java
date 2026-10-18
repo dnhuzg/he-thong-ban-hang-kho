@@ -19,6 +19,11 @@ public final class AccessRules {
 
     private static final Map<String, Rule> RULES = Map.ofEntries(
             Map.entry("/home", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/sales/targets", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/sales/targets/create", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/sales/targets/update", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/sales/targets/my", new Rule(Kind.AUTHENTICATED, null)),
+            Map.entry("/sales/targets/progress", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/debt-ledger", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/return-credits", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/return-credits/create", new Rule(Kind.AUTHENTICATED, null)),
