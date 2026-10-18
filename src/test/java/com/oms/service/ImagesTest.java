@@ -17,10 +17,8 @@ class ImagesTest {
             "UklGRjYAAABXRUJQVlA4ICoAAADwAQCdASoCAAEAAUAmJaACdLoB+AAEgwAA/upl//yC5YXXI1/bsFnLGAA=");
 
     @Test
-    void readsWebpForReceiptUploads() {
-        BufferedImage image = Images.readJpegPngOrWebp(WEBP);
-        assertEquals(2, image.getWidth());
-        assertEquals(1, image.getHeight());
+    void rejectsWebpBecauseReceiptUploadOnlyAcceptsJpgOrPng() {
+        assertThrows(ServiceException.class, () -> Images.readJpegOrPng(WEBP));
     }
 
     @Test
@@ -34,6 +32,6 @@ class ImagesTest {
 
     @Test
     void rejectsNonImageUpload() {
-        assertThrows(ServiceException.class, () -> Images.readJpegPngOrWebp("not an image".getBytes()));
+        assertThrows(ServiceException.class, () -> Images.readJpegOrPng("not an image".getBytes()));
     }
 }

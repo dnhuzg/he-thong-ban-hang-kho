@@ -26,11 +26,6 @@ public final class Images {
         return readSupportedImage(data, Set.of("jpeg", "png"), "JPG hoặc PNG");
     }
 
-    /** Ảnh chứng từ thu tiền: nhận JPG, PNG và WebP đúng như loại tệp FE đang cho chọn. */
-    public static BufferedImage readJpegPngOrWebp(byte[] data) {
-        return readSupportedImage(data, Set.of("jpeg", "jpg", "png", "webp"), "JPG, PNG hoặc WebP");
-    }
-
     private static BufferedImage readSupportedImage(byte[] data, Set<String> allowedFormats, String label) {
         if (data == null || data.length == 0) {
             throw new ServiceException("Vui lòng chọn một tệp ảnh.");
