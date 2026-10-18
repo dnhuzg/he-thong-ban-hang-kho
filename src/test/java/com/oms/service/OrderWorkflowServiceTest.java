@@ -18,7 +18,7 @@ class OrderWorkflowServiceTest extends DatabaseTest {
         sql("INSERT INTO products(id,sku,name,category_id,base_unit_id) VALUES(500,'A','Hàng',3,1)");
         sql("INSERT INTO price_lists(id,code,name,customer_group_id,valid_from) VALUES(100,'BG','Giá',1,'2020-01-01')");
         sql("INSERT INTO price_list_items VALUES(100,500,10000,9000)");
-        sql("INSERT INTO warehouse_inventory VALUES(10,500,100,0)");
+        sql("INSERT INTO warehouse_inventory(warehouse_id,product_id,on_hand,reserved) VALUES(10,500,100,0)");
         id=orders.create(900,rep); orders.addLine(id,500,1,"5",rep);
     }
     @Test void normalSubmissionReservesAndFreezesPrice() throws Exception {

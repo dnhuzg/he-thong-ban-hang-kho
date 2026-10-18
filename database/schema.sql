@@ -560,6 +560,7 @@ CREATE TABLE IF NOT EXISTS warehouse_inventory (
   product_id BIGINT NOT NULL,
   on_hand DECIMAL(14,4) NOT NULL DEFAULT 0,
   reserved DECIMAL(14,4) NOT NULL DEFAULT 0,
+  min_quantity DECIMAL(14,4) NULL,
   PRIMARY KEY (warehouse_id, product_id),
   CONSTRAINT fk_inventory_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
   CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),

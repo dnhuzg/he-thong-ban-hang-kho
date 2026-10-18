@@ -51,7 +51,7 @@
             <article class="mdash-kpi mdash-kpi--warning">
                 <p>SKU hết hàng khả dụng</p>
                 <strong><fmt:formatNumber value="${d.outOfStockSkus}"/></strong>
-                <span>Chưa khai báo tồn tối thiểu (GHTK-57)</span>
+                <span>Khả dụng bằng 0 ở ít nhất một kho</span>
             </article>
         </div>
     </section>
