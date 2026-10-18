@@ -23,7 +23,6 @@ public final class AccessRules {
             Map.entry("/sales/targets/create", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/sales/targets/update", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/sales/targets/my", new Rule(Kind.AUTHENTICATED, null)),
-            Map.entry("/sales/targets/progress", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/debt-ledger", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/return-credits", new Rule(Kind.AUTHENTICATED, null)),
             Map.entry("/finance/return-credits/create", new Rule(Kind.AUTHENTICATED, null)),

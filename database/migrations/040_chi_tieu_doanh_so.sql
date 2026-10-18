@@ -1,5 +1,4 @@
-
--- S8-04: Dat chi tieu doanh so theo thang
+-- GHTK-79 / S8-04: chỉ tiêu doanh số theo tháng, nhân viên và khu vực
 USE oms;
 
 CREATE TABLE IF NOT EXISTS sales_targets (

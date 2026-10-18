@@ -2,7 +2,7 @@ package com.oms.service;
 
 import com.oms.config.Db;
 import com.oms.dao.AuditLogDao;
-import com.oms.dao.SalesReportDao;
+import com.oms.dao.LookupDao;
 import com.oms.dao.SalesTargetDao;
 import com.oms.dao.UserDao;
 import com.oms.model.NamedItem;
@@ -15,6 +15,7 @@ import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SalesTargetService {
@@ -28,12 +29,66 @@ public class SalesTargetService {
             BigDecimal revenue,
             BigDecimal percentage) {}
 
+    /** Một dòng trên trang chỉ tiêu (getter kiểu bean để JSP đọc được). */
+    public record Row(Progress progress, String employeeName, String areaName) {
+        public SalesTarget getTarget() { return progress.target(); }
+        public BigDecimal getRevenue() { return progress.revenue(); }
+        public BigDecimal getPercentage() { return progress.percentage(); }
+        public String getEmployeeName() { return employeeName; }
+        public String getAreaName() { return areaName; }
+        /** Nấc 10% cho thanh tiến độ (class meter__fill--N), vượt 100% vẫn vẽ đầy. */
+        public int getStep() { return Math.min(100, progress.percentage().intValue() / 10 * 10); }
+        /** Tháng đã qua thì sửa phải ghi lý do. */
+        public boolean isLocked() { return progress.target().getTargetMonth().isBefore(LocalDate.now().withDayOfMonth(1)); }
+    }
+
+    public record Board(LocalDate month, List<Row> rows, List<NamedItem> salesReps, List<NamedItem> areas) {
+        public LocalDate getMonth() { return month; }
+        public String getMonthValue() { return month.toString().substring(0, 7); }
+        public List<Row> getRows() { return rows; }
+        public List<NamedItem> getSalesReps() { return salesReps; }
+        public List<NamedItem> getAreas() { return areas; }
+    }
+
+    /** Trang của Quản lý kinh doanh: chỉ tiêu mọi nhân viên trong tháng kèm tiến độ. */
+    public Board board(LocalDate month, User actor) throws SQLException {
+        List<SalesTarget> targets = listByMonth(month, actor);
+        try (Connection conn = Db.getConnection()) {
+            LookupDao lookup = new LookupDao();
+            List<NamedItem> reps = lookup.salesReps(conn);
+            List<NamedItem> areas = lookup.areas(conn);
+            return new Board(month, rows(conn, targets, reps, areas), reps, areas);
+        }
+    }
+
+    /** Trang của nhân viên kinh doanh: chỉ tiêu của chính mình. */
+    public List<Row> mine(User actor) throws SQLException {
+        List<SalesTarget> targets = myTargets(actor);
+        try (Connection conn = Db.getConnection()) {
+            LookupDao lookup = new LookupDao();
+            return rows(conn, targets, lookup.salesReps(conn), lookup.areas(conn));
+        }
+    }
+
+    private List<Row> rows(Connection conn, List<SalesTarget> targets, List<NamedItem> reps, List<NamedItem> areas)
+            throws SQLException {
+        List<Row> rows = new ArrayList<>();
+        for (SalesTarget target : targets) {
+            rows.add(new Row(progress(conn, target), name(reps, target.getEmployeeId()), name(areas, target.getAreaId())));
+        }
+        return rows;
+    }
+
+    private static String name(List<NamedItem> items, long id) {
+        return items.stream().filter(i -> i.getId() == id).map(NamedItem::getName).findFirst().orElse("#" + id);
+    }
+
     private void requireManager(User actor) {
         if (actor == null || actor.getRoles() == null
                 || actor.getStatus() != User.Status.ACTIVE
                 || !(actor.hasRole(Role.ADMIN)
                 || actor.hasRole(Role.SALES_MANAGER))) {
-            throw new ForbiddenException("Khong co quyen quan ly chi tieu.");
+            throw new ForbiddenException("Chỉ Quản lý kinh doanh được quản lý chỉ tiêu.");
         }
     }
 
@@ -46,7 +101,7 @@ public class SalesTargetService {
         if (employee == null
                 || employee.getStatus() != User.Status.ACTIVE
                 || !employee.hasRole(Role.SALES_REP)) {
-            throw new ServiceException("Nhan vien khong hop le.");
+            throw new ServiceException("Nhân viên kinh doanh không hợp lệ.");
         }
 
         boolean assigned = employee.getAreas().stream()
@@ -55,14 +110,14 @@ public class SalesTargetService {
 
         if (!assigned) {
             throw new ServiceException(
-                    "Nhan vien chua duoc phan cong khu vuc.");
+                    "Nhân viên chưa được phân công khu vực này.");
         }
     }
 
     private LocalDate validateMonth(LocalDate month) {
         if (month == null || month.getDayOfMonth() != 1) {
             throw new ServiceException(
-                    "Thang chi tieu phai la ngay dau thang.");
+                    "Tháng chỉ tiêu không hợp lệ.");
         }
         return month;
     }
@@ -71,7 +126,7 @@ public class SalesTargetService {
         if (amount == null || amount.signum() < 0
                 || amount.scale() > 2
                 || amount.precision() - amount.scale() > 16) {
-            throw new ServiceException("Chi tieu khong hop le.");
+            throw new ServiceException("Chỉ tiêu phải là số tiền từ 0, tối đa 2 chữ số thập phân.");
         }
     }
 
@@ -79,14 +134,14 @@ public class SalesTargetService {
             throws SQLException {
         requireManager(actor);
         if (target == null) {
-            throw new ServiceException("Thieu du lieu chi tieu.");
+            throw new ServiceException("Thiếu dữ liệu chỉ tiêu.");
         }
 
         LocalDate month = validateMonth(target.getTargetMonth());
         validateAmount(target.getTargetAmount());
 
         if (month.isBefore(LocalDate.now().withDayOfMonth(1))) {
-            throw new ServiceException("Ky da qua, khong the tao moi.");
+            throw new ServiceException("Tháng đã qua, không tạo chỉ tiêu mới được.");
         }
 
         try (Connection conn = Db.getConnection()) {
@@ -100,7 +155,7 @@ public class SalesTargetService {
 
                 audit.log(conn, actor.getId(), "CREATE",
                         "SALES_TARGET", id,
-                        "Tao chi tieu thang " + month,
+                        "Tạo chỉ tiêu tháng " + month,
                         null, target.getTargetAmount().toPlainString());
 
                 conn.commit();
@@ -123,7 +178,7 @@ public class SalesTargetService {
             try {
                 SalesTarget old = dao.findByIdForUpdate(conn, id);
                 if (old == null) {
-                    throw new ServiceException("Khong tim thay chi tieu.");
+                    throw new ServiceException("Không tìm thấy chỉ tiêu.");
                 }
 
                 boolean expired = old.getTargetMonth().isBefore(
@@ -132,16 +187,16 @@ public class SalesTargetService {
                 if (expired && (reason == null
                         || reason.isBlank())) {
                     throw new ServiceException(
-                            "Ky da khoa, phai nhap ly do sua.");
+                            "Tháng đã khoá sổ, phải nhập lý do khi sửa chỉ tiêu.");
                 }
 
                 if (!dao.updateAmount(conn, id, amount)) {
-                    throw new ServiceException("Cap nhat that bai.");
+                    throw new ServiceException("Cập nhật chỉ tiêu thất bại.");
                 }
 
                 audit.log(conn, actor.getId(), "UPDATE",
                         "SALES_TARGET", id,
-                        reason == null ? "Cap nhat chi tieu" : reason.trim(),
+                        reason == null ? "Cập nhật chỉ tiêu" : reason.trim(),
                         old.getTargetAmount().toPlainString(),
                         amount.toPlainString());
 
@@ -169,7 +224,7 @@ public class SalesTargetService {
                 || !(actor.hasRole(Role.SALES_REP)
                 || actor.hasRole(Role.SALES_MANAGER)
                 || actor.hasRole(Role.ADMIN))) {
-            throw new ForbiddenException("Khong du quyen xem chi tieu.");
+            throw new ForbiddenException("Bạn không có quyền xem chỉ tiêu.");
         }
 
         try (Connection conn = Db.getConnection()) {
@@ -182,55 +237,60 @@ public class SalesTargetService {
         if (actor == null
                 || actor.getStatus() != User.Status.ACTIVE
                 || actor.getRoles() == null) {
-            throw new ForbiddenException("Tai khoan khong hop le.");
+            throw new ForbiddenException("Tài khoản không hợp lệ.");
         }
 
         boolean manager = actor.hasRole(Role.ADMIN)
                 || actor.hasRole(Role.SALES_MANAGER);
 
         if (!manager && !actor.hasRole(Role.SALES_REP)) {
-            throw new ForbiddenException("Khong du quyen.");
+            throw new ForbiddenException("Bạn không có quyền xem chỉ tiêu.");
         }
 
         try (Connection conn = Db.getConnection()) {
             SalesTarget target = dao.findById(conn, targetId);
 
             if (target == null) {
-                throw new ServiceException("Khong tim thay chi tieu.");
+                throw new ServiceException("Không tìm thấy chỉ tiêu.");
             }
 
             if (!manager && target.getEmployeeId() != actor.getId()) {
                 throw new ForbiddenException(
-                        "Chi duoc xem tien do cua minh.");
+                        "Chỉ được xem tiến độ của mình.");
             }
 
-            LocalDate from = target.getTargetMonth();
-            LocalDate to = from.plusMonths(1).minusDays(1);
-            LocalDate today = LocalDate.now();
-
-            if (to.isAfter(today)) {
-                to = today;
-            }
-
-            BigDecimal revenue = BigDecimal.ZERO;
-
-            if (!to.isBefore(from)) {
-                revenue = dao.revenueByEmployeeArea(
-                        conn,
-                        target.getEmployeeId(),
-                        target.getAreaId(),
-                        from,
-                        to);
-            }
-
-            BigDecimal percentage =
-                    target.getTargetAmount().signum() == 0
-                    ? BigDecimal.ZERO
-                    : revenue.multiply(BigDecimal.valueOf(100))
-                    .divide(target.getTargetAmount(), 2,
-                            RoundingMode.HALF_UP);
-
-            return new Progress(target, revenue, percentage);
+            return progress(conn, target);
         }
+    }
+
+    /** Doanh số = hoá đơn đã phát hành (không tính huỷ) của đại lý thuộc nhân viên và khu vực, tính tới hôm nay. */
+    private Progress progress(Connection conn, SalesTarget target) throws SQLException {
+        LocalDate from = target.getTargetMonth();
+        LocalDate to = from.plusMonths(1).minusDays(1);
+        LocalDate today = LocalDate.now();
+
+        if (to.isAfter(today)) {
+            to = today;
+        }
+
+        BigDecimal revenue = BigDecimal.ZERO;
+
+        if (!to.isBefore(from)) {
+            revenue = dao.revenueByEmployeeArea(
+                    conn,
+                    target.getEmployeeId(),
+                    target.getAreaId(),
+                    from,
+                    to);
+        }
+
+        BigDecimal percentage =
+                target.getTargetAmount().signum() == 0
+                ? BigDecimal.ZERO
+                : revenue.multiply(BigDecimal.valueOf(100))
+                .divide(target.getTargetAmount(), 2,
+                        RoundingMode.HALF_UP);
+
+        return new Progress(target, revenue, percentage);
     }
 }

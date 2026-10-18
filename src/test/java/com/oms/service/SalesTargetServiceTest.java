@@ -207,4 +207,29 @@ class SalesTargetServiceTest extends DatabaseTest {
             }
         }
     }
+
+    @Test
+    void boardShowsNamesAndProgressForManagerAndMineOnlyOwnTargets() throws Exception {
+        service.create(target(currentMonth, "1000000"), manager);
+        sql("INSERT INTO products(id,sku,name,category_id,base_unit_id,status) VALUES(9903,'BRD','Board',3,1,'ACTIVE')");
+        sql("INSERT INTO customers(id,code,name,group_id,area_id,sales_rep_id) VALUES(9903,'BRD-C','Board',1,30,"
+                + employee.getId() + ")");
+        sql("INSERT INTO invoices(id,code,customer_id,total_amount,paid_amount,issued_at,due_date,status) VALUES(9903,"
+                + "'BRD-INV',9903,350000,0,'" + currentMonth + " 09:00:00','" + currentMonth + "','ISSUED')");
+        sql("INSERT INTO invoice_lines(invoice_id,product_id,quantity,unit_price,amount) VALUES(9903,9903,1,350000,350000)");
+
+        SalesTargetService.Board board = service.board(currentMonth, manager);
+        assertEquals(1, board.rows().size());
+        SalesTargetService.Row row = board.rows().get(0);
+        assertTrue(row.getEmployeeName().startsWith("target_employee"));
+        assertEquals("Địa bàn A", row.getAreaName());
+        assertEquals(0, new BigDecimal("350000").compareTo(row.getRevenue()));
+        assertEquals(30, row.getStep());            // 35% vẽ ở nấc 30%
+        assertFalse(row.isLocked());
+        assertEquals(currentMonth.toString().substring(0, 7), board.getMonthValue());
+
+        assertEquals(1, service.mine(employee).size());
+        assertTrue(service.mine(otherEmployee).isEmpty());
+        assertThrows(ForbiddenException.class, () -> service.board(currentMonth, employee));
+    }
 }
