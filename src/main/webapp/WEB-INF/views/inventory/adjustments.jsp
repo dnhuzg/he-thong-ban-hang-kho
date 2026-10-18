@@ -44,8 +44,7 @@
                 <h2>Lập phiếu điều chỉnh</h2>
             </div>
 
-            <form id="adjustment-create" class="stack"
-                  style="padding:1rem">
+            <form id="adjustment-create" class="stack card__body">
 
                 <label class="form-field">
                     <span class="form-label">Kho</span>
@@ -120,9 +119,8 @@
 
     </div>
 
-    <section class="card"
+    <section class="card mt-4"
              id="adjustment-detail"
-             style="margin-top:1rem"
              hidden>
 
         <div class="card__header">
@@ -154,7 +152,7 @@
             </table>
         </div>
 
-        <div style="padding:1rem">
+        <div class="card__body">
             <p>
                 <strong>Tổng giá trị tổn thất:</strong>
                 <span id="adjustment-total-loss">0</span>
@@ -173,7 +171,7 @@
                               rows="2"></textarea>
                 </label>
 
-                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                <div class="form-actions form-actions--start">
                     <button class="btn btn--primary"
                             type="button"
                             id="adjustment-submit"
