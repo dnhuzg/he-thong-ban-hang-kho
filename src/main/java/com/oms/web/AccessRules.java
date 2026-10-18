@@ -108,6 +108,7 @@ public final class AccessRules {
             Map.entry("/suppliers", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/stock", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/stock/export", new Rule(Kind.READ, Module.INVENTORY)),
+            Map.entry("/inventory/stock/minimum", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/lots", new Rule(Kind.READ, Module.INVENTORY)),
             Map.entry("/inventory/lots/configure", new Rule(Kind.WRITE, Module.INVENTORY)),
             Map.entry("/inventory/lots/metadata", new Rule(Kind.WRITE, Module.INVENTORY)),

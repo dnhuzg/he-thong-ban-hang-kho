@@ -5,6 +5,7 @@ import com.oms.dao.CustomerDao;
 import com.oms.dao.OrderDao;
 import com.oms.dao.OrderStockDao;
 import com.oms.dao.PortalAccountDao;
+import com.oms.dao.StockLedgerDao;
 import com.oms.model.AuditEntry;
 import com.oms.model.CreditChange;
 import com.oms.model.Customer;
@@ -188,6 +189,7 @@ public class HomeService {
         try (Connection conn = Db.getConnection()) {
             Map<Order.Status, Long> counts = orderDao.countByStatusInWarehouses(conn, ids);
             long outOfStock = stockDao.countUnavailable(conn, ids);
+            long belowMinimum = new StockLedgerDao().countBelowMinimum(conn, ids);
             d.add(new Card("wh.approved", "Đơn đã duyệt chờ soạn", counts.getOrDefault(Order.Status.APPROVED, 0L), null,
                     "đơn", null, null, "clipboard-list", "primary"));
             d.add(new Card("wh.picking", "Đang soạn", counts.getOrDefault(Order.Status.PICKING, 0L), null, "đơn", null,
@@ -196,6 +198,8 @@ public class HomeService {
                     null, null, "truck", "primary"));
             d.add(new Card("wh.outOfStock", "Mặt hàng hết tồn khả dụng", outOfStock, null, "SKU",
                     "SKU đã nhập kho, khả dụng = 0", null, "package", outOfStock > 0 ? "danger" : ""));
+            d.add(new Card("wh.belowMinimum", "Dưới mức tồn tối thiểu", belowMinimum, null, "SKU",
+                    "Cần đặt thêm hàng nhà cung cấp", null, "history", belowMinimum > 0 ? "warning" : ""));
             d.pickQueue = orderDao.pickQueue(conn, ids, BLOCK_SIZE);
         }
     }

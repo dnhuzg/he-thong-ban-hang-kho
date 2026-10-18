@@ -31,7 +31,7 @@ class StockCardServiceTest extends DatabaseTest {
         movement(2, "SHIPMENT_OUT", "SHIPMENT", 9, 1, "30", 10, keeper);
         movement(3, "SHIPMENT_RETURN", "SHIPMENT", 9, 1, "5", 0, keeper);
         // Tồn có sẵn 100 lon trước khi có bút toán: hiện tại 100 + 48 − 30 + 5 = 123
-        sql("INSERT INTO warehouse_inventory VALUES(10,500,123,0)");
+        sql("INSERT INTO warehouse_inventory(warehouse_id,product_id,on_hand,reserved) VALUES(10,500,123,0)");
     }
 
     private void movement(long id, String type, String refType, long refId, long unit, String qty, int daysAgo, User actor)
