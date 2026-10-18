@@ -127,4 +127,30 @@ class InventoryLotServiceTest extends PickingServiceTest {
             assertEquals(1,count("shipment_lot_allocations","lot_id=1"));
         } finally { pool.shutdownNow(); }
     }
+
+    @Test void exportScreenSuggestsNearestExpiryFirstAcrossLots() throws Exception {
+        lot(1,500,97,30); lot(2,500,3,10); lots.configure(500,true,0,manager); ready();
+        var choices=exports.page(keeper).lotChoices().get(first);
+        assertEquals(1,choices.size());
+        assertEquals(2,choices.get(0).getSuggestedLotId());
+        assertEquals("L2 (HSD "+LocalDate.now().plusDays(10)+") × 3; L1 (HSD "+LocalDate.now().plusDays(30)+") × 2",choices.get(0).suggestion());
+    }
+
+    @Test void pickingAnotherLotRequiresReasonAndConsumesThatLotFirst() throws Exception {
+        lot(1,500,50,30); lot(2,500,50,10); lots.configure(500,true,0,manager); ready();
+        assertThrows(ServiceException.class,()->exports.export(first,keeper,false,null,java.util.Map.of(500L,1L)," "));
+        assertEquals(0,count("shipments","1=1"));
+        long shipment=exports.export(first,keeper,false,null,java.util.Map.of(500L,1L),"Lô 2 để giao đại lý ở xa");
+        assertEquals(1,count("inventory_lots","id=1 AND remaining_quantity=45"));
+        assertEquals(1,count("inventory_lots","id=2 AND remaining_quantity=50"));
+        assertEquals(1,count("shipment_lot_allocations","shipment_id="+shipment+" AND lot_id=1 AND override_reason='Lô 2 để giao đại lý ở xa' AND override_by="+keeper.getId()));
+        assertEquals(1,count("audit_logs","action='LOT_MANUAL_PICK'"));
+    }
+
+    @Test void keepingTheSuggestedLotNeedsNoReason() throws Exception {
+        lot(1,500,50,30); lot(2,500,50,10); lots.configure(500,true,0,manager); ready();
+        long shipment=exports.export(first,keeper,false,null,java.util.Map.of(500L,2L),null);
+        assertEquals(1,count("shipment_lot_allocations","shipment_id="+shipment+" AND lot_id=2 AND override_reason IS NULL"));
+        assertEquals(0,count("audit_logs","action='LOT_MANUAL_PICK'"));
+    }
 }
