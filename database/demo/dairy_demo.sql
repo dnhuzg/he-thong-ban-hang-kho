@@ -539,14 +539,17 @@ ON DUPLICATE KEY UPDATE on_hand = on_hand + VALUES(on_hand);
 
 DROP TEMPORARY TABLE IF EXISTS demo_lines;
 
--- Tài khoản demo cho 6 vai trò (mật khẩu Demo@2026, không bắt đổi); admin do ứng dụng tự tạo lần chạy đầu
-INSERT IGNORE INTO users (username, email, full_name, password_hash, status, must_change_password) VALUES
-  ('demo_quanly', 'demo_quanly@oms.local', 'Demo Quản lý kinh doanh', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0),
-  ('demo_nvkd', 'demo_nvkd@oms.local', 'Demo Nhân viên kinh doanh', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0),
-  ('demo_ketoan', 'demo_ketoan@oms.local', 'Demo Kế toán công nợ', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0),
-  ('demo_kho', 'demo_kho@oms.local', 'Demo Thủ kho', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0),
-  ('demo_qlkho', 'demo_qlkho@oms.local', 'Demo Quản lý kho', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0),
-  ('demo_daily', 'demo_daily@oms.local', 'Demo Đại lý Minh Anh', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0);
+-- Tài khoản demo cho 6 vai trò (mật khẩu Demo@2026, không bắt đổi). Chỉ thêm khi đã có admin: ứng dụng chỉ tự tạo
+-- admin lúc bảng users còn trống, thêm demo trước lần khởi động đầu thì sẽ không bao giờ có admin.
+INSERT IGNORE INTO users (username, email, full_name, password_hash, status, must_change_password)
+SELECT * FROM (
+  SELECT 'demo_quanly' AS username, 'demo_quanly@oms.local' AS email, 'Demo Quản lý kinh doanh' AS full_name, '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56' AS password_hash, 'ACTIVE' AS status, 0 AS must_change_password UNION ALL
+  SELECT 'demo_nvkd', 'demo_nvkd@oms.local', 'Demo Nhân viên kinh doanh', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0 UNION ALL
+  SELECT 'demo_ketoan', 'demo_ketoan@oms.local', 'Demo Kế toán công nợ', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0 UNION ALL
+  SELECT 'demo_kho', 'demo_kho@oms.local', 'Demo Thủ kho', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0 UNION ALL
+  SELECT 'demo_qlkho', 'demo_qlkho@oms.local', 'Demo Quản lý kho', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0 UNION ALL
+  SELECT 'demo_daily', 'demo_daily@oms.local', 'Demo Đại lý Minh Anh', '$2a$10$bGBhVjc9OUCnd901MXybbOb/wP0xA8fGIkD0.uRUbmDUVB2eJDE56', 'ACTIVE', 0
+) demo WHERE @actor IS NOT NULL;
 INSERT IGNORE INTO user_roles (user_id, role_code)
 SELECT id, 'SALES_MANAGER' FROM users WHERE username = 'demo_quanly' UNION ALL
 SELECT id, 'SALES_REP' FROM users WHERE username = 'demo_nvkd' UNION ALL

@@ -42,7 +42,8 @@ Get-Content database\demo\dairy_demo.sql -Raw -Encoding UTF8 | & "C:\Program Fil
 
 Script nạp dữ liệu một kho sữa: 4 nhà cung cấp, 35 sản phẩm kèm quy đổi hộp/lốc/thùng, giá ở 3 bảng giá,
 tồn đầu kỳ ở cả 3 kho (12 phiếu nhập đã xác nhận, có lô và hạn dùng) và tài khoản demo cho từng vai trò.
-Chạy lại nhiều lần không bị nhân đôi.
+Chạy lại nhiều lần không bị nhân đôi. Lỡ chạy trước khi web khởi động lần đầu thì script chỉ nạp sản phẩm và giá
+(chưa có admin để đứng tên phiếu nhập) — khởi động web rồi chạy lại là đủ.
 
 | Tài khoản | Vai trò | Phạm vi |
 |---|---|---|
