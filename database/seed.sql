@@ -65,42 +65,26 @@ INSERT INTO customers (code, name, phone, area_id) VALUES
   ('DL004', 'Siêu thị mini Bình An',   '0911000004', 2),
   ('DL005', 'Nhà phân phối Kinh Bắc',  '0911000005', 3);
 
--- Đơn vị tính, nhóm hàng 3 cấp và sản phẩm mẫu (S2-05)
+-- Đơn vị tính và nhóm hàng của kho sữa (S2-05); sản phẩm, quy đổi và nhà cung cấp nhập qua giao diện
 INSERT IGNORE INTO units (code, name) VALUES
-  ('LON', 'Lon'), ('LOC', 'Lốc'), ('THUNG', 'Thùng'), ('CHAI', 'Chai'),
-  ('GOI', 'Gói'), ('HOP', 'Hộp'), ('KG', 'Kg'), ('CAI', 'Cái');
+  ('HOP', 'Hộp'), ('LOC', 'Lốc'), ('THUNG', 'Thùng'), ('LON', 'Lon'),
+  ('CHAI', 'Chai'), ('BICH', 'Bịch'), ('HU', 'Hũ'), ('GOI', 'Gói');
 
--- Nhóm hàng mẫu 3 cấp; chỉ thêm khi bảng còn trống để chạy lại không nhân đôi
+-- Chỉ thêm khi bảng còn trống để chạy lại không nhân đôi
 INSERT INTO product_categories (id, parent_id, name)
-SELECT * FROM (SELECT 1 AS id, NULL AS parent_id, 'Đồ uống' AS name UNION ALL
-               SELECT 2, 1, 'Nước giải khát' UNION ALL
-               SELECT 3, 2, 'Nước ngọt có ga' UNION ALL
-               SELECT 4, 2, 'Nước tăng lực' UNION ALL
-               SELECT 5, 1, 'Bia' UNION ALL
-               SELECT 6, NULL, 'Thực phẩm khô' UNION ALL
-               SELECT 7, 6, 'Mì, phở ăn liền') seed
+SELECT * FROM (SELECT 1 AS id, NULL AS parent_id, 'Sữa tươi' AS name UNION ALL
+               SELECT 2, 1, 'Sữa tươi tiệt trùng' UNION ALL
+               SELECT 3, 1, 'Sữa tươi thanh trùng' UNION ALL
+               SELECT 4, NULL, 'Sữa chua' UNION ALL
+               SELECT 5, 4, 'Sữa chua ăn' UNION ALL
+               SELECT 6, 4, 'Sữa chua uống' UNION ALL
+               SELECT 7, NULL, 'Sữa bột' UNION ALL
+               SELECT 8, 7, 'Sữa bột trẻ em' UNION ALL
+               SELECT 9, 7, 'Sữa bột người lớn' UNION ALL
+               SELECT 10, NULL, 'Sữa đặc' UNION ALL
+               SELECT 11, NULL, 'Sữa hạt' UNION ALL
+               SELECT 12, NULL, 'Phô mai, bơ, kem') seed
 WHERE NOT EXISTS (SELECT 1 FROM product_categories);
-
-INSERT IGNORE INTO products (sku, name, category_id, base_unit_id, packing_spec, cost_price)
-SELECT 'COCA-330', 'Coca-Cola lon 330ml', 3, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 7200.00 UNION ALL
-SELECT 'PEPSI-330', 'Pepsi lon 330ml', 3, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 7000.00 UNION ALL
-SELECT 'REDBULL-250', 'Red Bull lon 250ml', 4, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 9500.00 UNION ALL
-SELECT 'TIGER-330', 'Bia Tiger lon 330ml', 5, (SELECT id FROM units WHERE code='LON'), '24 lon/thùng', 14500.00 UNION ALL
-SELECT 'HAOHAO-TOM', 'Mì Hảo Hảo tôm chua cay', 7, (SELECT id FROM units WHERE code='GOI'), '30 gói/thùng', 3300.00;
-
--- Quy đổi mẫu (S2-07)
-INSERT IGNORE INTO product_units (product_id, unit_id, factor)
-SELECT p.id, u.id, 6 FROM products p JOIN units b ON b.id = p.base_unit_id AND b.code = 'LON' JOIN units u ON u.code = 'LOC'
-UNION ALL
-SELECT p.id, u.id, 24 FROM products p JOIN units b ON b.id = p.base_unit_id AND b.code = 'LON' JOIN units u ON u.code = 'THUNG'
-UNION ALL
-SELECT p.id, u.id, 30 FROM products p JOIN units b ON b.id = p.base_unit_id AND b.code = 'GOI' JOIN units u ON u.code = 'THUNG';
-
--- Nhà cung cấp mẫu (S2-09)
-INSERT IGNORE INTO suppliers (code, name, tax_code, contact_name, contact_phone, payment_terms) VALUES
-  ('NCC-COCA', 'Công ty TNHH Nước giải khát Coca-Cola Việt Nam', '0300792451', 'Nguyễn Văn Hùng', '0903123456', 'Công nợ 30 ngày'),
-  ('NCC-SUNTORY', 'Công ty TNHH Suntory PepsiCo Việt Nam', '0300816663', 'Trần Thị Mai', '0912345670', 'Công nợ 15 ngày'),
-  ('NCC-ACECOOK', 'Công ty CP Acecook Việt Nam', '0300808687', 'Lê Minh Tuấn', '0987654320', 'Thanh toán khi nhận hàng');
 
 -- Nhóm khách hàng và bảng giá mẫu (S2-10)
 INSERT IGNORE INTO customer_groups (code, name) VALUES
