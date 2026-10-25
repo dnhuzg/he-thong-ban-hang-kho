@@ -172,9 +172,14 @@ const DEMO_USERS = [
   ["demo_daily", "Demo Đại lý Minh Anh", "CUSTOMER"],
 ];
 out.push(`
--- Tài khoản demo cho 6 vai trò (mật khẩu Demo@2026, không bắt đổi); admin do ứng dụng tự tạo lần chạy đầu
-INSERT IGNORE INTO users (username, email, full_name, password_hash, status, must_change_password) VALUES
-${DEMO_USERS.map(([u, n]) => `  (${q(u)}, ${q(u + "@oms.local")}, ${q(n)}, ${q(DEMO_HASH)}, 'ACTIVE', 0)`).join(",\n")};
+-- Tài khoản demo cho 6 vai trò (mật khẩu Demo@2026, không bắt đổi). Chỉ thêm khi đã có admin: ứng dụng chỉ tự tạo
+-- admin lúc bảng users còn trống, thêm demo trước lần khởi động đầu thì sẽ không bao giờ có admin.
+INSERT IGNORE INTO users (username, email, full_name, password_hash, status, must_change_password)
+SELECT * FROM (
+${DEMO_USERS.map(([u, n], i) => i === 0
+  ? `  SELECT ${q(u)} AS username, ${q(u + "@oms.local")} AS email, ${q(n)} AS full_name, ${q(DEMO_HASH)} AS password_hash, 'ACTIVE' AS status, 0 AS must_change_password`
+  : `  SELECT ${q(u)}, ${q(u + "@oms.local")}, ${q(n)}, ${q(DEMO_HASH)}, 'ACTIVE', 0`).join(" UNION ALL\n")}
+) demo WHERE @actor IS NOT NULL;
 INSERT IGNORE INTO user_roles (user_id, role_code)
 ${DEMO_USERS.map(([u, , r]) => `SELECT id, ${q(r)} FROM users WHERE username = ${q(u)}`).join(" UNION ALL\n")};
 -- Thủ kho và quản lý kho phụ trách kho đầu tiên; nhân viên kinh doanh phụ trách địa bàn và hai đại lý đầu
