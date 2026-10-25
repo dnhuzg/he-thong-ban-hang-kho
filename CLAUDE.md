@@ -53,6 +53,8 @@ File này hướng dẫn Claude Code cách làm việc trong repo này. Hãy đ�
 
 ## Cơ sở dữ liệu
 
+Hệ thống hiện là **kho sữa**: `seed.sql` tạo nhóm hàng sữa; `database/demo/dairy_demo.sql` nạp 35 sản phẩm sữa, giá 3 bảng giá và tồn đầu kỳ (phiếu nhập có lô, hạn dùng) ở mọi kho, chạy sau khi web đã khởi động lần đầu, chạy lại an toàn; `database/dairy_reset.sql` chuyển một DB cũ sang kho sữa (XOÁ hàng hoá và chứng từ, giữ tài khoản, kho, đại lý — sao lưu trước). Bộ FMCG cũ bên dưới không còn dùng, đừng chạy lên DB kho sữa.
+
 Dữ liệu demo lớn (118 nhóm hàng nhiều cấp, 416 sản phẩm FMCG kèm quy đổi đơn vị) nằm ở `database/demo/demo_catalog.sql` (chạy lại an toàn, không đổi dữ liệu có sẵn); giá bán demo cho các sản phẩm đó ở `demo_prices.sql` (chạy sau `demo_catalog.sql`, để thử tạo đơn); gỡ cả hai bằng `demo_catalog_remove.sql`; nguồn có cấu trúc ở `database/demo/source/` (sửa `data.js` rồi chạy `gen.js`). Không phải migration, chỉ chạy khi cần dữ liệu thử.
 
 Hiện dùng schema tự thiết kế cho Sprint 1 trong `database/schema.sql` + `seed.sql`. Thiết kế đầy đủ của nhóm là `OMS_schema_mysql.sql` (69 bảng) nhưng file này chưa có trong repo; khi có thì phải đối chiếu và chuyển sang.
