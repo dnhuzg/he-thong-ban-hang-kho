@@ -32,6 +32,35 @@ Lần chạy đầu, ứng dụng tự tạo tài khoản `admin` với `admin.i
 
 Database đã tạo từ trước thì không chạy lại `schema.sql`; áp các file mới trong `database/migrations/` theo thứ tự số.
 
+## Dữ liệu mẫu để test
+
+Sau khi web đã chạy lần đầu (đã có tài khoản `admin`), chạy `database/demo/dairy_demo.sql` bằng user `oms_app`:
+
+```powershell
+Get-Content database\demo\dairy_demo.sql -Raw -Encoding UTF8 | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uoms_app -p --default-character-set=utf8mb4
+```
+
+Script nạp dữ liệu một kho sữa: 4 nhà cung cấp, 35 sản phẩm kèm quy đổi hộp/lốc/thùng, giá ở 3 bảng giá,
+tồn đầu kỳ ở cả 3 kho (12 phiếu nhập đã xác nhận, có lô và hạn dùng) và tài khoản demo cho từng vai trò.
+Chạy lại nhiều lần không bị nhân đôi. Lỡ chạy trước khi web khởi động lần đầu thì script chỉ nạp sản phẩm và giá
+(chưa có admin để đứng tên phiếu nhập) — khởi động web rồi chạy lại là đủ.
+
+| Tài khoản | Vai trò | Phạm vi |
+|---|---|---|
+| `demo_quanly` | Quản lý kinh doanh | toàn hệ thống, duyệt đơn vượt hạn mức / dưới giá sàn |
+| `demo_nvkd` | Nhân viên kinh doanh | đại lý DL001, DL002 |
+| `demo_ketoan` | Kế toán công nợ | hoá đơn, thanh toán, công nợ |
+| `demo_kho` | Thủ kho | kho đầu tiên |
+| `demo_qlkho` | Quản lý kho | kho đầu tiên |
+| `demo_daily` | Đại lý | cổng đặt hàng của DL001 |
+
+Mật khẩu chung **`Demo@2026`** — chỉ dùng trên máy thử, không dùng cho hệ thống thật.
+Gợi ý thử nhanh: đăng nhập `demo_nvkd` tạo đơn cho DL001 → `demo_quanly` duyệt (nếu cần) → `demo_kho` soạn và xuất kho
+→ `demo_ketoan` lập hoá đơn, ghi nhận thanh toán.
+
+Muốn đổi danh sách sản phẩm hay giá: sửa `database/demo/source/dairy_gen.js` rồi chạy
+`node database/demo/source/dairy_gen.js database/demo/dairy_demo.sql`.
+
 ## Quy trình làm việc nhóm
 
 1. Nhận việc trên Jira, tạo nhánh từ `develop` đặt tên theo mã issue, ví dụ `GHTK-24-quan-ly-san-pham`.
